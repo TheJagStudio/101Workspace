@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      - VITE_SERVER_URL=http://backend:8000
+    networks:
+      - app_network
+
+  backend:
+    build: 
+      context: ./backend/Workspace101
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=django-insecure-0mk0!p468jvsr@i=rt=d(_etd$ej2hzk--vo1&cxrgd4-ex1!f
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Workspace-99-101-2002
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - TYPESENSE_API_KEY=Hu52dwsas2AdxdE
+      - GEMINI_API_KEY=AIzaSyBvDQUjI3s8KB6Atfk0i5s4uPA4ZX27z_s
+      - GOOGLE_MAPS_API_KEY=AIzaSyBxBKKw8qRbooHIASvS0gkhiGa4EIr8pA4
+    depends_on:
+      - db
+    networks:
+      - app_network
+    volumes:
+      - ./backend/Workspace101:/app
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Workspace-99-101-2002
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
