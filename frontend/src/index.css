@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "tailwindcss";
+
+* {
+  font-family: 'Inter', sans-serif;
+}
+
+.leaflet-control-attribution {
+  display: none;
+}
+/* two line truncate */
+.truncate-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+mark {
+	@apply bg-indigo-500 rounded px-1 text-white font-semibold;
+}
+
+/* custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+::-webkit-scrollbar-thumb:active {
+  cursor: grabbing;
+}
+
+.gridjs-td {
+  @apply truncate;
+}
+
+.gridjs-wrapper,
+.gridjs-summary,
+.gridjs-pages {
+  @apply text-sm;
+}
+
+.gridjs-th {
+  @apply !py-1 !px-2 !text-gray-600 !font-bold capitalize;
+}
+
+.gridjs-tr:hover>* {
+  @apply !bg-gray-100 cursor-pointer;
+}
+
+.gridjs-td,
+.gridjs-input {
+  @apply !py-1 !px-2 !text-gray-700;
+}
+
+pre {
+  @apply rounded-xl !px-3 !bg-green-50 !border-l-4 !border-green-500 shadow-inner;
+}

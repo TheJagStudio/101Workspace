@@ -1,0 +1,459 @@
+My Django app database schema:
+ --- Model: LogEntry (Table: django_admin_log) ---
+Description: Log entry
+
+Columns:
+  - id (PK): 'id' (AutoField)
+  - action_time: 'action_time' (DateTimeField)
+  - user_id (FK): 'user_id' (ForeignKey)
+  - content_type_id (FK): 'content_type_id' (ForeignKey)
+  - object_id: 'object_id' (TextField)
+  - object_repr: 'object_repr' (CharField)
+  - action_flag: 'action_flag' (PositiveSmallIntegerField)
+  - change_message: 'change_message' (TextField)
+
+Sample Data:
+  {'id': '267742', 'action_time': '2025-06-02 03:01:28.812505+00:00', 'user_id': '1', 'content_type_id': '19', 'object_id': '74', 'object_repr': 'InvoiceLineItem object (74)', 'action_flag': '3', 'change_message': ''}
+  {'id': '267743', 'action_time': '2025-06-02 03:01:28.812505+00:00', 'user_id': '1', 'content_type_id': '19', 'object_id': '73', 'object_repr': 'InvoiceLineItem object (73)', 'action_flag': '3', 'change_message': ''}
+  {'id': '267744', 'action_time': '2025-06-02 03:01:28.812505+00:00', 'user_id': '1', 'content_type_id': '19', 'object_id': '72', 'object_repr': 'InvoiceLineItem object (72)', 'action_flag': '3', 'change_message': ''}
+
+
+--- Model: Permission (Table: auth_permission) ---
+Description: Permission
+
+Columns:
+  - id (PK): 'id' (AutoField)
+  - name: 'name' (CharField)
+  - content_type_id (FK): 'content_type_id' (ForeignKey)
+  - codename: 'codename' (CharField)
+
+Sample Data:
+  {'id': '1', 'name': 'Can add log entry', 'content_type_id': '1', 'codename': 'add_logentry'}
+  {'id': '2', 'name': 'Can change log entry', 'content_type_id': '1', 'codename': 'change_logentry'}
+  {'id': '3', 'name': 'Can delete log entry', 'content_type_id': '1', 'codename': 'delete_logentry'}
+
+
+--- Model: Group (Table: auth_group) ---
+Description: Group
+
+Columns:
+  - id (PK): 'id' (AutoField)
+  - name: 'name' (CharField)
+  - permissions: Many-to-many relationship with Permission instances.
+
+
+--- Model: User (Table: auth_user) ---
+Description: User
+
+Columns:
+  - id (PK): 'id' (AutoField)
+  - password: 'password' (CharField)
+  - last_login: 'last_login' (DateTimeField)
+  - is_superuser: 'is_superuser' (BooleanField) - Superuser status: Designates that this user has all permissions without explicitly assigning them.
+  - username: 'username' (CharField): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+  - first_name: 'first_name' (CharField)
+  - last_name: 'last_name' (CharField)
+  - email: 'email' (CharField) - Email address
+  - is_staff: 'is_staff' (BooleanField) - Staff status: Designates whether the user can log into this admin site.
+  - is_active: 'is_active' (BooleanField) - Active: Designates whether this user should be treated as active. Unselect this instead of deleting accounts.
+  - date_joined: 'date_joined' (DateTimeField)
+  - groups: Many-to-many relationship with Group instances.
+  - user_permissions: Many-to-many relationship with Permission instances.
+
+Sample Data:
+  {'id': '1', 'last_login': '2025-06-01 19:48:53.278600+00:00', 'is_superuser': 'True', 'username': 'thejagstudio@gmail.com', 'first_name': 'Jagrat', 'last_name': 'Patel', 'email': 'thejagstudio@gmail.com', 'is_staff': 'True', 'is_active': 'True', 'date_joined': '2025-05-28 21:42:05+00:00'}
+
+
+--- Model: ContentType (Table: django_content_type) ---
+Description: Content type
+
+Columns:
+  - id (PK): 'id' (AutoField)
+  - app_label: 'app_label' (CharField)
+  - model: 'model' (CharField) - Python model class name
+
+Sample Data:
+  {'id': '1', 'app_label': 'admin', 'model': 'logentry'}
+  {'id': '2', 'app_label': 'auth', 'model': 'permission'}
+  {'id': '3', 'app_label': 'auth', 'model': 'group'}
+
+
+--- Model: Session (Table: django_session) ---
+Description: Session
+
+Columns:
+  - session_key (PK): 'session_key' (CharField)
+  - session_data: 'session_data' (TextField)
+  - expire_date: 'expire_date' (DateTimeField)
+
+Sample Data:
+  {'session_key': 'd5ssgblrapd2bv2km0mrp8h3s64xtk99', 'expire_date': '2025-06-12 00:21:00.047000+00:00'}
+  {'session_key': 'll1hymcy279v7eepl5c07md4kfet24m8', 'expire_date': '2025-06-12 00:28:35.309000+00:00'}
+  {'session_key': 't5vtp7z6y1tr0vd9k5agtxnjjsbm134f', 'expire_date': '2025-06-12 00:42:48.928000+00:00'}
+
+
+--- Model: Product (Table: api_product) ---
+Description: Product
+
+Columns:
+  - productId (PK): 'productId' (IntegerField)
+  - sku: 'sku' (CharField)
+  - upc: 'upc' (CharField)
+  - productName: 'productName' (CharField)
+  - availableQuantity: 'availableQuantity' (IntegerField)
+  - imageUrl: 'imageUrl' (CharField)
+  - masterProductId: 'masterProductId' (IntegerField)
+  - masterProductName: 'masterProductName' (CharField)
+  - standardPrice: 'standardPrice' (DecimalField)
+  - tierPrice: 'tierPrice' (DecimalField)
+  - costPrice: 'costPrice' (DecimalField)
+  - ecommerce: 'ecommerce' (BooleanField)
+  - active: 'active' (BooleanField)
+  - compositeProduct: 'compositeProduct' (BooleanField)
+  - stateRestricted: 'stateRestricted' (BooleanField)
+  - customerGroupRestricted: 'customerGroupRestricted' (BooleanField)
+  - categories: 'categories' (CharField)
+  - trackInventory: 'trackInventory' (BooleanField)
+  - trackInventoryByImei: 'trackInventoryByImei' (BooleanField)
+  - size: 'size' (IntegerField)
+  - returnable: 'returnable' (BooleanField)
+  - minimumSellingPrice: 'minimumSellingPrice' (DecimalField)
+  - TotalSaleAmount: 'TotalSaleAmount' (DecimalField)
+  - TotalGrossMargin: 'TotalGrossMargin' (DecimalField)
+  - TotalGrossMarginPrecentage: 'TotalGrossMarginPrecentage' (DecimalField)
+  - TotalRevenue: 'TotalRevenue' (DecimalField)
+  - inventoryList: Many-to-many relationship with InventoryData instances.
+
+Sample Data:
+  {'productId': '1', 'sku': 'FL0011', 'upc': 'WP-0001', 'availableQuantity': '0', 'masterProductId': 'None', 'masterProductName': 'None', 'standardPrice': '22.99', 'tierPrice': '22.99', 'costPrice': '20.57', 'ecommerce': 'True', 'active': 'True', 'compositeProduct': 'False', 'stateRestricted': 'False', 'customerGroupRestricted': 'False', 'trackInventory': 'True', 'trackInventoryByImei': 'False', 'size': '0', 'returnable': 'True', 'minimumSellingPrice': '0.00', 'TotalSaleAmount': '1003.13', 'TotalGrossMargin': '148.52', 'TotalGrossMarginPrecentage': '22.08', 'TotalRevenue': '475.88'}
+  {'productId': '5', 'sku': 'BANG0040', 'upc': 'BANG0040', 'productName': '14M TERP SLURP Q.B', 'availableQuantity': '-76', 'masterProductId': 'None', 'masterProductName': 'None', 'standardPrice': '11.52', 'tierPrice': '11.52', 'costPrice': '10.22', 'ecommerce': 'False', 'active': 'True', 'compositeProduct': 'False', 'stateRestricted': 'False', 'customerGroupRestricted': 'False', 'trackInventory': 'True', 'trackInventoryByImei': 'False', 'size': '0', 'returnable': 'True', 'minimumSellingPrice': '0.00', 'TotalSaleAmount': '4342.39', 'TotalGrossMargin': '508.80', 'TotalGrossMarginPrecentage': '9.86', 'TotalRevenue': '4434.55'}
+  {'productId': '8', 'sku': 'WP-0210', 'upc': '346257383603', 'availableQuantity': '0', 'masterProductId': 'None', 'masterProductName': 'None', 'standardPrice': '47.99', 'tierPrice': '47.99', 'costPrice': '38.00', 'ecommerce': 'True', 'active': 'True', 'compositeProduct': 'False', 'stateRestricted': 'False', 'customerGroupRestricted': 'False', 'trackInventory': 'True', 'trackInventoryByImei': 'False', 'size': '0', 'returnable': 'True', 'minimumSellingPrice': '0.00', 'TotalSaleAmount': '804.91', 'TotalGrossMargin': '611.91', 'TotalGrossMarginPrecentage': '74.16', 'TotalRevenue': '804.91'}
+
+
+--- Model: Category (Table: api_category) ---
+Description: Category
+
+Columns:
+  - categoryId (PK): 'categoryId' (IntegerField)
+  - name: 'name' (CharField)
+  - alias: 'alias' (CharField)
+  - parentId: 'parentId' (IntegerField)
+  - parentIdStr: 'parentIdStr' (CharField)
+  - imageUrl: 'imageUrl' (CharField)
+  - description: 'description' (TextField)
+  - ecommerce: 'ecommerce' (BooleanField)
+  - customerSpecific: 'customerSpecific' (BooleanField)
+  - loginRequired: 'loginRequired' (BooleanField)
+  - repairCategory: 'repairCategory' (BooleanField)
+  - businessTypeId: 'businessTypeId' (IntegerField)
+  - businessTypeName: 'businessTypeName' (CharField)
+  - sequenceNumber: 'sequenceNumber' (IntegerField)
+  - metaTitle: 'metaTitle' (CharField)
+  - metaData: 'metaData' (TextField)
+  - metaDescription: 'metaDescription' (TextField)
+  - deleted: 'deleted' (BooleanField)
+  - taxPaid: 'taxPaid' (BooleanField)
+  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+  - businessTypeList: Many-to-many relationship with BusinessType instances.
+
+Sample Data:
+  {'categoryId': '0', 'name': 'GREEN HARVEST', 'alias': 'green-harvest', 'parentId': '87', 'parentIdStr': 'None', 'imageUrl': 'None', 'description': 'None', 'ecommerce': 'True', 'customerSpecific': 'False', 'loginRequired': 'False', 'repairCategory': 'False', 'businessTypeId': 'None', 'businessTypeName': 'None', 'sequenceNumber': '102', 'metaTitle': 'None', 'metaData': 'None', 'metaDescription': 'None', 'deleted': 'False', 'taxPaid': 'False', 'lastSyncTimestamp': '2025-05-29 13:10:57.305000+00:00'}
+  {'categoryId': '1', 'name': 'DISPOSABLE', 'alias': 'disposable-', 'parentId': 'None', 'parentIdStr': 'None', 'imageUrl': 'None', 'description': '', 'ecommerce': 'True', 'customerSpecific': 'False', 'loginRequired': 'False', 'repairCategory': 'False', 'businessTypeId': 'None', 'businessTypeName': 'None', 'sequenceNumber': '13', 'metaTitle': 'None', 'metaData': 'None', 'metaDescription': 'None', 'deleted': 'False', 'taxPaid': 'False', 'lastSyncTimestamp': '2025-05-31 20:29:03.674668+00:00'}
+  {'categoryId': '7', 'name': 'KRATOM', 'alias': 'KRATOM', 'parentId': 'None', 'parentIdStr': 'None', 'imageUrl': 'None', 'description': '', 'ecommerce': 'True', 'customerSpecific': 'True', 'loginRequired': 'False', 'repairCategory': 'False', 'businessTypeId': 'None', 'businessTypeName': 'None', 'sequenceNumber': '15', 'metaTitle': 'None', 'metaData': 'None', 'metaDescription': 'None', 'deleted': 'False', 'taxPaid': 'False', 'lastSyncTimestamp': '2025-05-31 20:29:05.213537+00:00'}
+
+
+--- Model: BusinessType (Table: api_businesstype) ---
+Description: Business type
+
+Columns:
+  - name (PK): 'name' (CharField)
+  - imageUrl: 'imageUrl' (CharField)
+  - description: 'description' (TextField)
+  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+
+Sample Data:
+  {'name': 'Gas Station & C-Store', 'description': 'Enter Gas Station & C-Store', 'insertedTimestamp': '2025-05-31 20:28:58.018932+00:00'}
+  {'name': 'Mobile App', 'imageUrl': 'None', 'description': 'None', 'insertedTimestamp': '2025-05-31 20:28:58.033432+00:00'}
+  {'name': 'Smoke & Vape ', 'description': 'Enter Smoke & Vape Shop ', 'insertedTimestamp': '2025-05-31 20:28:58.018932+00:00'}
+
+
+--- Model: InventoryData (Table: api_inventorydata) ---
+Description: Inventory data
+
+Columns:
+  - id (PK): 'id' (IntegerField)
+  - productInventoryId: 'productInventoryId' (IntegerField)
+  - productId (FK): 'productId' (ForeignKey)
+  - wareHouseId: 'wareHouseId' (IntegerField)
+  - quantity: 'quantity' (IntegerField)
+  - availableQuantity: 'availableQuantity' (IntegerField)
+  - costPrice: 'costPrice' (DecimalField)
+  - orderId: 'orderId' (IntegerField)
+  - orderLineItemId: 'orderLineItemId' (IntegerField)
+  - orderFulfillmentId: 'orderFulfillmentId' (IntegerField)
+  - returnOrderId: 'returnOrderId' (IntegerField)
+  - purchaseOrderId: 'purchaseOrderId' (IntegerField)
+  - billId: 'billId' (IntegerField)
+  - transferOrderId: 'transferOrderId' (IntegerField)
+  - vendorReturnOrderId: 'vendorReturnOrderId' (IntegerField)
+  - compositeProductId: 'compositeProductId' (IntegerField)
+  - adjustmentId: 'adjustmentId' (IntegerField)
+  - notes: 'notes' (TextField)
+  - actionType: 'actionType' (CharField)
+  - salesOrderId: 'salesOrderId' (IntegerField)
+  - createdBy: 'createdBy' (IntegerField)
+  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+  - employeeName: 'employeeName' (CharField)
+  - storeName: 'storeName' (CharField)
+  - warehouseName: 'warehouseName' (CharField)
+
+Sample Data:
+  {'id': '24', 'productInventoryId': '18998', 'productId_id': '19850', 'wareHouseId': '1', 'quantity': '30', 'availableQuantity': '30', 'costPrice': '0.00', 'orderId': 'None', 'orderLineItemId': 'None', 'orderFulfillmentId': 'None', 'returnOrderId': 'None', 'purchaseOrderId': 'None', 'billId': 'None', 'transferOrderId': 'None', 'vendorReturnOrderId': 'None', 'compositeProductId': 'None', 'adjustmentId': 'None', 'actionType': 'Inserted Manually', 'salesOrderId': 'None', 'createdBy': '26', 'insertedTimestamp': '2022-12-31 17:01:53+00:00', 'employeeName': 'KURBAN GABRANI', 'storeName': 'None', 'warehouseName': '101 DISTRIBUTORS  '}
+  {'id': '25', 'productInventoryId': '18999', 'productId_id': '19851', 'wareHouseId': '1', 'quantity': '30', 'availableQuantity': '30', 'costPrice': '0.00', 'orderId': 'None', 'orderLineItemId': 'None', 'orderFulfillmentId': 'None', 'returnOrderId': 'None', 'purchaseOrderId': 'None', 'billId': 'None', 'transferOrderId': 'None', 'vendorReturnOrderId': 'None', 'compositeProductId': 'None', 'adjustmentId': 'None', 'actionType': 'Inserted Manually', 'salesOrderId': 'None', 'createdBy': '26', 'insertedTimestamp': '2022-12-31 17:01:53+00:00', 'employeeName': 'KURBAN GABRANI', 'storeName': 'None', 'warehouseName': '101 DISTRIBUTORS  '}
+  {'id': '26', 'productInventoryId': '19000', 'productId_id': '19852', 'wareHouseId': '1', 'quantity': '30', 'availableQuantity': '30', 'costPrice': '0.00', 'orderId': 'None', 'orderLineItemId': 'None', 'orderFulfillmentId': 'None', 'returnOrderId': 'None', 'purchaseOrderId': 'None', 'billId': 'None', 'transferOrderId': 'None', 'vendorReturnOrderId': 'None', 'compositeProductId': 'None', 'adjustmentId': 'None', 'actionType': 'Inserted Manually', 'salesOrderId': 'None', 'createdBy': '26', 'insertedTimestamp': '2022-12-31 17:01:53+00:00', 'employeeName': 'KURBAN GABRANI', 'storeName': 'None', 'warehouseName': '101 DISTRIBUTORS  '}
+
+
+--- Model: Vendor (Table: api_vendor) ---
+Description: Vendor
+
+Columns:
+  - id (PK): 'id' (IntegerField)
+  - name: 'name' (CharField)
+  - company: 'company' (CharField)
+  - dbaName: 'dbaName' (CharField)
+  - active: 'active' (BooleanField)
+  - address1: 'address1' (CharField)
+  - address2: 'address2' (CharField)
+  - city: 'city' (CharField)
+  - stateId: 'stateId' (IntegerField)
+  - stateName: 'stateName' (CharField)
+  - zip: 'zip' (CharField)
+  - country: 'country' (CharField)
+  - countryId: 'countryId' (IntegerField)
+  - county: 'county' (CharField)
+  - phone: 'phone' (CharField)
+  - workPhone: 'workPhone' (CharField)
+  - email: 'email' (CharField)
+  - websiteUrl: 'websiteUrl' (CharField)
+  - websiteUsername: 'websiteUsername' (CharField)
+  - websitePassword: 'websitePassword' (CharField)
+  - portalUserName: 'portalUserName' (CharField)
+  - portalPassword: 'portalPassword' (CharField)
+  - taxId: 'taxId' (CharField)
+  - feinNumber: 'feinNumber' (CharField)
+  - description: 'description' (TextField)
+  - dueAmount: 'dueAmount' (DecimalField)
+  - excessAmount: 'excessAmount' (DecimalField)
+  - storeCredit: 'storeCredit' (DecimalField)
+  - insuranceExpiryDate: 'insuranceExpiryDate' (DateField)
+  - manufacturerId: 'manufacturerId' (IntegerField)
+  - manufacturerType: 'manufacturerType' (CharField)
+  - msaTypeId: 'msaTypeId' (IntegerField)
+  - msaTypeName: 'msaTypeName' (CharField)
+  - paymentTermsId: 'paymentTermsId' (IntegerField)
+  - paymentTermsName: 'paymentTermsName' (CharField)
+  - primarySalesRepresentativeId: 'primarySalesRepresentativeId' (IntegerField)
+  - primarySalesRepresentativeName: 'primarySalesRepresentativeName' (CharField)
+  - createdBy: 'createdBy' (IntegerField)
+  - updatedBy: 'updatedBy' (IntegerField)
+  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+  - updatedTimestamp: 'updatedTimestamp' (DateTimeField)
+
+Sample Data:
+  {'id': '1', 'name': '101 DISTRIBUTORS GA - MIGRATION', 'company': '101 DISTRIBUTORS GA - MIGRATION', 'dbaName': 'None', 'active': 'True', 'address1': 'None', 'address2': 'None', 'city': 'None', 'stateId': '0', 'stateName': 'None', 'zip': 'None', 'country': 'None', 'countryId': '0', 'county': 'None', 'phone': 'None', 'workPhone': 'None', 'email': 'None', 'websiteUrl': 'None', 'websiteUsername': 'None', 'websitePassword': 'None', 'portalUserName': 'None', 'portalPassword': 'None', 'taxId': 'None', 'feinNumber': 'None', 'description': 'None', 'dueAmount': '0.00', 'excessAmount': '0.00', 'storeCredit': '0.00', 'insuranceExpiryDate': 'None', 'manufacturerId': 'None', 'manufacturerType': 'None', 'msaTypeId': 'None', 'msaTypeName': 'None', 'paymentTermsId': 'None', 'paymentTermsName': 'None', 'primarySalesRepresentativeId': 'None', 'primarySalesRepresentativeName': 'None', 'createdBy': 'None', 'updatedBy': 'None', 'insertedTimestamp': 'None', 'updatedTimestamp': 'None'}
+  {'id': '2', 'name': 'BIG BULL DISTRIBUTOR LLC', 'company': 'BIG BULL DISTRIBUTOR LLC', 'dbaName': 'None', 'active': 'True', 'address1': 'None', 'address2': 'None', 'city': 'None', 'stateId': '0', 'stateName': 'None', 'zip': 'None', 'country': 'None', 'countryId': '0', 'county': 'None', 'phone': '4074891069', 'workPhone': 'None', 'email': 'ace7117@icloud.com', 'websiteUrl': 'None', 'websiteUsername': 'None', 'websitePassword': 'None', 'portalUserName': 'None', 'portalPassword': 'None', 'taxId': 'None', 'feinNumber': 'None', 'description': 'None', 'dueAmount': '0.00', 'excessAmount': '0.00', 'storeCredit': '0.00', 'insuranceExpiryDate': 'None', 'manufacturerId': 'None', 'manufacturerType': 'None', 'msaTypeId': 'None', 'msaTypeName': 'None', 'paymentTermsId': 'None', 'paymentTermsName': 'None', 'primarySalesRepresentativeId': 'None', 'primarySalesRepresentativeName': 'None', 'createdBy': 'None', 'updatedBy': 'None', 'insertedTimestamp': 'None', 'updatedTimestamp': 'None'}
+  {'id': '3', 'name': 'MASH ENTERPRISE', 'company': 'MASH ENTERPRISE', 'dbaName': 'None', 'active': 'True', 'address1': 'None', 'address2': 'None', 'city': 'None', 'stateId': '0', 'stateName': 'None', 'zip': 'None', 'country': 'None', 'countryId': '0', 'county': 'None', 'phone': '', 'workPhone': 'None', 'email': 'None', 'websiteUrl': 'None', 'websiteUsername': 'None', 'websitePassword': 'None', 'portalUserName': 'None', 'portalPassword': 'None', 'taxId': 'None', 'feinNumber': 'None', 'description': 'None', 'dueAmount': '0.80', 'excessAmount': '0.00', 'storeCredit': '0.00', 'insuranceExpiryDate': 'None', 'manufacturerId': 'None', 'manufacturerType': 'None', 'msaTypeId': 'None', 'msaTypeName': 'None', 'paymentTermsId': 'None', 'paymentTermsName': 'None', 'primarySalesRepresentativeId': 'None', 'primarySalesRepresentativeName': 'None', 'createdBy': 'None', 'updatedBy': 'None', 'insertedTimestamp': 'None', 'updatedTimestamp': 'None'}
+
+
+--- Model: Invoice (Table: api_invoice) ---
+Description: Invoice
+
+Columns:
+  - id (PK): 'id' (IntegerField)
+  - totalQuantity: 'totalQuantity' (IntegerField)
+  - discount: 'discount' (DecimalField)
+  - totalAmount: 'totalAmount' (DecimalField)
+  - status: 'status' (CharField)
+  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+  - customerName: 'customerName' (CharField)
+  - companyName: 'companyName' (CharField)
+  - email: 'email' (CharField)
+  - storeName: 'storeName' (CharField)
+  - orderTags: 'orderTags' (TextField)
+  - dueAmount: 'dueAmount' (DecimalField)
+  - dueDate: 'dueDate' (DateTimeField)
+  - orderNotes: 'orderNotes' (TextField)
+  - salesRepId: 'salesRepId' (IntegerField)
+  - salesRepName: 'salesRepName' (CharField)
+  - pickerId: 'pickerId' (IntegerField)
+  - pickerName: 'pickerName' (CharField)
+  - trackingUrl: 'trackingUrl' (CharField)
+  - trackingNumber: 'trackingNumber' (CharField)
+  - salesOrderId: 'salesOrderId' (IntegerField)
+  - quotationId: 'quotationId' (IntegerField)
+  - shippingStatusId: 'shippingStatusId' (IntegerField)
+  - shippingStatusName: 'shippingStatusName' (CharField)
+  - stateId: 'stateId' (IntegerField)
+  - state: 'state' (CharField)
+  - city: 'city' (CharField)
+  - county: 'county' (CharField)
+  - dbaName: 'dbaName' (CharField)
+
+Sample Data:
+  {'id': '20000', 'totalQuantity': '0', 'discount': '0.00', 'totalAmount': '535.28', 'status': 'Completed', 'insertedTimestamp': '2023-01-04 06:41:00+00:00', 'customerName': 'HEPIN PATEL', 'companyName': '101 BROADWAY LLC', 'storeName': 'CASH & CARRY', 'orderTags': 'None', 'dueAmount': '0.00', 'dueDate': '2023-01-04 06:41:00+00:00', 'orderNotes': 'None', 'salesRepId': '1', 'salesRepName': 'NO REP', 'pickerId': 'None', 'pickerName': 'None', 'trackingUrl': 'None', 'trackingNumber': 'None', 'salesOrderId': 'None', 'quotationId': 'None', 'shippingStatusId': '664', 'shippingStatusName': 'Pending Shipment', 'stateId': '11', 'state': 'Georgia', 'city': 'COLUMBUS', 'county': 'None', 'dbaName': 'None'}
+  {'id': '20001', 'totalQuantity': '0', 'discount': '0.00', 'totalAmount': '0.00', 'status': 'Test', 'insertedTimestamp': '2023-01-04 14:55:00+00:00', 'customerName': 'TestGA test two Customer two test', 'companyName': 'Test13', 'storeName': 'CASH & CARRY', 'orderTags': 'None', 'dueAmount': '0.00', 'dueDate': '2023-01-04 14:55:00+00:00', 'orderNotes': 'None', 'salesRepId': '1', 'salesRepName': 'NO REP', 'pickerId': 'None', 'pickerName': 'None', 'trackingUrl': 'None', 'trackingNumber': 'None', 'salesOrderId': 'None', 'quotationId': 'None', 'shippingStatusId': '664', 'shippingStatusName': 'Pending Shipment', 'stateId': '11', 'state': 'Georgia', 'city': 'cumming', 'county': 'None', 'dbaName': 'None'}
+  {'id': '20002', 'totalQuantity': '0', 'discount': '0.00', 'totalAmount': '0.00', 'status': 'Test', 'insertedTimestamp': '2023-01-04 15:27:00+00:00', 'customerName': 'TestGA test two Customer two test', 'companyName': 'Test13', 'storeName': 'CASH & CARRY', 'orderTags': 'None', 'dueAmount': '0.00', 'dueDate': '2023-01-04 15:27:00+00:00', 'orderNotes': 'None', 'salesRepId': '1', 'salesRepName': 'NO REP', 'pickerId': 'None', 'pickerName': 'None', 'trackingUrl': 'None', 'trackingNumber': 'None', 'salesOrderId': 'None', 'quotationId': 'None', 'shippingStatusId': '664', 'shippingStatusName': 'Pending Shipment', 'stateId': '11', 'state': 'Georgia', 'city': 'cumming', 'county': 'None', 'dbaName': 'None'}
+
+
+--- Model: InvoiceLineItem (Table: api_invoicelineitem) ---
+Description: Invoice line item
+
+Columns:
+  - id (PK): 'id' (IntegerField)
+  - createdBy: 'createdBy' (IntegerField)
+  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+  - updatedBy: 'updatedBy' (IntegerField)
+  - updatedTimestamp: 'updatedTimestamp' (DateTimeField)
+  - orderId (FK): 'orderId' (ForeignKey)
+  - productId (FK): 'productId' (ForeignKey)
+  - masterProductId: 'masterProductId' (IntegerField)
+  - quantity: 'quantity' (IntegerField)
+  - availableQuantity: 'availableQuantity' (IntegerField)
+  - deleted: 'deleted' (BooleanField)
+  - inStock: 'inStock' (BooleanField)
+  - shippingQuantity: 'shippingQuantity' (IntegerField)
+  - packs: 'packs' (IntegerField)
+  - costPrice: 'costPrice' (DecimalField)
+  - maxCostPrice: 'maxCostPrice' (DecimalField)
+  - retailPrice: 'retailPrice' (DecimalField)
+  - couponDiscount: 'couponDiscount' (DecimalField)
+  - discountValue: 'discountValue' (DecimalField)
+  - discountType: 'discountType' (CharField)
+  - discountAmount: 'discountAmount' (DecimalField)
+  - taxClassId: 'taxClassId' (IntegerField)
+  - taxType: 'taxType' (CharField)
+  - taxPercentage: 'taxPercentage' (DecimalField)
+  - taxPerVolume: 'taxPerVolume' (DecimalField)
+  - taxPerOunce: 'taxPerOunce' (DecimalField)
+  - directTaxPercentage: 'directTaxPercentage' (DecimalField)
+  - taxIncludedInSellingPrice: 'taxIncludedInSellingPrice' (BooleanField)
+  - volume: 'volume' (DecimalField)
+  - size: 'size' (IntegerField)
+  - taxAmount: 'taxAmount' (DecimalField)
+  - totalAmount: 'totalAmount' (DecimalField)
+  - retailAfterDiscount: 'retailAfterDiscount' (DecimalField)
+  - updated: 'updated' (BooleanField)
+  - loyaltyPointPerProduct: 'loyaltyPointPerProduct' (DecimalField)
+  - notes: 'notes' (TextField)
+  - status: 'status' (CharField)
+  - productInventoryId: 'productInventoryId' (IntegerField)
+  - productName: 'productName' (CharField)
+  - sku: 'sku' (CharField)
+  - upc: 'upc' (CharField)
+  - singleUpc: 'singleUpc' (CharField)
+  - discountId: 'discountId' (IntegerField)
+  - boxQuantity: 'boxQuantity' (IntegerField)
+  - serviceProduct: 'serviceProduct' (BooleanField)
+  - trackInventoryByImei: 'trackInventoryByImei' (BooleanField)
+  - trackInventory: 'trackInventory' (BooleanField)
+  - sameCostAndRetail: 'sameCostAndRetail' (BooleanField)
+  - productIMEIList: 'productIMEIList' (TextField)
+  - grossMargin: 'grossMargin' (DecimalField)
+  - grossMarginPercentage: 'grossMarginPercentage' (DecimalField)
+  - isNoteName: 'isNoteName' (BooleanField)
+  - masterCategoryName: 'masterCategoryName' (CharField)
+  - productDefaultLocation: 'productDefaultLocation' (CharField)
+  - urlAlias: 'urlAlias' (CharField)
+  - productImageList: 'productImageList' (TextField)
+  - dropShipment: 'dropShipment' (BooleanField)
+  - primaryVendorId: 'primaryVendorId' (IntegerField)
+  - primaryVendorName: 'primaryVendorName' (CharField)
+  - inventoryValidated: 'inventoryValidated' (BooleanField)
+  - alternativeName: 'alternativeName' (CharField)
+  - salesOrderLineItemId: 'salesOrderLineItemId' (IntegerField)
+  - salesOrderQuantity: 'salesOrderQuantity' (IntegerField)
+  - minimumSellingPrice: 'minimumSellingPrice' (DecimalField)
+  - msrp: 'msrp' (DecimalField)
+
+Sample Data:
+  {'id': '34', 'createdBy': 'None', 'insertedTimestamp': 'None', 'updatedBy': 'None', 'updatedTimestamp': 'None', 'orderId_id': '20004', 'productId_id': '12101', 'masterProductId': 'None', 'quantity': '12', 'availableQuantity': '-1', 'deleted': 'False', 'inStock': 'False', 'shippingQuantity': '0', 'packs': '0', 'costPrice': '3.30', 'maxCostPrice': '0.00', 'retailPrice': '25.73', 'couponDiscount': '0.00', 'discountValue': '0.00', 'discountType': 'dollar', 'discountAmount': '0.00', 'taxClassId': 'None', 'taxType': 'None', 'taxPercentage': '0.00', 'taxPerVolume': '0.00', 'taxPerOunce': '0.00', 'directTaxPercentage': '0.00', 'taxIncludedInSellingPrice': 'False', 'volume': 'None', 'size': '0', 'taxAmount': '0.00', 'totalAmount': '308.76', 'retailAfterDiscount': '25.73', 'updated': 'False', 'loyaltyPointPerProduct': '0.00', 'notes': 'None', 'status': 'Pending Fulfilment', 'productInventoryId': '0', 'sku': 'GA006389', 'upc': '856614004572', 'singleUpc': '856614004572', 'discountId': 'None', 'boxQuantity': '16', 'serviceProduct': 'False', 'trackInventoryByImei': 'False', 'trackInventory': 'True', 'sameCostAndRetail': 'False', 'productIMEIList': 'None', 'grossMargin': '0.00', 'grossMarginPercentage': '0.00', 'isNoteName': 'False', 'masterCategoryName': 'None', 'productDefaultLocation': 'B39-2-2-1', 'urlAlias': 'SELECT---BATH-TISSUE---6PK-ROLL---16PK-BX', 'productImageList': 'None', 'dropShipment': 'False', 'primaryVendorId': '0', 'primaryVendorName': 'None', 'inventoryValidated': 'False', 'alternativeName': 'None', 'salesOrderLineItemId': 'None', 'salesOrderQuantity': '0', 'minimumSellingPrice': '0.00', 'msrp': '0.00'}
+  {'id': '35', 'createdBy': 'None', 'insertedTimestamp': 'None', 'updatedBy': 'None', 'updatedTimestamp': 'None', 'orderId_id': '20004', 'productId_id': '12099', 'masterProductId': 'None', 'quantity': '24', 'availableQuantity': '86', 'deleted': 'False', 'inStock': 'True', 'shippingQuantity': '0', 'packs': '0', 'costPrice': '4.80', 'maxCostPrice': '0.00', 'retailPrice': '5.49', 'couponDiscount': '0.00', 'discountValue': '0.00', 'discountType': 'dollar', 'discountAmount': '0.00', 'taxClassId': 'None', 'taxType': 'None', 'taxPercentage': '0.00', 'taxPerVolume': '0.00', 'taxPerOunce': '0.00', 'directTaxPercentage': '0.00', 'taxIncludedInSellingPrice': 'False', 'volume': 'None', 'size': '0', 'taxAmount': '0.00', 'totalAmount': '131.76', 'retailAfterDiscount': '5.49', 'updated': 'False', 'loyaltyPointPerProduct': '0.00', 'notes': 'None', 'status': 'Picked', 'productInventoryId': '0', 'productName': 'CLOROX - HOUSEHOLD - BLEACH - 121OZ', 'sku': 'GA006387', 'upc': '055500017348', 'singleUpc': '055500017348', 'discountId': 'None', 'boxQuantity': '1', 'serviceProduct': 'False', 'trackInventoryByImei': 'False', 'trackInventory': 'True', 'sameCostAndRetail': 'False', 'productIMEIList': 'None', 'grossMargin': '0.00', 'grossMarginPercentage': '0.00', 'isNoteName': 'False', 'masterCategoryName': 'None', 'productDefaultLocation': 'B38-1-2-5', 'urlAlias': 'CLOROX---121OZ---BLEACH', 'productImageList': 'None', 'dropShipment': 'False', 'primaryVendorId': '0', 'primaryVendorName': 'None', 'inventoryValidated': 'False', 'alternativeName': 'None', 'salesOrderLineItemId': 'None', 'salesOrderQuantity': '0', 'minimumSellingPrice': '0.00', 'msrp': '0.00'}
+  {'id': '36', 'createdBy': 'None', 'insertedTimestamp': 'None', 'updatedBy': 'None', 'updatedTimestamp': 'None', 'orderId_id': '20004', 'productId_id': '1069', 'masterProductId': 'None', 'quantity': '1', 'availableQuantity': '791', 'deleted': 'False', 'inStock': 'True', 'shippingQuantity': '0', 'packs': '0', 'costPrice': '12.25', 'maxCostPrice': '0.00', 'retailPrice': '15.89', 'couponDiscount': '0.00', 'discountValue': '0.00', 'discountType': 'dollar', 'discountAmount': '0.00', 'taxClassId': 'None', 'taxType': 'None', 'taxPercentage': '0.00', 'taxPerVolume': '0.00', 'taxPerOunce': '0.00', 'directTaxPercentage': '0.00', 'taxIncludedInSellingPrice': 'False', 'volume': 'None', 'size': '0', 'taxAmount': '0.00', 'totalAmount': '15.89', 'retailAfterDiscount': '15.89', 'updated': 'False', 'loyaltyPointPerProduct': '0.00', 'notes': 'None', 'status': 'Pending Fulfilment', 'productInventoryId': '0', 'sku': 'GA000225', 'upc': '8716294401004', 'singleUpc': '8716294401004', 'discountId': 'None', 'boxQuantity': '10', 'serviceProduct': 'False', 'trackInventoryByImei': 'False', 'trackInventory': 'True', 'sameCostAndRetail': 'False', 'productIMEIList': 'None', 'grossMargin': '0.00', 'grossMarginPercentage': '0.00', 'isNoteName': 'False', 'masterCategoryName': 'None', 'productDefaultLocation': 'H4-6-4-7', 'productImageList': 'None', 'dropShipment': 'False', 'primaryVendorId': '0', 'primaryVendorName': 'None', 'inventoryValidated': 'False', 'alternativeName': 'None', 'salesOrderLineItemId': 'None', 'salesOrderQuantity': '0', 'minimumSellingPrice': '0.00', 'msrp': '0.00'}
+
+
+--- Model: CustomUser (Table: users) ---
+Description: User
+
+Columns:
+  - id (PK): 'id' (BigAutoField)
+  - password: 'password' (CharField)
+  - last_login: 'last_login' (DateTimeField)
+  - is_superuser: 'is_superuser' (BooleanField) - Superuser status: Designates that this user has all permissions without explicitly assigning them.
+  - username: 'username' (CharField): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+  - first_name: 'first_name' (CharField)
+  - last_name: 'last_name' (CharField)
+  - email: 'email' (CharField) - Email address
+  - is_staff: 'is_staff' (BooleanField) - Staff status: Designates whether the user can log into this admin site.
+  - is_active: 'is_active' (BooleanField) - Active: Designates whether this user should be treated as active. Unselect this instead of deleting accounts.
+  - date_joined: 'date_joined' (DateTimeField)
+  - user_type: 'user_type' (CharField)
+  - phone_number: 'phone_number' (CharField)
+  - groups: Many-to-many relationship with Group instances.
+  - user_permissions: Many-to-many relationship with Permission instances.
+
+Sample Data:
+  {'id': '1', 'last_login': '2025-05-31 21:08:33+00:00', 'is_superuser': 'True', 'username': 'thejagstudio@gmail.com', 'first_name': 'Jagrat', 'last_name': 'Patel', 'email': 'thejagstudio@gmail.com', 'is_staff': 'False', 'is_active': 'True', 'date_joined': '2025-05-31 21:08:12+00:00', 'user_type': 'admin', 'phone_number': '4708307691'}
+
+
+--- Model: Salesman (Table: tracker_salesman) ---
+Description: Salesman
+
+Columns:
+  - id (PK): 'id' (BigAutoField)
+  - user_id (FK): 'user_id' (OneToOneField)
+  - status: 'status' (CharField)
+  - last_seen: 'last_seen' (DateTimeField)
+  - current_location_lat: 'current_location_lat' (FloatField)
+  - current_location_lng: 'current_location_lng' (FloatField)
+  - today_visits: 'today_visits' (IntegerField)
+  - battery: 'battery' (IntegerField)
+
+
+--- Model: LocationPoint (Table: tracker_locationpoint) ---
+Description: Location point
+
+Columns:
+  - id (PK): 'id' (BigAutoField)
+  - salesman_id (FK): 'salesman_id' (ForeignKey)
+  - latitude: 'latitude' (FloatField)
+  - longitude: 'longitude' (FloatField)
+  - timestamp: 'timestamp' (DateTimeField)
+
+
+--- Model: DailyActivity (Table: tracker_dailyactivity) ---
+Description: Daily activity
+
+Columns:
+  - id (PK): 'id' (BigAutoField)
+  - salesman_id (FK): 'salesman_id' (ForeignKey)
+  - date: 'date' (DateField)
+  - checkpoints: 'checkpoints' (IntegerField)
+  - duration: 'duration' (CharField)
+  - distance: 'distance' (FloatField)
+  - start_time: 'start_time' (TimeField)
+  - end_time: 'end_time' (TimeField)
+  - route_coordinates_json: 'route_coordinates_json' (JSONField)
+
+
+--- Model: AdminSettings (Table: tracker_adminsettings) ---
+Description: Admin setting
+
+Columns:
+  - id (PK): 'id' (BigAutoField)
+  - location_update_interval_minutes: 'location_update_interval_minutes' (IntegerField): Interval in minutes for location updates.
+  - checkpoint_threshold_minutes: 'checkpoint_threshold_minutes' (IntegerField): Time in minutes a salesman must stay at a location to be considered a checkpoint.
+  - proximity_range_meters: 'proximity_range_meters' (IntegerField): Proximity range in meters for location-based events.
+  - notify_salesman_offline: 'notify_salesman_offline' (BooleanField)
+  - notify_low_battery_alerts: 'notify_low_battery_alerts' (BooleanField)
+  - notify_unusual_route_patterns: 'notify_unusual_route_patterns' (BooleanField)
+  - notify_daily_summary_reports: 'notify_daily_summary_reports' (BooleanField)
