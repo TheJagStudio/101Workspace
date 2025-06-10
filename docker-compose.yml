@@ -19,7 +19,7 @@ services:
       context: ./backend/Workspace101
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "9876:9876"
     environment:
       - DEBUG=1
       - SECRET_KEY=django-insecure-0mk0!p468jvsr@i=rt=d(_etd$ej2hzk--vo1&cxrgd4-ex1!f
@@ -36,7 +36,7 @@ services:
     networks:
       - app_network
     volumes:
-      - ./backend/Workspace101:/app
+      - ./backend/Workspace101:/app/Workspace101
 
   db:
     image: postgres:15

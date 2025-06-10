@@ -10,6 +10,9 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.db import transaction
+import typesense
+import time
+from django.conf import settings
 
 
 def syncProducts(token):
@@ -592,6 +595,88 @@ def syncCategories(token):
         yield 100
 
 
+def syncSearchData(token):
+    # Connect to Typesense
+    client = typesense.Client(
+        {
+            "api_key": settings.TYPESENSE_API_KEY,
+            "nodes": [
+                {
+                    "host": "thejagstudio-typesense.hf.space",
+                    "port": "443",
+                    "protocol": "https",
+                }
+            ],
+            "connection_timeout_seconds": 2,
+        }
+    )
+
+    # Prepare collection schema
+    collection_name = "101"
+    schema = {"name": collection_name, "fields": [{"name": "id", "type": "int32"}, {"name": "productId", "type": "int32"}, {"name": "sku", "type": "string"}, {"name": "upc", "type": "string"}, {"name": "productName", "type": "string"}, {"name": "availableQuantity", "type": "int32"}, {"name": "eta", "type": "string"}, {"name": "imageUrl", "type": "string"}, {"name": "masterProductId", "type": "int32"}, {"name": "masterProductName", "type": "string"}, {"name": "standardPrice", "type": "float"}, {"name": "tierPrice", "type": "float"}, {"name": "costPrice", "type": "float"}, {"name": "ecommerce", "type": "bool"}, {"name": "active", "type": "bool"}, {"name": "compositeProduct", "type": "bool"}, {"name": "stateRestricted", "type": "bool"}, {"name": "customerGroupRestricted", "type": "bool"}, {"name": "categories", "type": "string", "facet": True}, {"name": "trackInventory", "type": "bool"}, {"name": "trackInventoryByImei", "type": "bool"}, {"name": "insertedTimestamp", "type": "string"}, {"name": "size", "type": "int32"}], "default_sorting_field": "availableQuantity"}
+
+    # Delete collection if exists
+    try:
+        client.collections[collection_name].delete()
+    except Exception as e:
+        print(f"Collection {collection_name} does not exist or could not be deleted: {e}")
+    # Create collection
+    client.collections.create(schema)
+
+    # Fetch products from API and import to Typesense
+
+    totalPages = 10
+    page = 1
+
+    headers = {
+        "Accept": "application/json, text/plain",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Authorization": "Bearer " + token,
+        "Connection": "keep-alive",
+        "Referer": "https://erp.101distributorsga.com/product",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+    }
+    # Fetch all products first
+    all_products = []
+    while page <= totalPages:
+        response = requests.get(
+            f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=10000",
+            headers=headers,
+        )
+        try:
+            products = response.json()["result"]["content"]
+            totalPages = response.json()["result"]["totalPages"]
+        except Exception as e:
+            print(f"Error fetching products on page {page}: {e} {response.json()}")
+        for product in products:
+            product["id"] = str(product["id"])
+            product["eta"] = str(product["eta"])
+            product["masterProductName"] = str(product["masterProductName"])
+            try:
+                product["masterProductId"] = int(product["masterProductId"])
+            except:
+                product["masterProductId"] = 0
+            product['categories'] = str(product['categories'])
+            all_products.append(product)
+        percent = (page / totalPages) * 50
+        page += 1
+        yield percent
+
+    # Import to Typesense in chunks of 1000
+    for i in range(0, len(all_products), 1000):
+        client.collections[collection_name].documents.import_(all_products[i : i + 1000], {"action": "create"})
+        percent = 50 + ((i + 1000) / len(all_products)) * 50
+        yield percent
+
+    yield 100
+
+
 class syncData(APIView):
     def post(self, request):
         token = request.data.get("token")
@@ -602,63 +687,7 @@ class syncData(APIView):
 
         def event_stream():
             try:
-                if syncType == "all":
-                    # Define weights for each step (must sum to 1.0)
-                    # These are estimates; adjust based on typical time taken
-                    weight_bt = 0.05  # Business Types: 5%
-                    weight_cat = 0.15  # Categories: 15%
-                    weight_prod = 0.40  # Products: 40%
-                    weight_inv = 0.30  # Inventory Data: 30%
-                    weight_vendors = 0.10  # Vendors: 10%
-
-                    current_overall_progress = 0
-
-                    # 1. Sync Business Types
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'business_types_starting'})}\n\n"
-                    for percent_done_bt in syncBusinessTypes(token):
-                        # Calculate progress for this step within its weighted portion
-                        step_progress = percent_done_bt * weight_bt
-                        # Add to overall progress (base is current_overall_progress)
-                        yield f"data: {json.dumps({'progress': round(current_overall_progress + step_progress), 'status': 'business_types'})}\n\n"
-                    current_overall_progress += 100 * weight_bt  # Mark this section as fully complete
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'business_types_done'})}\n\n"
-
-                    # 2. Sync Categories
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'categories_starting'})}\n\n"
-                    for percent_done_cat in syncCategories(token):
-                        step_progress = percent_done_cat * weight_cat
-                        yield f"data: {json.dumps({'progress': round(current_overall_progress + step_progress), 'status': 'categories'})}\n\n"
-                    current_overall_progress += 100 * weight_cat
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'categories_done'})}\n\n"
-
-                    # 3. Sync Products
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'products_starting'})}\n\n"
-                    for percent_done_prod in syncProducts(token):
-                        step_progress = percent_done_prod * weight_prod
-                        # Ensure progress doesn't exceed 100 due to rounding or weight adjustments
-                        final_progress = min(round(current_overall_progress + step_progress), 100)
-                        yield f"data: {json.dumps({'progress': final_progress, 'status': 'products'})}\n\n"
-
-                    # 4. Sync Inventory Data
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'inventory_data_starting'})}\n\n"
-                    for percent_done_inv in syncInventoryData(token):
-                        # Inventory sync is part of the product sync, so we can use the same weight
-                        step_progress = percent_done_inv * weight_inv
-                        final_progress = min(round(current_overall_progress + step_progress), 100)
-                        yield f"data: {json.dumps({'progress': final_progress, 'status': 'inventory_data'})}\n\n"
-
-                    # 5. Sync Vendors
-                    yield f"data: {json.dumps({'progress': round(current_overall_progress), 'status': 'vendor_starting'})}\n\n"
-                    for percent_done_vendors in syncVendors(token):
-                        # Vendors sync is also part of the product sync, so we can use the same weight
-                        step_progress = percent_done_vendors * weight_vendors
-                        final_progress = min(round(current_overall_progress + step_progress), 100)
-                        yield f"data: {json.dumps({'progress': final_progress, 'status': 'vendor'})}\n\n"
-
-                    # Ensure final "all done" message reports 100%
-                    yield f"data: {json.dumps({'progress': 100, 'status': 'done'})}\n\n"
-
-                elif syncType == "businessType":
+                if syncType == "businessType":
                     yield f"data: {json.dumps({'progress': 0, 'status': 'business_types_starting'})}\n\n"
                     for percent in syncBusinessTypes(token):
                         yield f"data: {json.dumps({'progress': round(percent), 'status': 'business_types'})}\n\n"
@@ -687,7 +716,11 @@ class syncData(APIView):
                     for percent in syncVendors(token):
                         yield f"data: {json.dumps({'progress': round(percent), 'status': 'vendor'})}\n\n"
                     yield f"data: {json.dumps({'progress': 100, 'status': 'done'})}\n\n"
-
+                elif syncType == "search":
+                    yield f"data: {json.dumps({'progress': 0, 'status': 'search_data_starting'})}\n\n"
+                    for percent in syncSearchData(token):
+                        yield f"data: {json.dumps({'progress': round(percent), 'status': 'search_data'})}\n\n"
+                    yield f"data: {json.dumps({'progress': 100, 'status': 'done'})}\n\n"
                 else:
                     yield f"data: {json.dumps({'error': 'Invalid syncType specified', 'progress': 0, 'status': 'error'})}\n\n"
 

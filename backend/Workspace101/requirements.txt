@@ -1,9 +1,9 @@
-Django>=5.2.1
+Django
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
 django-import-export
 python-dotenv
 psycopg2-binary
-google-generativeai
+google-genai
 typesense

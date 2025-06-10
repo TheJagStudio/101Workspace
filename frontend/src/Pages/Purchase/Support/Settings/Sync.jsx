@@ -32,6 +32,16 @@ const syncItems = [
 		label: "Sync Vendor Data",
 		info: "Sync your vendor information for accurate reporting.",
 	},
+	{
+		key: "customer",
+		label: "Sync Customer Data",
+		info: "Sync your customer information for accurate reporting.",
+	},
+	{
+		key:"search",
+		label: "Search Data",
+		info: "Sync your search data to ensure accurate search results.",
+	}
 ];
 
 const SyncPage = () => {
@@ -40,6 +50,8 @@ const SyncPage = () => {
 		categories: false,
 		businessType: false,
 		vendor: false,
+		customer: false,
+		search: false,
 		inventoryData: false,
 		all: false,
 	});
@@ -48,6 +60,8 @@ const SyncPage = () => {
 		categories: 0,
 		businessType: 0,
 		vendor: 0,
+		search: 0,
+		customer: 0,
 		inventoryData: 0,
 		all: 0,
 	});
@@ -151,9 +165,9 @@ const SyncPage = () => {
 			{syncItems.map((item) => {
 				// Special handling for "all"
 				if (item.key === "all") {
-					const allLoading = loading.products || loading.categories || loading.businessType || loading.inventoryData || loading.vendor;
-					const allProgress = (progress.products + progress.categories + progress.businessType + progress.inventoryData + progress.vendor) / 5;
-					const allCompleted = progress.products === 100 && progress.categories === 100 && progress.businessType === 100 && progress.inventoryData === 100 && progress.vendor === 100 && !allLoading;
+					const allLoading = loading.products || loading.categories || loading.businessType || loading.inventoryData || loading.vendor || loading.customer || loading.search;
+					const allProgress = (progress.products + progress.categories + progress.businessType + progress.inventoryData + progress.vendor + progress.customer + progress.search) / 7;
+					const allCompleted = progress.products === 100 && progress.categories === 100 && progress.businessType === 100 && progress.inventoryData === 100 && progress.vendor === 100 && progress.customer === 100 && progress.search === 100 && !allLoading;
 
 					return (
 						<div key={item.key} className="mb-8 p-4 border border-dashed rounded-lg shadow-sm bg-white">
@@ -171,6 +185,8 @@ const SyncPage = () => {
 											await handleSync("businessType");
 											await handleSync("inventoryData");
 											await handleSync("vendor");
+											await handleSync("customer");
+											await handleSync("search");
 										};
 										syncAll();
 									}}

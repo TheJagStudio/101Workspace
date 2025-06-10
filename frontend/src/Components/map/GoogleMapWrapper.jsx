@@ -160,6 +160,7 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liv
             zoom={zoom}
             center={userLocation || center}
             options={mapOptions}
+
         >
             {/* Today's route stop markers */}
             {todayRoute.map((stop, index) => (

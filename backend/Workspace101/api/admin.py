@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem
 from .models import PurchaseHistory
+from .models import SalesgentToken
 
 # import export
 from import_export.admin import ImportExportModelAdmin
@@ -81,6 +82,12 @@ class PurchaseHistoryAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["productId", "vendorId"]
 
 
+# Add SalesgentToken admin
+class SalesgentTokenAdmin(ImportExportModelAdmin):
+    list_display = ("id", "accessToken", "lastSyncTimestamp")
+    search_fields = ("accessToken", "id")
+
+
 # Register your models here.
 admin.site.site_header = "API Admin"
 admin.site.site_title = "API Admin Portal"
@@ -94,3 +101,4 @@ admin.site.register(Vendor, VendorAdmin)
 admin.site.register(Invoice, InvoiceAdmin)
 admin.site.register(InvoiceLineItem, InvoiceLineItemAdmin)
 admin.site.register(PurchaseHistory, PurchaseHistoryAdmin)
+admin.site.register(SalesgentToken, SalesgentTokenAdmin)  # <-- Register the model

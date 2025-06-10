@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAtom } from "jotai";
-import { userAtom,activeProductAtom } from "../../Variables";
+import { userAtom, activeProductAtom } from "../../Variables";
 
 const Header = ({ logout }) => {
 	const [user] = useAtom(userAtom);
@@ -52,10 +52,18 @@ const Header = ({ logout }) => {
 
 	return (
 		<div className="w-full h-16 bg-white border-b border-gray-200 shadow-lg flex items-center justify-between px-6 z-50">
-			{/* Search Bar */}
+
 			<div className="flex items-center w-full sm:w-84 ml-5">
 				<div className="relative w-full">
-					<input type="text" ref={searchInputRef} placeholder="Search Products" onChange={handleSearchChange} className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-indigo-500 text-sm" />
+					<input
+						type="text"
+						ref={searchInputRef}
+						placeholder="Search Products"
+						onChange={handleSearchChange}
+						value={search}
+						autoComplete="off"
+						className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-indigo-500 text-sm"
+					/>
 					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500">
 						{/* Search Icon */}
 						<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -68,7 +76,7 @@ const Header = ({ logout }) => {
 					{results?.length > 0 && (
 						<div className="absolute hidden peer-focus:block hover:block left-0 right-0 mt-2 py-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 h-fit w-full sm:w-[150%] overflow-hidden">
 							{results.map((item, idx) => (
-								<div onClick={()=>{
+								<div onClick={() => {
 									setActiveProduct(item?.document);
 								}} key={item?.document.id || idx} className="flex flex-row flex-nowrap gap-2 w-full items-center justify-start px-4 py-1 h-12 hover:bg-indigo-50 cursor-pointer text-sm">
 									<img src={item?.document.imageUrl || "/static/images/default.png"} alt={item?.document.productName} className="w-10 h-10 rounded mr-2 inline-block" />
