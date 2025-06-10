@@ -38,22 +38,6 @@ services:
     volumes:
       - ./backend/Workspace101:/app/Workspace101
 
-  db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Workspace-99-101-2002
-    ports:
-      - "5432:5432"
-    networks:
-      - app_network
-
-volumes:
-  postgres_data:
-
 networks:
   app_network:
     driver: bridge

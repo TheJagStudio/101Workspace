@@ -3,7 +3,7 @@ from django.http import JsonResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import Product, Category, BusinessType, InventoryData, Invoice, InvoiceLineItem, Vendor, PurchaseHistory,SalesgentToken
+from .models import Product, Category, BusinessType, InventoryData, Invoice, InvoiceLineItem, Vendor, PurchaseHistory, SalesgentToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +13,7 @@ from django.db import models
 from django.db.models import F, Sum, DecimalField, OuterRef, Subquery, Q
 from django.utils import timezone
 from datetime import datetime
-from django.db.models.functions import TruncDate,Abs,Cast
+from django.db.models.functions import TruncDate, Abs, Cast
 from api.ai_agent.agent import DjangoAIAgent
 import requests
 from django.contrib.auth.models import User
@@ -47,6 +47,7 @@ class SearchProductsView(APIView):
         except typesense.exceptions.ObjectNotFound:
             return JsonResponse({"error": "Typesense collection not found."}, status=404)
 
+
 class SyncSalesgentTokenView(APIView):
     permission_classes = []
 
@@ -58,39 +59,39 @@ class SyncSalesgentTokenView(APIView):
         password = request.data.get("password")
         # authenticate the user
         if not username or not password:
-            return JsonResponse({"error": "Username and password are required."}, status=400)
+            return JsonResponse({"error": "Username and password are required.","status": "failed"}, status=400)
         user = User.objects.filter(username=username).first()
         if not user or not user.check_password(password):
-            return JsonResponse({"error": "Invalid username or password."}, status=401)
-        
+            return JsonResponse({"error": "Invalid username or password.","status": "failed"}, status=401)
+
         entry = SalesgentToken.objects.first()
         if not entry:
-            return JsonResponse({"error": "No Salesgent token found."}, status=404)
+            return JsonResponse({"error": "No Salesgent token found.","status": "failed"}, status=404)
         refresh_token = entry.refreshToken
         headers = {
-            'Accept': 'application/json, text/plain',
-            'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
-            'refreshToken': refresh_token,
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Pragma': 'no-cache',
-            'Referer': 'https://erp.101distributorsga.com/product',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-            'device-id': '07b17521-b821-41fd-beea-22679d5ef98f',
-            'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
+            "Accept": "application/json, text/plain",
+            "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+            "refreshToken": refresh_token,
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Pragma": "no-cache",
+            "Referer": "https://erp.101distributorsga.com/product",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+            "device-id": "07b17521-b821-41fd-beea-22679d5ef98f",
+            "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
         }
 
-        response = requests.post('https://erp.101distributorsga.com/api/refreshToken', headers=headers)
-        data = response.json()['result']
+        response = requests.post("https://erp.101distributorsga.com/api/refreshToken", headers=headers)
+        data = response.json()["result"]
         entry.accessToken = data.get("access")
         entry.refreshToken = data.get("refresh")
         entry.save()
-        return JsonResponse({"message": "Token synced successfully.", "accessToken": entry.accessToken, "refreshToken": entry.refreshToken}, status=200)
+        return JsonResponse({"message": "Token synced successfully.", "status": "success"}, status=200)
 
 
 class InventorySummaryView(APIView):
