@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import requests
-from api.models import BusinessType, Category, Product, InventoryData, Vendor
+from api.models import BusinessType, Category, Product, InventoryData, Vendor, SalesgentToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import StreamingHttpResponse
@@ -679,7 +679,7 @@ def syncSearchData(token):
 
 class syncData(APIView):
     def post(self, request):
-        token = request.data.get("token")
+        token = SalesgentToken.objects.first().accessToken if SalesgentToken.objects.exists() else None
         syncType = request.data.get("syncType", "all")
 
         if not token:

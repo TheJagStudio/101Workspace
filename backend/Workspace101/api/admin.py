@@ -69,11 +69,10 @@ class InvoiceLineItemAdmin(ImportExportModelAdmin):
 
 
 class PurchaseHistoryAdmin(ImportExportModelAdmin):
-    list_display = ("purchaseOrderId", "productId", "productId__productName", "sku", "purchasedQuantity", "costPrice", "vendorId", "purchaseOrderInsertedTimestamp")
+    list_display = ("purchaseOrderId", "productId", "sku", "purchasedQuantity", "costPrice", "vendorId", "purchaseOrderInsertedTimestamp")
     search_fields = (
         "purchaseOrderId",
         "productId__productId",
-        "productId__productName",
         "sku",
         "name",
         "vendorName",

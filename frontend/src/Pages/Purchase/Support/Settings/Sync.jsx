@@ -67,7 +67,6 @@ const SyncPage = () => {
 	});
 	const [error, setError] = useState(null);
 	const pollInterval = useRef(null);
-	const [token, setToken] = useState("");
 
 	useEffect(() => {
 		return () => {
@@ -88,7 +87,7 @@ const SyncPage = () => {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ token, syncType: key }),
+				body: JSON.stringify({syncType : key }),
 			});
 
 			if (!response.body) {
@@ -138,30 +137,10 @@ const SyncPage = () => {
 		}
 	};
 
-	useEffect(() => {
-		if (localStorage.getItem("syncToken")) {
-			setToken(localStorage.getItem("syncToken"));
-		}
-	}, []);
-
 	return (
 		<div className="py-4 ">
 			<h1 className="text-2xl font-semibold mb-6">Sync Data</h1>
 			{error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
-			{/* create a input text field for adding token */}
-			<div className="mb-4">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Token</label>
-				<input
-					type="text"
-					value={token}
-					onChange={(e) => {
-						setToken(e.target.value);
-						localStorage.setItem("syncToken", e.target.value);
-					}}
-					className="w-full p-2 border border-gray-300 rounded"
-					placeholder="Enter your token"
-				/>
-			</div>
 			{syncItems.map((item) => {
 				// Special handling for "all"
 				if (item.key === "all") {
