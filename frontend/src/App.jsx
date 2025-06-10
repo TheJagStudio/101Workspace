@@ -130,7 +130,7 @@ function App() {
 					<Route path="customers" element={<DeliveryCustomer />} />
 					<Route path="reports" element={<DeliveryReport />} />
 				</Route>
-				<Route path="*" element={<Navigate to="/404" replace />} />
+				{/* <Route path="*" element={<Navigate to="/404" replace />} /> */}
 				<Route path="/404" element={<NotFound />} />
 			</Routes>
 		</Router>
