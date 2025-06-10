@@ -31,7 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*","217.196.49.245","workspace.101distributors.com"]
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173","http://217.196.49.245:5173","http://217.196.49.245:9876","http://workspace.101distributors.com"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173","http://217.196.49.245:5173","http://217.196.49.245:9876","http://workspace.101distributors.com","https://workspace.101distributors.com"]
 CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
