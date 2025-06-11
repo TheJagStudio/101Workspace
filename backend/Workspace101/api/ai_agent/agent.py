@@ -35,7 +35,7 @@ The output of this tool will be the result of the executed query or an error mes
 
 
 def ExecuteOrmQuery(python_code: str) -> str:
-    if not python_code.strip():
+    if not python_code:
         print("Error: Empty Python code provided for execution.")
         return "Error: Empty Python code provided for execution."
     # forbidden_keywords = [
@@ -94,7 +94,7 @@ def ExecuteOrmQuery(python_code: str) -> str:
                 return f"Error: Could not serialize results to JSON. Raw: {results}"
         else:
             print("Error: The executed code did not produce a 'results' variable.")
-            return "Error: The executed code did not produce a 'results' variable. CLI Output: " + cli_output.strip()
+            return "Error: The executed code did not produce a 'results' variable. CLI Output: " + cli_output
     except Exception as e:
         if isinstance(e, django.core.exceptions.FieldDoesNotExist):
             print(f"Django ORM Error: Field does not exist. Check model schema. Details: {e}")
@@ -129,7 +129,7 @@ class DjangoAIAgent:
 
         # Read system prompt from file (if needed)
         with open("./api/ai_agent/modelContext.txt", "r") as file:
-            final_system_prompt = file.read().strip()
+            final_system_prompt = file.read()
         SYSTEM_PROMPT = (
             """
 You are an AI assistant designed to interact with a Django database.
@@ -293,7 +293,7 @@ This JSON string should adhere to the following structure:
             print(f"LLM Response: {llm_json_response_str}")
             if llm_json_response_str:
                 try:
-                    llm_json_response_str = llm_json_response_str.replace("```json", "").replace("```", "").strip()
+                    llm_json_response_str = llm_json_response_str.replace("```json", "").replace("```", "")
                     parsed_llm_json = json.loads(llm_json_response_str)
                     final_data_for_frontend.update(parsed_llm_json)
                 except json.JSONDecodeError as e:
@@ -303,8 +303,9 @@ This JSON string should adhere to the following structure:
                         final_data_for_frontend["natural_language_response"] = llm_json_response_str
 
             if generated_python_code or parsed_llm_json.get("python_code"):
-                final_data_for_frontend["python_code"] = generated_python_code
-                orm_result_str = ExecuteOrmQuery(generated_python_code)
+                finalCode = parsed_llm_json.get("python_code", generated_python_code)
+                final_data_for_frontend["python_code"] = finalCode
+                orm_result_str = ExecuteOrmQuery(finalCode)
                 print(f"ORM Result: {orm_result_str}")
                 final_data_for_frontend["results"] = orm_result_str
 

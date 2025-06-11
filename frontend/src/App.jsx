@@ -33,6 +33,7 @@ import SalesmanHome from "./Pages/Tracker/SalesmanHome";
 import SalesmanHistory from "./Pages/Tracker/SalesmanHistory";
 import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
 
+
 function App() {
 	const [user, setUser] = useAtom(userAtom);
 
@@ -130,7 +131,7 @@ function App() {
 					<Route path="customers" element={<DeliveryCustomer />} />
 					<Route path="reports" element={<DeliveryReport />} />
 				</Route>
-				{/* <Route path="*" element={<Navigate to="/404" replace />} /> */}
+				<Route path="*" element={<Navigate to="/404" replace />} />
 				<Route path="/404" element={<NotFound />} />
 			</Routes>
 		</Router>

@@ -77,7 +77,7 @@ const Chatbot = () => {
 	};
 
 	useEffect(() => {
-		mermaid.initialize({ startOnLoad: false, theme: 'light' }); 
+		mermaid.initialize({ startOnLoad: false, theme: 'light' });
 	}, []);
 	return (
 		<>
@@ -133,8 +133,8 @@ const Chatbot = () => {
 											return (
 												<div key={index} className={`flex flex-col gap-2 mb-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
 													{pythonCode !== null && <CodeBlockCustom code={pythonCode} />}
-													{!isLoaded && msg.sender !== "user" && <div className={`max-w-[50%] w-fit px-4 py-2 rounded-lg shadow-inner text-wrap wrap-break-word  ${msg.sender === "user" ? "bg-indigo-500 text-white rounded-br-none" : "bg-green-200 text-gray-800 rounded-bl-none"}`} dangerouslySetInnerHTML={{ __html: msg?.data?.natural_language_response }}></div>}
-													{/* create a table using json data */}
+
+													{isLoaded && msg.sender !== "user" && <div className={`max-w-[50%] w-fit px-4 py-2 rounded-lg shadow-inner text-wrap wrap-break-word  ${msg.sender === "user" ? "bg-indigo-500 text-white rounded-br-none" : "bg-green-200 text-gray-800 rounded-bl-none"}`} >{msg?.data?.natural_language_response}</div>}
 													{isLoaded && (
 														<div className="w-full text-wrap wrap-break-word ">
 															<TableGrid data={queryResult} />

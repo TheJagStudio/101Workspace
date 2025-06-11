@@ -28,7 +28,7 @@ const Header = ({ logout }) => {
 				setResults([]);
 				return;
 			}
-			fetch(`${import.meta.env.VITE_SERVER_URL}/api/search-products?query=${encodeURIComponent(value)}`)
+			fetch(`${import.meta.env.VITE_SERVER_URL}/api/search-products/?query=${encodeURIComponent(value)}`)
 				.then((res) => res.json())
 				.then((data) => {
 					setResults(data || []);
