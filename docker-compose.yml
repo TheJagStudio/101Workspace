@@ -31,8 +31,6 @@ services:
       - TYPESENSE_API_KEY=Hu52dwsas2AdxdE
       - GEMINI_API_KEY=AIzaSyBvDQUjI3s8KB6Atfk0i5s4uPA4ZX27z_s
       - GOOGLE_MAPS_API_KEY=AIzaSyBxBKKw8qRbooHIASvS0gkhiGa4EIr8pA4
-    depends_on:
-      - db
     networks:
       - app_network
     volumes:
