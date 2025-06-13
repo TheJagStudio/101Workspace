@@ -231,20 +231,21 @@ const MonthView = ({ monthDate, onDateSelect, startDate, endDate }) => {
 
 
 
-const Calendar = ({startDate, endDate, setStartDate, setEndDate}) => {
+const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     const handleDateSelect = (date) => {
         if (!startDate || (startDate && endDate)) {
-            setStartDate(date);
+            // use dateFormat 
+            setStartDate(format(date, dateFormat));
             setEndDate(null);
         } else {
             if (date < startDate) {
-                setEndDate(startDate);
-                setStartDate(date);
+                setEndDate(format(startDate, dateFormat));
+                setStartDate(format(date, dateFormat));
             } else {
-                setEndDate(date);
+                setEndDate(format(date, dateFormat));
             }
             setIsOpen(false); // Optionally close after selecting a range
         }
@@ -281,8 +282,8 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate}) => {
 
     const handlePredefinedRangeSelect = (rangeFunc) => {
         const { startDate: newStart, endDate: newEnd } = rangeFunc();
-        setStartDate(newStart);
-        setEndDate(newEnd);
+        setStartDate(format(newStart, dateFormat));
+        setEndDate(format(newEnd, dateFormat));
         setIsOpen(false); // Optionally close
     };
 

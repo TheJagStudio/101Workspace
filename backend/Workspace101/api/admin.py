@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem
+from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer
 from .models import PurchaseHistory
 from .models import SalesgentToken
 
@@ -25,12 +25,25 @@ class InventoryStatusFilter(admin.SimpleListFilter):
             return queryset.filter(inventoryList__isnull=True)
         return queryset
 
+class categoryFilter(SimpleListFilter):
+    title = "Category"
+    parameter_name = "category"
+
+    def lookups(self, request, model_admin):
+        categories = set(Category.objects.filter(parentId__isnull=True).values_list("name", flat=True))
+        return [(c, c) for c in categories if c]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(categories__name=self.value())
+        return queryset
+
 
 class ProductAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["inventoryList", "categories"]
     list_display = ("productId", "sku", "productName", "availableQuantity", "standardPrice", "active")
     search_fields = ("productName", "sku", "productId")
-    list_filter = ("active", "ecommerce", InventoryStatusFilter)
+    list_filter = ("active", "ecommerce", InventoryStatusFilter,categoryFilter)
 
 
 class CategoryAdmin(ImportExportModelAdmin):
@@ -56,8 +69,8 @@ class VendorAdmin(ImportExportModelAdmin):
 
 
 class InvoiceAdmin(ImportExportModelAdmin):
-    list_display = ("id", "customerName", "companyName", "totalAmount", "status", "insertedTimestamp")
-    search_fields = ("id", "customerName", "companyName", "email", "storeName")
+    list_display = ("id", "customerId", "totalAmount", "status", "insertedTimestamp")
+    search_fields = ("id", "customerId__customerName", "email", "storeName")
     list_filter = ("status", "insertedTimestamp", "storeName")
 
 
@@ -87,6 +100,16 @@ class SalesgentTokenAdmin(ImportExportModelAdmin):
     search_fields = ("accessToken", "id")
 
 
+class ProductHistoryAdmin(ImportExportModelAdmin):
+    list_display = ("productId", "quantity", "costPrice", "date")
+    search_fields = ("productId__productId", "date")
+
+
+class CustomerAdmin(ImportExportModelAdmin):
+    list_display = ("id", "name", "company", "email", "phone")
+    search_fields = ("id","name", "company", "email", "phone")
+
+
 # Register your models here.
 admin.site.site_header = "API Admin"
 admin.site.site_title = "API Admin Portal"
@@ -100,4 +123,6 @@ admin.site.register(Vendor, VendorAdmin)
 admin.site.register(Invoice, InvoiceAdmin)
 admin.site.register(InvoiceLineItem, InvoiceLineItemAdmin)
 admin.site.register(PurchaseHistory, PurchaseHistoryAdmin)
-admin.site.register(SalesgentToken, SalesgentTokenAdmin)  # <-- Register the model
+admin.site.register(SalesgentToken, SalesgentTokenAdmin)
+admin.site.register(ProductHistory, ProductHistoryAdmin)
+admin.site.register(Customer, CustomerAdmin)

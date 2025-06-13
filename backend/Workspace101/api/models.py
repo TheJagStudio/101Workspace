@@ -33,7 +33,7 @@ class Product(models.Model):
     lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     def __str__(self):
-        return str(self.productId)
+        return str(self.productName)
 
 
 class Category(models.Model):
@@ -155,6 +155,46 @@ class Vendor(models.Model):
     def __str__(self):
         return str(self.name)
 
+class Customer(models.Model):
+    id = models.AutoField(primary_key=True)
+    insertedTimestamp = models.DateTimeField(null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    company = models.CharField(max_length=255, null=True, blank=True)
+    storeId = models.IntegerField(null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    phone = models.CharField(max_length=500, null=True, blank=True)
+    tier = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    storeCredit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    loyaltyPoints = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    dueAmount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    excessAmount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    active = models.BooleanField(default=True)
+    verified    = models.BooleanField(default=False)
+    viewSpecificCategory = models.BooleanField(default=False)
+    viewSpecificProduct = models.BooleanField(default=False)
+    salesRepresentativeName = models.CharField(max_length=255, null=True, blank=True)
+    taxable = models.BooleanField(default=False)
+    communicateViaPhone = models.BooleanField(default=False)
+    communicateViaText = models.BooleanField(default=False)
+    dbaName = models.CharField(max_length=255, null=True, blank=True)
+    address1 = models.CharField(max_length=255, null=True, blank=True)
+    stateId = models.IntegerField(null=True, blank=True)
+    billingStateId = models.IntegerField(null=True, blank=True)
+    sendDuePaymentReminder = models.BooleanField(default=False)
+    rewardable = models.BooleanField(default=False)
+    saveProductPrice = models.BooleanField(default=False)
+        
+    def __str__(self):
+        """String representation of the Customer model."""
+        return f"{self.name} ({self.company or 'N/A'})"
+
+    class Meta:
+        verbose_name = "Customer"
+        verbose_name_plural = "Customers"
+        ordering = ['name']
+
+
 
 class Invoice(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -162,7 +202,14 @@ class Invoice(models.Model):
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     totalAmount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=100, default="")
-    insertedTimestamp = models.DateTimeField(auto_now_add=True)
+    insertedTimestamp = models.DateTimeField(null=True, blank=True)
+    customerId = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        db_column="customerId",
+        null=True,
+        blank=True,
+    )
     customerName = models.CharField(max_length=255, default="")
     companyName = models.CharField(max_length=255, default="")
     email = models.EmailField(null=True, blank=True)
@@ -190,6 +237,21 @@ class Invoice(models.Model):
 
     def __str__(self):
         return str(self.id)
+    
+class ProductHistory(models.Model):
+    productId = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        db_column="productId",
+        related_name="product_history",
+    )
+    quantity = models.IntegerField(null=True, blank=True)
+    costPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    retailPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.productId.productName} - {self.quantity}"
 
 
 class InvoiceLineItem(models.Model):
@@ -308,3 +370,4 @@ class SalesgentToken(models.Model):
 
     def __str__(self):
         return self.accessToken
+

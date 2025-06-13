@@ -107,7 +107,7 @@ const Sidebar = () => {
         },
     ];
 
-    const items = user?.role === "driver" ? driverItems : managerItems;
+    const items = user?.role !== "admin" ? driverItems : managerItems;
 
     const sections = Array.from(new Set(items.map((item) => item?.section)));
 

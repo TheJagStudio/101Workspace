@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import requests
-from api.models import BusinessType, Category, Product, InventoryData, Vendor, SalesgentToken
+from api.models import BusinessType, Category, Product, InventoryData, Vendor, SalesgentToken, Customer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import StreamingHttpResponse
@@ -17,38 +17,69 @@ from django.conf import settings
 
 def syncProducts(token):
     totalPages = 80
-    i = 1
+    i = 0
+    categoryNameMap = {category.name: category for category in Category.objects.all()}
+    headers = {
+        "Accept": "application/json, text/plain",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Authorization": "Bearer " + token,
+        "Connection": "keep-alive",
+        "Referer": "https://erp.101distributorsga.com/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+    }
+    productList = []
+    
     while i <= totalPages:
-        headers = {
-            "Accept": "application/json, text/plain",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Authorization": "Bearer " + token,
-            "Connection": "keep-alive",
-            "Referer": "https://erp.101distributorsga.com/",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-        }
-
-        response = requests.get(
-            "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page=" + str(i) + "&size=1000",
-            headers=headers,
-        )
-        totalPages = response.json()["result"]["totalPages"]
-        products_to_update = []
+        try:
+            response = requests.get(
+                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page=" + str(i) + "&size=1000",
+                headers=headers,
+            )
+            totalPages = response.json()["result"]["totalPages"]
+            data = response.json()["result"]["content"]
+            print(f"Fetching products from page {i + 1} of {totalPages}")
+            for product in data:
+                productList.append(product)
+            i += 1
+        except Exception as e:
+            print(f"Error fetching products from page {i + 1}: {e}")
+            yield 100
+        yield (i * 15) / totalPages
+    i = 0
+    while i <= totalPages:
+        try:
+            response = requests.get(
+                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page=" + str(i) + "&size=1000&active=false",
+                headers=headers,
+            )
+            totalPages = response.json()["result"]["totalPages"]
+            data = response.json()["result"]["content"]
+            for product in data:
+                productList.append(product)
+            i += 1
+        except Exception as e:
+            print(f"Error fetching products from page {i + 1}: {e}")
+            yield 100
+        yield 15 + (i * 15) / totalPages
+    
+    totalProducts = len(productList)
+    for i in range(0,totalProducts,1000):
         product_categories_map = {}
-        for product in response.json()["result"]["content"]:
-            sku = product.get("sku", "")
-            if sku is not None and sku != "":
+        productObjList = []
+        for product in productList[i:i+1000]:
+            upc = product.get("upc", "")
+            if upc is not None and upc != "":
                 categories = []
                 for category in product.get("categories", []).split(","):
                     category = category.strip()
                     if category:
-                        cat_obj = Category.objects.filter(name=category).first()
+                        cat_obj = categoryNameMap.get(category)
                         if cat_obj:
                             categories.append(cat_obj)
 
@@ -75,44 +106,75 @@ def syncProducts(token):
                     returnable=product.get("returnable", False),
                     minimumSellingPrice=product.get("minimumSellingPrice", 0),
                 )
-                products_to_update.append(productObj)
+                productObjList.append(productObj)
                 if categories:
                     product_categories_map[product["productId"]] = categories
 
-        with transaction.atomic():
-            Product.objects.bulk_create(
-                products_to_update,
-                update_fields=[
-                    "sku",
-                    "upc",
-                    "productName",
-                    "availableQuantity",
-                    "imageUrl",
-                    "masterProductId",
-                    "masterProductName",
-                    "standardPrice",
-                    "tierPrice",
-                    "costPrice",
-                    "ecommerce",
-                    "active",
-                    "compositeProduct",
-                    "stateRestricted",
-                    "customerGroupRestricted",
-                    "trackInventory",
-                    "trackInventoryByImei",
-                    "size",
-                    "returnable",
-                    "minimumSellingPrice",
-                ],
-                update_conflicts=True,
-                unique_fields=["productId"],
-            )
-            # Now assign categories to products
-            for product_id, categories in product_categories_map.items():
-                product_instance = Product.objects.get(productId=product_id)
-                product_instance.categories.set(categories)
-        i += 1
-        yield (i * 100) / totalPages
+        productExists = Product.objects.filter(productId__in=[p.productId for p in productObjList]).values_list("productId", flat=True)
+        # bulk create or update products
+        products_to_update = [p for p in productObjList if p.productId in productExists]
+        products_to_create = [p for p in productObjList if p.productId not in productExists]
+        if products_to_create:
+            # do bulk create
+            with transaction.atomic():
+                Product.objects.bulk_create(
+                    products_to_create,
+                    ignore_conflicts=False,
+                )
+                category_relations = [
+                    Product.categories.through(
+                        product_id=product.productId,
+                        category_id=category.categoryId
+                    )
+                    for product in products_to_update
+                    for category in product_categories_map.get(product.productId, [])
+                ]
+                
+                # Bulk create the many-to-many relationships
+                if category_relations:
+                    Product.categories.through.objects.bulk_create(
+                        category_relations,
+                        ignore_conflicts=True
+                    )
+        else:
+            with transaction.atomic():
+                Product.objects.bulk_update(
+                    products_to_update,
+                    [
+                        "sku",
+                        "upc",
+                        "productName",
+                        "availableQuantity",
+                        "imageUrl",
+                        "standardPrice",
+                        "tierPrice",
+                        "costPrice",
+                        "ecommerce",
+                        "active",
+                    ],
+                )
+                # Create a list of many-to-many relationships
+                # Clear existing category relationships and create new ones
+                product_ids = [p.productId for p in products_to_update]
+                Product.categories.through.objects.filter(product_id__in=product_ids).delete()
+                
+                # Create new category relationships
+                category_relations = [
+                    Product.categories.through(
+                        product_id=product.productId,
+                        category_id=category.categoryId
+                    )
+                    for product in products_to_update
+                    for category in product_categories_map.get(product.productId, [])
+                ]
+                
+                # Bulk create the many-to-many relationships
+                if category_relations:
+                    Product.categories.through.objects.bulk_create(
+                        category_relations,
+                        ignore_conflicts=True
+                    )
+        yield 30 + (i * 70) / totalProducts
 
 
 def syncBusinessTypes(token):
@@ -376,9 +438,8 @@ def syncInventoryData(token):
         "sec-ch-ua-platform": '"Windows"',
     }
     today = datetime.now()
-    start_date = (today - timedelta(days=3)).strftime("%Y-%m-%d+%H:%M:%S")
+    start_date = (today - timedelta(days=6)).strftime("%Y-%m-%d+%H:%M:%S")
     end_date = today.strftime("%Y-%m-%d+%H:%M:%S")
-    print(f"Fetching inventory data from {start_date} to {end_date}")
     response = requests.get(
         "https://erp.101distributorsga.com/api/order/list?storeIds=1,2&startDate=" + start_date + "&endDate=" + end_date + "&page=0&size=500&showEmployeeSpecificData=false",
         headers=headers,
@@ -457,7 +518,6 @@ def syncInventoryData(token):
                 createSingleInventoryData(product, inventoryDataList)
                 # print(f"Updated inventory for product ID: {productId}")
             else:
-                print(f"Product ID {productId} not found in database.")
                 headers = {
                     "Accept": "application/json, text/plain",
                     "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
@@ -626,7 +686,7 @@ def syncSearchData(token):
     # Fetch products from API and import to Typesense
 
     totalPages = 10
-    page = 1
+    page = 0
 
     headers = {
         "Accept": "application/json, text/plain",
@@ -662,7 +722,7 @@ def syncSearchData(token):
                 product["masterProductId"] = int(product["masterProductId"])
             except:
                 product["masterProductId"] = 0
-            product['categories'] = str(product['categories'])
+            product["categories"] = str(product["categories"])
             all_products.append(product)
         percent = (page / totalPages) * 50
         page += 1
@@ -675,6 +735,146 @@ def syncSearchData(token):
         yield percent
 
     yield 100
+
+
+def syncCustomers(token):
+    totalPages = 50
+    i = 0
+    customers = []
+    headers = {
+        "Accept": "application/json, text/plain",
+        "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+        "Authorization": "Bearer " + token,
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Pragma": "no-cache",
+        "Referer": "https://erp.101distributorsga.com/customer",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+    }
+    while i <= totalPages:
+        try:
+            response = requests.get(
+                f"https://erp.101distributorsga.com/api/customer/list?storeIds=1,2&page={i}&size=500&showEmployeeSpecificData=false",
+                headers=headers,
+            )
+            customers.extend(response.json()["result"]["content"])
+            totalPages = response.json()["result"]["totalPages"]
+            i = i + 1
+            yield (i * 15) / (totalPages + 1)
+        except Exception as e:
+            print(f"Error fetching customers on page {i}: {e}")
+            yield 100
+            break
+    totalPages = 50
+    i = 0
+    while i <= totalPages:
+        try:
+            response = requests.get(
+                f"https://erp.101distributorsga.com/api/customer/list?storeIds=1,2&page={i}&size=500&showEmployeeSpecificData=false&active=false",
+                headers=headers,
+            )
+            customers.extend(response.json()["result"]["content"])
+            totalPages = response.json()["result"]["totalPages"]
+            i = i + 1
+            yield 15 + (i * 15) / (totalPages + 1)
+        except Exception as e:
+            print(f"Error fetching customers on page {i}: {e}")
+            yield 100
+            break
+    totalCustomers = len(customers)
+    yield 30
+    # list all customers which exists in the database
+    existing_customers = set(Customer.objects.values_list("id", flat=True))
+
+    # Separate customers into new and existing
+    customers_to_create = []
+    customers_to_update = []
+    i = 0
+    for customer in customers:
+        if customer["id"] in existing_customers:
+            customers_to_update.append(
+                Customer(
+                    id=customer["id"],
+                    insertedTimestamp=timezone.make_aware(datetime.strptime(customer["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if customer["insertedTimestamp"] else None,
+                    name=customer["name"],
+                    company=customer["company"],
+                    storeId=customer["storeId"],
+                    email=customer["email"],
+                    phone=customer["phone"],
+                    tier=customer["tier"],
+                    notes=customer["notes"],
+                    storeCredit=customer["storeCredit"],
+                    loyaltyPoints=customer["loyaltyPoints"],
+                    dueAmount=customer["dueAmount"],
+                    excessAmount=customer["excessAmount"],
+                    active=customer["active"],
+                    verified=customer["verified"],
+                    viewSpecificCategory=customer["viewSpecificCategory"],
+                    viewSpecificProduct=customer["viewSpecificProduct"],
+                    salesRepresentativeName=customer["salesRepresentativeName"],
+                    taxable=customer["taxable"],
+                    communicateViaPhone=customer["communicateViaPhone"],
+                    communicateViaText=customer["communicateViaText"],
+                    dbaName=customer["dbaName"],
+                    address1=customer["address1"],
+                    stateId=customer["stateId"],
+                    billingStateId=customer["billingStateId"],
+                    sendDuePaymentReminder=customer["sendDuePaymentReminder"],
+                    rewardable=customer["rewardable"],
+                    saveProductPrice=customer["saveProductPrice"],
+                )
+            )
+        else:
+            customers_to_create.append(
+                Customer(
+                    id=customer["id"],
+                    insertedTimestamp=timezone.make_aware(datetime.strptime(customer["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if customer["insertedTimestamp"] else None,
+                    name=customer["name"],
+                    company=customer["company"],
+                    storeId=customer["storeId"],
+                    email=customer["email"],
+                    phone=customer["phone"],
+                    tier=customer["tier"],
+                    notes=customer["notes"],
+                    storeCredit=customer["storeCredit"],
+                    loyaltyPoints=customer["loyaltyPoints"],
+                    dueAmount=customer["dueAmount"],
+                    excessAmount=customer["excessAmount"],
+                    active=customer["active"],
+                    verified=customer["verified"],
+                    viewSpecificCategory=customer["viewSpecificCategory"],
+                    viewSpecificProduct=customer["viewSpecificProduct"],
+                    salesRepresentativeName=customer["salesRepresentativeName"],
+                    taxable=customer["taxable"],
+                    communicateViaPhone=customer["communicateViaPhone"],
+                    communicateViaText=customer["communicateViaText"],
+                    dbaName=customer["dbaName"],
+                    address1=customer["address1"],
+                    stateId=customer["stateId"],
+                    billingStateId=customer["billingStateId"],
+                    sendDuePaymentReminder=customer["sendDuePaymentReminder"],
+                    rewardable=customer["rewardable"],
+                    saveProductPrice=customer["saveProductPrice"],
+                )
+            )
+        i += 1
+        yield 30 + ((i * 30) / totalCustomers)
+
+    # Bulk create new customers
+    if customers_to_create:
+        Customer.objects.bulk_create(customers_to_create, ignore_conflicts=True)
+        yield 70
+
+    # Bulk update existing customers
+    if customers_to_update:
+        Customer.objects.bulk_update(customers_to_update, ["insertedTimestamp", "name", "company", "storeId", "email", "phone", "tier", "notes", "storeCredit", "loyaltyPoints", "dueAmount", "excessAmount", "active", "verified", "viewSpecificCategory", "viewSpecificProduct", "salesRepresentativeName", "taxable", "communicateViaPhone", "communicateViaText", "dbaName", "address1", "stateId", "billingStateId", "sendDuePaymentReminder", "rewardable", "saveProductPrice"])
+        yield 100
 
 
 class syncData(APIView):
@@ -716,10 +916,17 @@ class syncData(APIView):
                     for percent in syncVendors(token):
                         yield f"data: {json.dumps({'progress': round(percent), 'status': 'vendor'})}\n\n"
                     yield f"data: {json.dumps({'progress': 100, 'status': 'done'})}\n\n"
+
                 elif syncType == "search":
                     yield f"data: {json.dumps({'progress': 0, 'status': 'search_data_starting'})}\n\n"
                     for percent in syncSearchData(token):
                         yield f"data: {json.dumps({'progress': round(percent), 'status': 'search_data'})}\n\n"
+                    yield f"data: {json.dumps({'progress': 100, 'status': 'done'})}\n\n"
+
+                elif syncType == "customer":
+                    yield f"data: {json.dumps({'progress': 0, 'status': 'customer_starting'})}\n\n"
+                    for percent in syncCustomers(token):
+                        yield f"data: {json.dumps({'progress': round(percent), 'status': 'customer'})}\n\n"
                     yield f"data: {json.dumps({'progress': 100, 'status': 'done'})}\n\n"
                 else:
                     yield f"data: {json.dumps({'error': 'Invalid syncType specified', 'progress': 0, 'status': 'error'})}\n\n"

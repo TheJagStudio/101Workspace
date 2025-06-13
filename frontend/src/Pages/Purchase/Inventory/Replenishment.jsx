@@ -3,7 +3,7 @@ import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from "../../../utils/api";
 import { useAtom } from "jotai";
 import { isSidebarOpenAtom, glossaryAtom } from "../../../Variables";
-import Glossary from "../../../Components/Purchase/Glossary";
+import Calendar from "../../../Components/utils/Calendar";
 
 const dropdownOptions = {
 	reportType: [
@@ -94,7 +94,7 @@ const Replenishment = () => {
 
 	async function getData() {
 		try {
-			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}`);
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}`);
 			setTableData(data["data"]);
 			setTotalPages(data["totalPages"]);
 		} catch (error) {
@@ -119,7 +119,7 @@ const Replenishment = () => {
 	useEffect(() => {
 		async function totalData() {
 			try {
-				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
+				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
 				setTotalClosingInventory(data["totalClosingInventory"]);
 				setTotalRevenue(data["totalRevenue"]);
 				setTotalInventoryCost(data["totalInventoryCost"]);
@@ -175,12 +175,8 @@ const Replenishment = () => {
 					<path fill="currentColor" fillOpacity={!reverseSort ? "40%" : "100%"} d="M7.676 11h4.648c.563 0 .879.603.53 1.014l-2.323 2.746a.708.708 0 0 1-1.062 0l-2.324-2.746C6.798 11.603 7.113 11 7.676 11" />
 				</svg>
 				<div className="flex flex-col">
-					<label className="text-sm text-gray-600 mb-1">Start date</label>
-					<input type="date" className="border border-gray-300 focus:outline-none focus:border-indigo-500 rounded-md px-3 py-1.5 w-48" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-				</div>
-				<div className="flex flex-col">
-					<label className="text-sm text-gray-600 mb-1">End date</label>
-					<input type="date" className="border border-gray-300 focus:outline-none focus:border-indigo-500 rounded-md px-3 py-1.5 w-48" value={endDate} onChange={(e) => setEndDate(e.target.value)} max={new Date().toISOString().split("T")[0]} />
+					<label className="text-sm text-gray-600 mb-1">Analysis Period</label>
+					<Calendar startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} dateFormat="yyyy-MM-dd" />
 				</div>
 
 				<button
@@ -240,7 +236,7 @@ const Replenishment = () => {
 							<td className="py-2 px-1 "></td>
 							<td className="py-2 px-4 w-[50%] border-l border-gray-300">Totals</td>
 							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatNumber(totalClosingInventory)}</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalRevenue)}</td>
+							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatNumber(totalRevenue)}</td>
 							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
 							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
 							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
@@ -263,8 +259,8 @@ const Replenishment = () => {
 									</div>
 								</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.revenue)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
+								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.itemsSoldPerDay)}</td>
+								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.itemsSold)}</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.inventoryCost)}</td>

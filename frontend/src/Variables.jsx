@@ -25,3 +25,8 @@ export const glossaryAtom = atom({
     open: false,
     tabData: {},
 });
+
+export const errorsAtom = atom([])
+export const warningsAtom = atom([])
+export const successAtom = atom([])
+export const infoAtom = atom([])

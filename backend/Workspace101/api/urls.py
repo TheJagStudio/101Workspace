@@ -19,6 +19,16 @@ urlpatterns = [
         name="InventorySummaryView",
     ),
     path(
+        "inventory-replenishment/",
+        views.InventoryReplenishmentView.as_view(),
+        name="InventoryReplenishmentView",
+    ),
+    path(
+        "dusty-inventory/",
+        views.DustyInventoryView.as_view(),
+        name="DustyInventoryView",
+    ),
+    path(
         "categories/",
         views.FetchCategoriesView.as_view(),
         name="FetchCategoriesView",
@@ -43,6 +53,6 @@ urlpatterns = [
         views.POMakerView.as_view(),
         name="POMakerView",
     ),
-    # path("dataMaker/", views.dataMaker.as_view(), name="dataMaker"),
+    path("dataMaker/", views.dataMaker.as_view(), name="dataMaker"),
     path("vacuum-sqlite/", views.vacuum_sqlite_database.as_view(), name="vacuum_sqlite"),
 ]

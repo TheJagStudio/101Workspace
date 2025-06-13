@@ -2,28 +2,10 @@ import { useState, useEffect, use } from 'react';
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from '../../../utils/api';
 import { useAtom } from 'jotai';
-import { glossaryAtom, isSidebarOpenAtom } from "../../../Variables";
+import { glossaryAtom, isSidebarOpenAtom, warningsAtom, infoAtom } from "../../../Variables";
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
-const dropdownOptions = {
-	reportType: [
-		{ value: "product", label: "Product" },
-		{ value: "category", label: "Category" },
-	],
-	measure: [
-		{ value: "all", label: "All inventory" },
-		{ value: "hand", label: "On-hand inventory" },
-		{ value: "low", label: "Low inventory" },
-		{ value: "out", label: "Out of stock" },
-	],
-	sort: [
-		{ value: "closing_inventory", label: "Closing inventory" },
-		{ value: "revenue", label: "Revenue" },
-		{ value: "gross_margin", label: "Gross Profit" },
-		{ value: "inventory_cost", label: "Inventory cost" },
-	],
-};
 
 const Loader = ({ height, width }) => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
@@ -34,49 +16,13 @@ const Loader = ({ height, width }) => (
 	</svg>
 );
 
-const tabData = {
-	historical: {
-		tabInfo: "Historical measures are based on sales data within the selected date range.",
-		measures: [
-			{
-				measure: "Items sold per day",
-				definition: "Average number of items sold per day",
-			},
-			{
-				measure: "Items sold",
-				definition: "Total number of items sold minus returns",
-			},
-			{
-				measure: "Days cover",
-				definition: "Estimated number of days current inventory will last based on items sold per day",
-			},
-			{
-				measure: "Avg. cost",
-				definition: "Average cost of an item as at the end of the reporting period, calculated from the start of the item's lifecycle",
-			},
-		],
-	},
-	other: {
-		tabInfo: "Historical measures are based on sales data within the selected date range.",
-		measures: [
-			{
-				measure: "Closing inventory",
-				definition: "Amount of inventory as at the end of the reporting period",
-			},
-			{
-				measure: "Inbound inventory",
-				definition: "Amount of incoming inventory from dispatched purchase orders and sent transfers",
-			},
-		],
-	},
-};
 
 const VendorList = ({ data, setSelectedVendors, index }) => {
 	const [openDropdown, setOpenDropdown] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [hoveredIndex, setHoveredIndex] = useState(0);
-	const [selectedVendor, setSelectedVendor] = useState(data?.[0] || null);
-	const [hoveredVendor, setHoveredVendor] = useState(data?.[0] || null);
+	const [selectedVendor, setSelectedVendor] = useState(null);
+	const [hoveredVendor, setHoveredVendor] = useState(null);
 
 
 	const handleSelect = (idx) => {
@@ -88,6 +34,10 @@ const VendorList = ({ data, setSelectedVendors, index }) => {
 		setSelectedVendor(data?.[selectedIndex] || null);
 		setHoveredVendor(data?.[hoveredIndex] || null);
 	}, [selectedIndex, hoveredIndex]);
+	useEffect(() => {
+		setSelectedVendor(data?.[0] || null);
+		setHoveredVendor(data?.[0] || null);
+	}, []);
 
 	useEffect(() => {
 		setSelectedVendors((prev) => {
@@ -97,45 +47,50 @@ const VendorList = ({ data, setSelectedVendors, index }) => {
 		});
 	}, [selectedIndex]);
 
-	if (!data || data.length === 0) return <span className="text-gray-400 w-full ml-2">No vendors</span>;
-	if (data.length > 1) {
-		return (
-			<div className="relative w-full" onMouseLeave={() => setOpenDropdown(false)}>
-				<button
-					type="button"
-					className={"flex items-center gap-2 w-full h-9 px-2 py-1 justify-between rounded border border-gray-300 text-left " + (selectedIndex !== 0 ? "border-red-400 bg-red-50" : "border-gray-300 bg-white hover:bg-gray-50")}
-					onClick={() => setOpenDropdown((v) => !v)}
-				>
-					<span className="text-sm text-gray-700 text-left truncate">{selectedVendor?.name}</span>
-					<span className="text-sm text-gray-700 mr-5 font-bold">{selectedVendor?.prices?.[0]?.price}</span>
-					<svg className="w-4 h-4 absolute right-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-					</svg>
-				</button>
-				{openDropdown && (
-					<div className="absolute -left-1 z-20 pt-1 pl-1 w-full ">
-						<div className='py-1 bg-white border border-gray-200 rounded shadow-xl max-h-40 overflow-auto'>
-							{data.map((item, idx) => {
-								return (
-									<div
-										key={idx}
-										className={`flex items-center justify-between gap-2 px-2 py-1 border-b border-gray-200 cursor-pointer ${idx === selectedIndex ? "bg-indigo-500 text-white hover:bg-indigo-500" : "text-gray-700 hover:bg-indigo-100"}`}
-										onClick={() => handleSelect(idx)}
-										onMouseEnter={() => setHoveredIndex(idx)}
-									>
-										<span className="text-sm text-left truncate">{item?.name}</span>
-										<span className="text-sm font-bold">{item?.prices?.[0]?.price}</span>
-									</div>
-								);
-							})}
-						</div>
+	return (
+		<div className="relative w-full" onMouseLeave={() => setOpenDropdown(false)}>
+			<button
+				type="button"
+				className={"flex items-center gap-2 w-full h-9 px-2 py-1 justify-between rounded border border-gray-300 text-left " + (selectedIndex !== 0 ? "border-red-400 bg-red-50" : "border-gray-300 bg-white hover:bg-gray-50")}
+				onClick={() => setOpenDropdown((v) => !v)}
+			>
+				<span className="text-sm text-gray-700 text-left truncate">{selectedVendor?.name}</span>
+				<span className="text-sm text-gray-700 mr-5 font-bold">{selectedVendor?.prices?.[0]?.price}</span>
+				<svg className="w-4 h-4 absolute right-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+			{openDropdown && (
+				<div className="absolute -left-1 z-20 pt-1 pl-1 w-full ">
+					<div className='py-1 bg-white border border-gray-300 rounded shadow-xl max-h-40 overflow-auto'>
+						{data.map((item, idx) => {
+							return (
+								<div
+									key={idx}
+									className={`flex items-center justify-between gap-2 px-2 py-1 border-b last:border-b-0 border-gray-300 cursor-pointer ${idx === selectedIndex ? "bg-indigo-500 text-white hover:bg-indigo-500" : "text-gray-700 hover:bg-indigo-100"}`}
+									onClick={() => handleSelect(idx)}
+									onMouseEnter={() => setHoveredIndex(idx)}
+								>
+									<span className="text-sm text-left truncate">{item?.name}</span>
+									<span className="text-sm font-bold">{item?.prices?.[0]?.price}</span>
+								</div>
+							);
+						})}
 					</div>
-				)}
-				{openDropdown && (
-					<div className='absolute z-20 top-0 -left-0 pr-1 -translate-x-full'>
-						<div className='flex flex-col min-w-32 w-fit p-2 h-46 bg-white border border-gray-200 rounded-md shadow-xl items-center justify-center'>
-							<p className="text-gray-700 text-xs whitespace-nowrap font-bold">{hoveredVendor?.name}</p>
-							<ResponsiveContainer width="100%" height="100%">
+				</div>
+			)}
+			{openDropdown && (
+				<div className='absolute z-20 top-0 -left-0 pr-1 -translate-x-full'>
+					<div className='flex flex-col max-w-48 w-fit h-fit overflow-hidden bg-white border border-gray-300 rounded-md shadow-xl items-center justify-start'>
+						<div className="text-gray-700 w-48 text-xs font-bold bg-gray-100 p-2 border-b border-gray-300 ">{hoveredVendor?.name}</div>
+						<div className='flex flex-col items-center justify-start w-48 overflow-y-auto max-h-36'>
+							{hoveredVendor?.prices && hoveredVendor?.prices.length > 0 ? hoveredVendor?.prices.map((price, index) => (
+								<p key={index} className="text-gray-700 text-xs whitespace-nowrap font-bold even:bg-gray-100 text-left w-full mr-auto p-2">{price?.price} | {price?.date}</p>
+							)) : (
+								<p className="text-gray-500 text-xs whitespace-nowrap p-2">No price available</p>
+							)}
+						</div>
+						{/* <ResponsiveContainer width="100%" height="100%">
 								<BarChart width={150} height={40} data={hoveredVendor?.prices && hoveredVendor?.prices.sort((a, b) => new Date(a.date) - new Date(b.date)).map(price => ({
 									date: price.date,
 									price: price.price,
@@ -157,26 +112,18 @@ const VendorList = ({ data, setSelectedVendors, index }) => {
 									/>
 									<Bar dataKey="price" fill="#615fff" />
 								</BarChart>
-							</ResponsiveContainer>
-						</div>
+							</ResponsiveContainer> */}
+
 					</div>
-				)}
-			</div>
-		);
-	} else {
-		return (
-			<div className="flex items-center justify-between gap-2 px-2 py-1 w-full">
-				<span className="text-sm text-gray-700 text-left truncate">{selectedVendor?.name}</span>
-				<span className="text-sm text-gray-700 font-bold">{selectedVendor?.price}</span>
-			</div>
-		);
-	}
+				</div>
+			)}
+		</div>
+	);
+
 
 }
 
 const PO = () => {
-	const [reportType, setReportType] = useState("product");
-	const [measure, setMeasure] = useState("all");
 	const [loading, setLoading] = useState(false);
 	const [categories, setCategories] = useState([]);
 	const [currentMasterCategory, setCurrentMasterCategory] = useState(null);
@@ -190,6 +137,8 @@ const PO = () => {
 	const [collapsed, setCollapsed] = useAtom(isSidebarOpenAtom);
 	const [totalPages, setTotalPages] = useState(0);
 	const [selectedVendors, setSelectedVendors] = useState([]);
+	const [warnings, setWarnings] = useAtom(warningsAtom);
+	const [info, setInfo] = useAtom(infoAtom);
 
 	function formatCurrency(value) {
 		value = Number(value);
@@ -206,25 +155,31 @@ const PO = () => {
 
 	async function getData() {
 		if (!currentMasterCategory) {
-			alert("Please select a category");
+			setInfo(prev => [...prev, { id: Date.now(), message: "Please select a category", status: 400 }]);
 			return;
 		}
 		setLoading(true);
-		const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po-maker/?page=${page}&page_size=${pageSize}&categoryId=${currentSubCategory ? currentSubCategory : currentCategory ? currentCategory : currentMasterCategory}&vendor=${currentVendor || ''}`, {
-			method: "GET",
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		})
-		setTableData(response.data || []);
-		let selectedVendorsTemp = [];
-		for (let i = 0; i < response.data.length; i++) {
-			selectedVendorsTemp.push(0);
+		try {
+
+			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po-maker/?page=${page}&page_size=${pageSize}&categoryId=${currentSubCategory ? currentSubCategory : currentCategory ? currentCategory : currentMasterCategory}&vendor=${currentVendor || ''}`, {
+				method: "GET",
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
+			setTableData(response.data || []);
+			let selectedVendorsTemp = [];
+			for (let i = 0; i < response.data.length; i++) {
+				selectedVendorsTemp.push(0);
+			}
+			setSelectedVendors(selectedVendorsTemp);
+			setTotalPages(response["totalPages"]);
+			setLoading(false);
+		} catch (error) {
+			console.error('Error fetching PO data:', error);
+			setLoading(false);
 		}
-		setSelectedVendors(selectedVendorsTemp);
-		setTotalPages(response["totalPages"]);
-		setLoading(false);
-	}
+	};
 
 
 	useEffect(() => {
@@ -248,10 +203,8 @@ const PO = () => {
 	}, []);
 
 	useEffect(() => {
-		if (currentMasterCategory) {
-			getData();
-		}
-	}, [currentMasterCategory, currentCategory, currentSubCategory, currentVendor, page, pageSize]);
+		getData();
+	}, [currentCategory, currentSubCategory, currentVendor, page, pageSize]);
 
 	useEffect(() => {
 		const vendorsByCategory = async () => {
@@ -272,6 +225,7 @@ const PO = () => {
 			}
 		}
 		vendorsByCategory();
+		setPage(1);
 	}, [currentCategory, currentSubCategory]);
 
 
@@ -339,13 +293,14 @@ const PO = () => {
 				<button
 					onClick={() => {
 						getData();
+
 					}}
 					className="bg-indigo-500 text-white px-4 py-1.5 rounded-md hover:bg-blue-700"
 				>
 					Search
 				</button>
 			</div>
-			<div className={"mt-5 relative bg-white border-t border-gray-200 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
+			<div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
 				{loading && (
 					<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/25 backdrop-blur-md z-20">
 						<Loader height={60} width={60} />
@@ -353,41 +308,48 @@ const PO = () => {
 				)}
 				<div className="h-full overflow-y-auto">
 					{<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")} borderWidth={2}>
-						<thead className="sticky top-0 bg-white z-10 border-b border-gray-200">
-							<tr className="border-b border-gray-200 bg-gray-100 leading-4">
+						<thead className="sticky top-0 bg-white z-10 border-b border-gray-300">
+							<tr className="border-b border-gray-300 bg-gray-100 leading-4">
 								<th className="text-center py-4 px-1">SR</th>
-								<th className="text-left p-4 border-l border-gray-200 w-[50%]">Product</th>
-								<th className="text-center p-4 border-l border-gray-200">Cost Price</th>
-								<th className="text-center p-4 border-l border-gray-200">
+								<th className="text-left p-4 border-l border-gray-300 w-[50%]">Product</th>
+								<th className="text-center p-4 border-l border-gray-300">Cost Price</th>
+								<th className="text-center p-4 border-l border-gray-300">
 									Selling Price
 								</th>
-								<th className="text-center p-4 border-l border-gray-200">
+								<th className="text-center p-4 border-l border-gray-300">
 									Profit Percentage
 								</th>
-								<th className="text-center p-4 border-l border-gray-200">Vendors</th>
+								<th className="text-center p-4 border-l border-gray-300">Vendors</th>
 							</tr>
 
 						</thead>
 						<tbody className="h-64 overflow-y-auto">
 							{tableData.map((item, index) => (
-								<tr className={"items-start border-b group " + (index % 2 === 0 ? "" : "bg-gray-100") + (selectedVendors[index] !== 0 ? " !bg-red-100 border-red-200 hover:!bg-red-200/75" : " border-gray-200 hover:bg-indigo-50")} key={index}>
+								<tr className={"items-start border-b group " + (index % 2 === 0 ? "" : "bg-gray-100") + (selectedVendors[index] !== 0 ? " !bg-red-100 border-red-200 hover:!bg-red-200/75" : " border-gray-300 hover:bg-indigo-50")} key={index}>
 									<td className="py-2 px-1 w-fit text-center">
 										<p className="text-sm text-gray-600">{item.index}</p>
 									</td>
-									<td className={"py-2 px-2 w-[50%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-200")}>
+									<td className={"py-2 px-2 w-[50%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
 										<div className="flex items-center">
 											{pageSize <= 50 && <img src={item?.imageUrl || "/static/images/default.png"} alt="" className="w-8 h-8 mr-2" />}
-											<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
+											<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer mix-blend-darken">
 												({item?.id})
 											</a>
 											<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
 										</div>
 									</td>
-									<td className={"text-center py-2 px-2 border-l items-start " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-200")}>{formatNumber(item?.costPrice)}</td>
-									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-200")}>{formatCurrency(item?.standardPrice)}</td>
-									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-200")}>{formatPercentage(item?.profitPercentage)}</td>
-									<td className={"text-left py-1 px-1 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-200")}>
-										<VendorList data={item?.vendors} setSelectedVendors={setSelectedVendors} index={index} />
+									<td className={"text-center py-2 px-2 border-l items-start " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatNumber(item?.costPrice)}</td>
+									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.standardPrice)}</td>
+									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatPercentage(item?.profitPercentage)}</td>
+									<td className={"text-left py-1 px-1 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
+										{item?.vendors?.length > 1 && (<VendorList data={item?.vendors} setSelectedVendors={setSelectedVendors} index={index} />)}
+										{item?.vendors?.length === 0 && (<span className="text-gray-400 w-full ml-2">No vendors</span>)}
+										{item?.vendors?.length === 1 && (
+											<div className="flex items-center justify-between gap-2 px-2 py-1 w-full">
+												<span className="text-sm text-gray-700 text-left truncate">{item?.vendors?.[0]?.name}</span>
+												<span className="text-sm text-gray-700 font-bold">{item?.vendors?.[0]?.price}</span>
+											</div>
+										)}
 									</td>
 								</tr>
 							))}

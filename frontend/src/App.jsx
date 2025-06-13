@@ -32,6 +32,7 @@ import TrackerAdminProfile from "./Pages/Tracker/TrackerAdminProfile";
 import SalesmanHome from "./Pages/Tracker/SalesmanHome";
 import SalesmanHistory from "./Pages/Tracker/SalesmanHistory";
 import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
+import Notification from "./Components/utils/Notification";
 
 
 function App() {
@@ -97,6 +98,7 @@ function App() {
 
 	return (
 		<Router>
+			<Notification />
 			<Routes>
 				<Route path="/" element={user?.is_active ? <Home /> : <Navigate to="/login" replace />} />
 				<Route path="/login" element={user?.is_active ? <Navigate to="/" replace /> : <Login />} />

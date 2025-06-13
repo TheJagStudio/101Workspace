@@ -244,15 +244,10 @@ const Summary = () => {
 					<path fill="currentColor" fillOpacity={reverseSort ? "40%" : "100%"} d="M12.324 9H7.676c-.563 0-.878-.603-.53-1.014L9.468 5.24a.708.708 0 0 1 1.062 0l2.323 2.746c.349.411.033 1.014-.53 1.014" />
 					<path fill="currentColor" fillOpacity={!reverseSort ? "40%" : "100%"} d="M7.676 11h4.648c.563 0 .879.603.53 1.014l-2.323 2.746a.708.708 0 0 1-1.062 0l-2.324-2.746C6.798 11.603 7.113 11 7.676 11" />
 				</svg>
-				{/* <div className="flex flex-col">
-					<label className="text-sm text-gray-600 mb-1">Start date</label>
-					<input type="date" className="border border-gray-300 focus:outline-none focus:border-indigo-500 rounded-md px-3 py-1.5 w-48" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-				</div>
 				<div className="flex flex-col">
-					<label className="text-sm text-gray-600 mb-1">End date</label>
-					<input type="date" className="border border-gray-300 focus:outline-none focus:border-indigo-500 rounded-md px-3 py-1.5 w-48" value={endDate} onChange={(e) => setEndDate(e.target.value)} max={new Date().toISOString().split("T")[0]} />
-				</div> */}
-				<Calendar startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+					<label className="text-sm text-gray-600 mb-1">Analysis Period</label>
+					<Calendar startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} dateFormat="yyyy-MM-dd" />
+				</div>
 				<button
 					onClick={() => {
 						getData();

@@ -21,7 +21,7 @@ const Sidebar = () => {
 		<div className={`absolute flex flex-col h-screen sm:relative bg-white shadow-lg shadow-gray-200 border-r border-gray-200 transition-all duration-300 z-50  ${collapsed ? "w-0 sm:w-20 " : "w-screen sm:w-64 "}`}>
 			<div className="flex items-center h-16 px-2 border-b border-gray-200">
 				<div className="flex items-center">
-					<img src="/static/images/101-logo-purchase.png" alt="Logo" className={"w-auto h-11 mb-0.5 rounded-full transition-all duration-300 opacity-90 "} />
+					<img src="/static/images/101-logo-purchase.png" alt="Logo" className={"w-auto h-10 mb-0.5 rounded-full transition-all duration-300 opacity-90 "} />
 					<span className={`text-3xl font-semibold text-indigo-600 ml-1 transition-all duration-300 ${collapsed ? "hidden" : ""}`}>Purchase</span>
 				</div>
 				<div className={`ml-auto ${collapsed && "absolute top-5 -right-9"}`}>
