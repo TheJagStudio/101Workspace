@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="bg-gray-100">
+    <div id="productContainerA" class="grid grid-cols-4 gap-3 p-3">
+        <!-- Products will be dynamically inserted here -->
+    </div>
+    <div class="break-before-column"></div>
+    <br/>
+    <br/>
+    <div id="productContainerB" class="grid grid-cols-4 gap-3 p-3">
+        <!-- Products will be dynamically inserted here -->
+    </div>
+</body>
+<script>
+    let data = [
+        {
+            "A1": {
+                "Title": "VAPES",
+                "subtitle": "Raz Lxt Disposable",
+                "color": "blue"
+            }
+        },
+        {
+            "A2": {
+                "Title": "VAPES",
+                "subtitle": "Lost Marry Q20 Pro Disposable",
+                "color": "blue"
+            }
+        },
+        {
+            "A3": {
+                "Title": "VAPES",
+                "subtitle": "Foger 30k Disposable",
+                "color": "blue"
+            }
+        },
+        {
+            "A4": {
+                "Title": "VAPES",
+                "subtitle": "Kado Bar 40k Disposable",
+                "color": "blue"
+            }
+        },
+        {
+            "A5": {
+                "Title": "VAPES",
+                "subtitle": "MFU Lok, Out Lok Disposable",
+                "color": "blue"
+            }
+        },
+        {
+            "A6": {
+                "Title": "CLEARENCE",
+                "subtitle": "",
+                "color": "orange"
+            }
+        },
+        {
+            "A7": {
+                "Title": "CLEARENCE",
+                "subtitle": "",
+                "color": "orange"
+            }
+        },
+        {
+            "A8": {
+                "Title": "DELTA",
+                "subtitle": "VAPES AND PRE ROLLS",
+                "color": "green"
+            }
+        },
+        {
+            "A9": {
+                "Title": "DELTA",
+                "subtitle": "VAPES AND PRE ROLLS",
+                "color": "green"
+            }
+        },
+        {
+            "A10": {
+                "Title": "DELTA",
+                "subtitle": "PRE ROLLS",
+                "color": "green"
+            }
+        },
+        {
+            "A11": {
+                "Title": "DELTA",
+                "subtitle": "PRE ROLLS",
+                "color": "green"
+            }
+        },
+        {
+            "A12": {
+                "Title": "Kratom",
+                "subtitle": "CAPSULES AND POWDER",
+                "color": "purple"
+            }
+        },
+        {
+            "A13": {
+                "Title": "Kratom",
+                "subtitle": "CAPSULES AND POWDER",
+                "color": "purple"
+            }
+        },
+        {
+            "A14": {
+                "Title": "Kratom",
+                "subtitle": "DRINKS AND SHOTS",
+                "color": "purple"
+            }
+        },
+        {
+            "A15": {
+                "Title": "Electronic Hookah",
+                "subtitle": "KIT AND PODS",
+                "color": "red"
+            }
+        },
+        {
+            "A16": {
+                "Title": "Lookah",
+                "subtitle": "Device Kit AND Cartridge Batteries",
+                "color": "pink"
+            }
+        },
+        {
+            "A17": {
+                "Title": "VAPORESSO",
+                "subtitle": "Device Kit AND ACCESSORIES",
+                "color": "yellow"
+            }
+        },
+        {
+            "A18": {
+                "Title": "GEEKVAP",
+                "subtitle": "DEVICE kit AND VOOPOO DEVICE AND ACCESSORIES",
+                "color": "cyan"
+            }
+        },
+        {
+            "A19": {
+                "Title": "SMOK",
+                "subtitle": "DEVICE kit AND ACCESSORIES",
+                "color": "teal"
+            }
+        },
+        {
+            "A20": {
+                "Title": "Cloud Nurdz",
+                "subtitle": "E-LIQUID juices",
+                "color": "indigo"
+            }
+        },
+        {
+            "A21": {
+                "Title": "COASTAL Clouds",
+                "subtitle": "E-LIQUID juices",
+                "color": "gray"
+            }
+        },
+        {
+            "A22": {
+                "Title": "Al Fakher",
+                "subtitle": "SHISHA FLAVORS",
+                "color": "lime"
+            }
+        },
+        {
+            "A23": {
+                "Title": "STARBUZZ",
+                "subtitle": "SHISHA FLAVOURS",
+                "color": "emerald"
+            }
+        },
+        {
+            "A24": {
+                "Title": "ZIG ZAG",
+                "subtitle": "WRAPS, ROLLING PAPERS AND CONES",
+                "color": "violet"
+            }
+        },
+        {
+            "A25": {
+                "Title": "WRAPS",
+                "subtitle": "",
+                "color": "rose"
+            }
+        },
+        {
+            "A26": {
+                "Title": "BLAZY Susan",
+                "subtitle": "CONES",
+                "color": "fuchsia"
+            }
+        },
+        {
+            "A27": {
+                "Title": "Raw",
+                "subtitle": "CONES, ROLLING PAPER AND TIPS",
+                "color": "amber"
+            }
+        },
+        {
+            "A28": {
+                "Title": "BLUNT SPRAYS",
+                "subtitle": "AND INCENSES",
+                "color": "stone"
+            }
+        },
+        {
+            "A29": {
+                "Title": "INCENSES",
+                "subtitle": "AND CANDLES",
+                "color": "stone"
+            }
+        },
+        {
+            "A30": {
+                "Title": "Medicines",
+                "subtitle": "",
+                "color": "sky"
+            }
+        },
+        {
+            "A31": {
+                "Title": "Energy Shots",
+                "subtitle": "5 Hour (Parcel Care",
+                "color": "red"
+            }
+        },
+        {
+            "A32": {
+                "Title": "Phone",
+                "subtitle": "Accessories",
+                "color": "indigo"
+            }
+        },
+        {
+            "A33": {
+                "Title": "Air Freshners",
+                "subtitle": "And Lighters / Knife",
+                "color": "cyan"
+            }
+        },
+        {
+            "A34": {
+                "Title": "Car",
+                "subtitle": "Accessories",
+                "color": "teal"
+            }
+        },
+        {
+            "A35": {
+                "Title": "Pallets",
+                "subtitle": "Thank You Bags",
+                "color": "gray"
+            }
+        },
+        {
+            "A36": {
+                "Title": "Pallets",
+                "subtitle": "",
+                "color": "gray"
+            }
+        },
+        {
+            "A37": {
+                "Title": "Pallets",
+                "subtitle": "Infused Gold Whips",
+                "color": "gray"
+            }
+        },
+        {
+            "A38": {
+                "Title": "Pallets",
+                "subtitle": "Infused Whip Trip, N20",
+                "color": "gray"
+            }
+        },
+        {
+            "A39": {
+                "Title": "Whip Trip",
+                "subtitle": "",
+                "color": "lime"
+            }
+        },
+        {
+            "": {
+                "Title": "",
+                "subtitle": ""
+            }
+        },
+        {
+            "B1": {
+                "Title": "CHEECH Smp",
+                "subtitle": "WATER PIPES 18\" [PYRAMID BEAKER",
+                "color": "purple"
+            }
+        },
+        {
+            "B2": {
+                "Title": "INEX",
+                "subtitle": "Glass WATER PIPES 15\", M&M TECH",
+                "color": "pink"
+            }
+        },
+        {
+            "B3": {
+                "Title": "G Rollz",
+                "subtitle": "GLASS WATER PIPES 12\", ILLADELPH GLASS PIPE",
+                "color": "yellow"
+            }
+        },
+        {
+            "B4": {
+                "Title": "ROOR TECH",
+                "subtitle": "WATER PIPES",
+                "color": "cyan"
+            }
+        },
+        {
+            "B5": {
+                "Title": "ROOR TECH & ROOR STRAIN",
+                "subtitle": "WATER PIPES",
+                "color": "cyan"
+            }
+        },
+        {
+            "B6": {
+                "Title": "MAV",
+                "subtitle": "WATER PIPES 20\"",
+                "color": "teal"
+            }
+        },
+        {
+            "B7": {
+                "Title": "LOTUS",
+                "subtitle": "WATER PIPES PERCULATOR",
+                "color": "indigo"
+            }
+        },
+        {
+            "B8": {
+                "Title": "LOTUS",
+                "subtitle": "WATER PIPES",
+                "color": "indigo"
+            }
+        },
+        {
+            "B9": {
+                "Title": "NBC",
+                "subtitle": "WATER PIPES",
+                "color": "gray"
+            }
+        },
+        {
+            "B10": {
+                "Title": "TURBO & NBC",
+                "subtitle": "WATER PIPES",
+                "color": "gray"
+            }
+        },
+        {
+            "B11": {
+                "Title": "NBC",
+                "subtitle": "GLASS WATER PIPES",
+                "color": "gray"
+            }
+        },
+        {
+            "B12": {
+                "Title": "NBC",
+                "subtitle": "WATER PIPES & HAND PIPES",
+                "color": "gray"
+            }
+        },
+        {
+            "B13": {
+                "Title": "Jars",
+                "subtitle": "ONE HITTER & HAND PIPES",
+                "color": "lime"
+            }
+        },
+        {
+            "B14": {
+                "Title": "Oil BURNERS",
+                "subtitle": "& SNIFFER",
+                "color": "emerald"
+            }
+        },
+        {
+            "B15": {
+                "Title": "Oil BURNER",
+                "subtitle": "DAB TOOLS AND BOWL, BANGERS",
+                "color": "emerald"
+            }
+        },
+        {
+            "B16": {
+                "Title": "NECTOR COLLECTOR",
+                "subtitle": "WOODEN HANPIPES, SILICON PIPES",
+                "color": "violet"
+            }
+        },
+        {
+            "B17": {
+                "Title": "ASH CATCHER",
+                "subtitle": "CERAMIC MUG PIPE",
+                "color": "rose"
+            }
+        },
+        {
+            "B18": {
+                "Title": "NBC",
+                "subtitle": "GRINDERS",
+                "color": "gray"
+            }
+        },
+        {
+            "B19": {
+                "Title": "Empty",
+                "subtitle": "",
+                "color": "stone"
+            }
+        },
+        {
+            "B20": {
+                "Title": "Empty",
+                "subtitle": "",
+                "color": "stone"
+            }
+        },
+        {
+            "B21": {
+                "Title": "Empty",
+                "subtitle": "",
+                "color": "stone"
+            }
+        },
+        {
+            "B22": {
+                "Title": "SAFE CANS AND MYLAR BAGS",
+                "subtitle": "",
+                "color": "sky"
+            }
+        },
+        {
+            "B23": {
+                "Title": "Empty",
+                "subtitle": "",
+                "color": "stone"
+            }
+        },
+        {
+            "B24": {
+                "Title": "Rolling TRAYS",
+                "subtitle": "",
+                "color": "crimson"
+            }
+        },
+        {
+            "B25": {
+                "Title": "ASHTRAY",
+                "subtitle": "",
+                "color": "indigo"
+            }
+        },
+        {
+            "B26": {
+                "Title": "TOURCH LIGHTERS",
+                "subtitle": "",
+                "color": "cyan"
+            }
+        },
+        {
+            "B27": {
+                "Title": "TOURCH LIGHTERS",
+                "subtitle": "",
+                "color": "cyan"
+            }
+        },
+        {
+            "B28": {
+                "Title": "EMPTY",
+                "subtitle": "",
+                "color": "stone"
+            }
+        },
+        {
+            "B29": {
+                "Title": "Hookah ACCESSORIES",
+                "subtitle": "Foils, Bowl, CHARCOAL",
+                "color": "teal"
+            }
+        },
+        {
+            "B30": {
+                "Title": "GAS MUSK",
+                "subtitle": "All IN ONE KIT, STASH JAR",
+                "color": "gray"
+            }
+        },
+        {
+            "B31": {
+                "Title": "SCALE AND KIT",
+                "subtitle": "All IN ONE",
+                "color": "lime"
+            }
+        },
+        {
+            "B32": {
+                "Title": "T-SHIRTS",
+                "subtitle": "WINTER CAPS",
+                "color": "emerald"
+            }
+        },
+        {
+            "B33": {
+                "Title": "T-SHIRTS",
+                "subtitle": "",
+                "color": "emerald"
+            }
+        },
+        {
+            "B34": {
+                "Title": "LAUNDRY DETERGENT",
+                "subtitle": "HOUSEHOLD PRODUCTS",
+                "color": "violet"
+            }
+        },
+        {
+            "B35": {
+                "Title": "PERSONNEL CARE.",
+                "subtitle": "PALLET",
+                "color": "rose"
+            }
+        },
+        {
+            "B36": {
+                "Title": "PALLET",
+                "subtitle": "",
+                "color": "gray"
+            }
+        },
+        {
+            "B37": {
+                "Title": "PALLET",
+                "subtitle": "",
+                "color": "gray"
+            }
+        },
+        {
+            "B38": {
+                "Title": "PALLETS",
+                "subtitle": "INFUSED TANK.",
+                "color": "gray"
+            }
+        }
+    ]
+
+    // Function to group data into pairs
+    function groupDataIntoPairs(data) {
+        let pairs = [];
+        let currentPair = [];
+
+        data.forEach(item => {
+            if (currentPair.length < 2) {
+                currentPair.push(item);
+            }
+            if (currentPair.length === 2) {
+                pairs.push([...currentPair]);
+                currentPair = [];
+            }
+        });
+
+        if (currentPair.length > 0) {
+            pairs.push([...currentPair]);
+        }
+
+        return pairs;
+    }
+
+    // Function to render the products
+    function renderProducts() {
+        const containerA = document.getElementById('productContainerA');
+        const containerB = document.getElementById('productContainerB');
+        const pairs = groupDataIntoPairs(data);
+
+        pairs.forEach(pair => {
+            const [first, second] = pair;
+            const firstKey = Object.keys(first)[0];
+            const secondKey = second ? Object.keys(second)[0] : null;
+            let color1 = first[firstKey].color;
+            let color2 = second[secondKey].color;
+            let finalColor = color1;
+            if (color1 !== color2){
+                finalColor = "bg-gradient-to-l from-" + color2 + "-500 to-" + color1 + "-500";
+            }else{
+                finalColor = "bg-"+color1 + "-500";
+            }
+            const productCard = `
+                <div class="p-1 rounded-lg ${finalColor} shadow-inner flex flex-row items-center justify-center gap-1">
+                    <div class="w-full h-full flex flex-col gap-1">
+                        <div class="bg-white w-full h-10 shadow rounded font-bold text-2xl text-center flex items-center justify-center">
+                            <p class="">${firstKey}</p>
+                        </div>
+                        <div class="flex-1 bg-white w-full h-full rounded p-1 px-2 flex flex-col justify-center items-center shadow">
+                            <p class="text-center text-xl font-bold text-gray-700 leading-5">${first[firstKey].Title}</p>
+                            <p class="text-center text-gray-700 leading-5">${first[firstKey].subtitle}</p>
+                        </div>
+                        
+                    </div>
+                    <div class="w-full h-full flex flex-col gap-1">
+                        ${secondKey ? `
+                        <div class="bg-white w-full h-10 shadow rounded font-bold text-2xl text-center flex items-center justify-center">
+                            <p class="">${secondKey}</p>
+                        </div>
+                        ` : ''}
+                        ${second ? `
+                        <div class="flex-1 bg-white w-full h-full rounded p-1 px-2 flex flex-col justify-center items-center shadow">
+                            <p class="text-center text-xl font-bold text-gray-700 leading-5">${second[secondKey].Title}</p>
+                            <p class="text-center text-gray-700 leading-5">${second[secondKey].subtitle}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            if (firstKey.startsWith('A')) {
+                containerA.innerHTML += productCard;
+            } else if (firstKey.startsWith('B')) {
+                containerB.innerHTML += productCard;
+            }
+        });
+    }
+
+    // Call the render function when the page loads
+    window.addEventListener('DOMContentLoaded', renderProducts);
+</script>
+
+</html>

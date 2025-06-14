@@ -3,7 +3,20 @@ from django.http import JsonResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import Product, Category, BusinessType, InventoryData, Invoice, InvoiceLineItem, Vendor, PurchaseHistory, SalesgentToken, ProductHistory, Customer
+from .models import (
+    Product,
+    Category,
+    BusinessType,
+    InventoryData,
+    Invoice,
+    InvoiceLineItem,
+    Vendor,
+    PurchaseHistory,
+    SalesgentToken,
+    ProductHistory,
+    Customer,
+    AIReport,
+)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -1171,3 +1184,66 @@ class ChatWithAIAgentView(APIView):
             return Response({"error": "Invalid JSON"}, status=400)
         except Exception as e:
             return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+
+class AIReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Handle GET requests for AI reports.
+        """
+        reportName  = request.GET.get("reportName", None)
+        if not reportName:
+            return Response({"error": "reportName parameter is required"}, status=400)
+        try:
+            report_data = AIReport.objects.filter(reportName=reportName).first().htmlContent
+            return Response({"report": report_data})
+        except AIReport.DoesNotExist:
+            return Response({"error": "Report not found"}, status=404)
+        except Exception as e:
+            return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+    
+    def post(self, request):
+        """
+        Handle POST requests to create or update AI reports.
+        """
+        from .ai_agent.researchAgent import Orchestrator
+        from django.http import StreamingHttpResponse
+        import json
+
+        def stream_response():
+            try:
+                report_name = request.data.get("reportName")
+                theme = request.data.get("theme", "indigo")
+                if not report_name:
+                    yield json.dumps({"error": "reportName is required"}) + "|||"
+                    return
+
+                orchestrator = Orchestrator(theme)
+                final_report = None
+
+                for status_update in orchestrator.run():
+                    if isinstance(status_update, dict):
+                        if 'finalReport' in status_update:
+                            final_report = status_update['finalReport']
+                        print("Status Update:", status_update["type"])
+                        yield json.dumps(status_update) + "|||"
+                
+                if final_report:
+                    AIReport.objects.update_or_create(
+                        reportName=report_name,
+                        defaults={'htmlContent': final_report}
+                    )
+                    yield json.dumps({
+                        "message": "Report generation completed",
+                        "report": final_report
+                    }) + "|||"
+
+            except Exception as e:
+                yield json.dumps({"error": f"An unexpected error occurred: {str(e)}"}) + "|||"
+
+        return StreamingHttpResponse(
+            streaming_content=stream_response(),
+            content_type='application/json'
+        )

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer
+from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer,AIReport
 from .models import PurchaseHistory
 from .models import SalesgentToken
 
@@ -109,6 +109,9 @@ class CustomerAdmin(ImportExportModelAdmin):
     list_display = ("id", "name", "company", "email", "phone")
     search_fields = ("id","name", "company", "email", "phone")
 
+class AIReportAdmin(ImportExportModelAdmin):
+    list_display = ("reportName", "createdAt", "updatedAt")
+
 
 # Register your models here.
 admin.site.site_header = "API Admin"
@@ -126,3 +129,4 @@ admin.site.register(PurchaseHistory, PurchaseHistoryAdmin)
 admin.site.register(SalesgentToken, SalesgentTokenAdmin)
 admin.site.register(ProductHistory, ProductHistoryAdmin)
 admin.site.register(Customer, CustomerAdmin)
+admin.site.register(AIReport, AIReportAdmin)

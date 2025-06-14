@@ -4,7 +4,7 @@ import { useAtom } from "jotai";
 import { isSidebarOpenAtom } from "../../Variables";
 
 const Sidebar = () => {
-	const [activeItem, setActiveItem] = useState("Dashboard");
+	const [activeItem, setActiveItem] = useState("report");
 	const [collapsed, setCollapsed] = useAtom(isSidebarOpenAtom);
 
 	const handleItemClick = (item) => {
@@ -38,11 +38,11 @@ const Sidebar = () => {
 					<div className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"} mb-2`}>GENERAL</div>
 					<ul>
 						<li className="mb-1">
-							<Link to="/purchase/dashboard" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Dashboard" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Dashboard")}>
+							<Link to="/purchase/report" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Dashboard" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Dashboard")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Dashboard" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M10 14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm11-5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM10 2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm11 0a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
 								</svg>
-								{!collapsed && "Dashboard"}
+								{!collapsed && "AI Report"}
 							</Link>
 						</li>
 						<li className="mb-1">

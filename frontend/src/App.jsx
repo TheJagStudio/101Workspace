@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Dashboard from "./Pages/Purchase/General/Dashboard";
+import AIReport from "./Pages/Purchase/General/AIReport";
 import Login from "./Pages/Auth/Login";
 import Signup from "./Pages/Auth/Signup";
 import { useAtom } from "jotai";
@@ -104,9 +104,9 @@ function App() {
 				<Route path="/login" element={user?.is_active ? <Navigate to="/" replace /> : <Login />} />
 				<Route path="/signup" element={<Signup />} />
 				<Route path="/purchase" element={user?.is_active ? <PurchaseOutlet logout={logout} /> : <Navigate to="/login" replace />}>
-					<Route path="" element={<Dashboard />} />
+					<Route path="" element={<AIReport />} />
 					<Route path="po" element={<PO />} />
-					<Route path="dashboard" element={<Dashboard />} />
+					<Route path="report" element={<AIReport />} />
 					<Route path="summary" element={<Summary />} />
 					<Route path="performance" element={<PerformanceDash />} />
 					<Route path="replenishment" element={<Replenishment />} />

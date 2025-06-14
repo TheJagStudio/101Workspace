@@ -49,6 +49,11 @@ urlpatterns = [
         name="ChatWithAIAgentView",
     ),
     path(
+        "ai-report/",
+        views.AIReportView.as_view(),
+        name="AIReportView",
+    ),
+    path(
         "po-maker/",
         views.POMakerView.as_view(),
         name="POMakerView",
