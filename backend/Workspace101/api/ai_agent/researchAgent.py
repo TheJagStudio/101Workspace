@@ -1,7 +1,6 @@
 import os
 import requests
 from bs4 import BeautifulSoup
-from .duckduckgo_search import DDGS
 from datetime import datetime
 import json
 import time
@@ -15,6 +14,7 @@ load_dotenv()
 # IMPORTANT: It is recommended to use environment variables for API keys.
 # For this example, we'll use a placeholder. Replace with your actual key or set as an environment variable.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+searpApi = "094a8b2cbd3a1252c2982d6190db2ca1ed7e11c2"
 
 # Replaced f-string
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}".format(GEMINI_API_KEY)
@@ -24,16 +24,23 @@ PRODUCT_CATEGORIES = ["Vape Devices and Vaporizers (Disposable and Refillable)",
 JURISDICTION = "Georgia, USA"
 
 
+def searpApi(query: str, max_results: int = 5):
+    url = "https://google.serper.dev/search"
+
+    payload = json.dumps({"q": query, "location": "Atlanta, Georgia, United States","num": max_results})
+    headers = {"X-API-KEY": searpApi, "Content-Type": "application/json"}
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    return response.json().get("organic", [])[:max_results]
+
 class WebSearchTool:
     """A tool for performing general web searches using DuckDuckGo."""
 
     def search(self, query: str, max_results: int = 5):
         yield {"type": "status", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Searching for query: {query}", "details": {"query": query}}
         try:
-            with DDGS() as ddgs:
-                results = [r for r in ddgs.text(query, max_results=max_results)]
-                print(f"Web search results for '{query}': {len(results)} results found.")
-                return results
+            return searpApi(query, max_results=max_results)
         except Exception as e:
             yield {"type": "error", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Error during web search for query: {query}", "details": {"query": query, "error": str(e)}}
             return []
@@ -47,9 +54,7 @@ class SocialMediaSearchTool:
         try:
             # Focus on Reddit for candid conversations
             social_query = f"site:reddit.com {query}"
-            with DDGS() as ddgs:
-                results = [r for r in ddgs.text(social_query, max_results=max_results)]
-                return results
+            return searpApi(social_query, max_results=max_results)
         except Exception as e:
             yield {"type": "error", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Error during social media search for: {query}", "details": {"query": query, "error": str(e)}}
             return []
