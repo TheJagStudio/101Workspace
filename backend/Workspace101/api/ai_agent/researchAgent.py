@@ -14,7 +14,7 @@ load_dotenv()
 # IMPORTANT: It is recommended to use environment variables for API keys.
 # For this example, we'll use a placeholder. Replace with your actual key or set as an environment variable.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-searpApi = "094a8b2cbd3a1252c2982d6190db2ca1ed7e11c2"
+searpApi = "db2606ec0664d3016ae1660375bce6f1d803b081"
 
 # Replaced f-string
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}".format(GEMINI_API_KEY)
@@ -24,25 +24,24 @@ PRODUCT_CATEGORIES = ["Vape Devices and Vaporizers (Disposable and Refillable)",
 JURISDICTION = "Georgia, USA"
 
 
-def searpApi(query: str, max_results: int = 5):
+def SearpApiFunction(query: str, max_results: int = 10):
     url = "https://google.serper.dev/search"
 
-    payload = json.dumps({"q": query, "location": "Atlanta, Georgia, United States","num": max_results})
+    payload = json.dumps({"q": query, "location": "Atlanta, Georgia, United States"})
     headers = {"X-API-KEY": searpApi, "Content-Type": "application/json"}
 
     response = requests.request("POST", url, headers=headers, data=payload)
-
     return response.json().get("organic", [])[:max_results]
 
 class WebSearchTool:
     """A tool for performing general web searches using DuckDuckGo."""
 
     def search(self, query: str, max_results: int = 5):
-        yield {"type": "status", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Searching for query: {query}", "details": {"query": query}}
+        # yield {"type": "status", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Searching for query: {query}", "details": {"query": query}}
         try:
-            return searpApi(query, max_results=max_results)
+            return SearpApiFunction(query, max_results=max_results)
         except Exception as e:
-            yield {"type": "error", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Error during web search for query: {query}", "details": {"query": query, "error": str(e)}}
+            # yield {"type": "error", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Error during web search for query: {query}", "details": {"query": query, "error": str(e)}}
             return []
 
 
@@ -50,13 +49,13 @@ class SocialMediaSearchTool:
     """A tool for searching social media platforms for consumer sentiment."""
 
     def search(self, query: str, max_results: int = 5):
-        yield {"type": "status", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Searching social media for: {query}", "details": {"query": query}}
+        # yield {"type": "status", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Searching social media for: {query}", "details": {"query": query}}
         try:
             # Focus on Reddit for candid conversations
             social_query = f"site:reddit.com {query}"
-            return searpApi(social_query, max_results=max_results)
+            return SearpApiFunction(social_query, max_results=max_results)
         except Exception as e:
-            yield {"type": "error", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Error during social media search for: {query}", "details": {"query": query, "error": str(e)}}
+            # yield {"type": "error", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Error during social media search for: {query}", "details": {"query": query, "error": str(e)}}
             return []
 
 
@@ -64,19 +63,21 @@ class WebScraperTool:
     """A tool for scraping and cleaning content from a URL."""
 
     def scrape(self, url: str):
-        yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Scraping URL: {url}", "details": {"url": url}}
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive", "Upgrade-Insecure-Requests": "1"}
+        # yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Scraping URL: {url}", "details": {"url": url}}
         try:
-            response = requests.get(url, headers=headers, timeout=20)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, "html.parser")
-            # More aggressive cleaning
-            for element in soup(["script", "style", "nav", "footer", "header", "aside", "form", "button"]):
-                element.decompose()
-            text = soup.get_text(separator=" ", strip=True)
-            return text[:8000]  # Limit content size
+            payload = json.dumps({
+            "url":  url,
+            })
+            headers = {
+                'X-API-KEY':  searpApi,
+                'Content-Type': 'application/json'
+            }
+
+            response = requests.request("POST", "https://scrape.serper.dev", headers=headers, data=payload)
+
+            return response.json().get("text", "")[:8000]
         except requests.RequestException as e:
-            yield {"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error scraping URL: {url}", "details": {"url": url, "error": str(e)}}
+            # yield {"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error scraping URL: {url}", "details": {"url": url, "error": str(e)}}
             return None
 
 
@@ -95,29 +96,30 @@ class GeminiLLM:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            yield {"type": "error", "agent": "GeminiLLM", "phase": "API_CALL", "message": "Error calling Gemini API", "details": {"error": str(e)}}
+            print({"type": "error", "agent": "GeminiLLM", "phase": "API_CALL", "message": "Error calling Gemini API", "details": {"error": str(e)}})
             if hasattr(e, "response") and e.response:
-                yield {"type": "error_detail", "agent": "GeminiLLM", "phase": "API_CALL", "message": "Received error response body from API", "details": {"response_body": e.response.text}}
+                print({"type": "error_detail", "agent": "GeminiLLM", "phase": "API_CALL", "message": "Received error response body from API", "details": {"response_body": e.response.text}})
             return None
 
     def analyze(self, prompt: str):
-        yield {"type": "status", "agent": "GeminiLLM", "phase": "ANALYZE", "message": "Sending analysis prompt to LLM.", "details": {"prompt_snippet": prompt[:150].replace("\n", " ")}}
         result = self._make_request(prompt)
         if result and "candidates" in result and result["candidates"][0].get("content", {}).get("parts"):
             return result["candidates"][0]["content"]["parts"][0]["text"]
         else:
-            yield {"type": "error", "agent": "GeminiLLM", "phase": "ANALYZE", "message": "Could not parse LLM response.", "details": {"raw_response": result}}
+            print({"type": "error", "agent": "GeminiLLM", "phase": "ANALYZE", "message": "Could not parse LLM response.", "details": {"raw_response": result}})
             return "Error: Analysis failed due to an invalid API response."
 
     def analyze_json(self, prompt: str):
-        yield {"type": "status", "agent": "GeminiLLM", "phase": "ANALYZE_JSON", "message": "Sending JSON analysis prompt to LLM.", "details": {"prompt_snippet": prompt[:150].replace("\n", " ")}}
-        raw_response = yield from self.analyze(prompt)
+        raw_response = self.analyze(prompt)
         try:
             # Clean the response string from markdown code blocks
-            clean_str = raw_response.strip().removeprefix("```json").removesuffix("```").strip()
-            return json.loads(clean_str)
+            if raw_response is None:
+                return {"error": "No response from LLM"}
+            clean_str = raw_response.strip().replace("```json", "").replace("```", "").strip()
+            result = json.loads(clean_str)
+            return result
         except (json.JSONDecodeError, AttributeError) as e:
-            yield {"type": "error", "agent": "GeminiLLM", "phase": "ANALYZE_JSON", "message": "Failed to decode JSON from LLM response.", "details": {"error": str(e), "raw_response": raw_response}}
+            print({"type": "error", "agent": "GeminiLLM", "phase": "ANALYZE_JSON", "message": "Failed to decode JSON from LLM response.", "details": {"error": str(e), "raw_response": raw_response}})
             return {"error": "Failed to parse JSON response from LLM.", "raw_response": raw_response}
 
 
@@ -129,25 +131,27 @@ class MarketResearchAgent:
         self.name = "Market Research Agent (MRA)"
 
     def research_category(self, category: str):
-        yield {"type": "agent_start", "agent": self.name, "phase": "RESEARCH_CATEGORY", "message": f"Starting research for category: {category}", "details": {"category": category}}
+        # yield {"type": "agent_start", "agent": self.name, "phase": "RESEARCH_CATEGORY", "message": f"Starting research for category: {category}", "details": {"category": category}}
         search_queries = [f"new product trends in {category} 2025", f"top selling {category} products wholesale B2B", f"innovations and future of {category}"]
         social_queries = [f"honest review {category}", f"what's the best {category} right now", f"underrated {category} products"]
 
         all_content, sources = "", set()
 
         for query in search_queries:
-            search_results = yield from self.search_tool.search(query, max_results=7)
-            for result in search_results:
-                content = yield from self.scraper_tool.scrape(result["href"])
-                if content:
-                    all_content += f"\n\n--- Web Source: {result['title']} ({result['href']}) ---\n{content}"
-                    sources.add(result["href"])
+            search_results = self.search_tool.search(query, max_results=3)
+            if search_results:
+                for result in search_results:
+                    content = self.scraper_tool.scrape(result["link"])
+                    if content:
+                        all_content += f"\n\n--- Web Source: {result['title']} ({result['link']}) ---\n{content}"
+                        sources.add(result["link"])
 
         for query in social_queries:
-            search_results = yield from self.social_tool.search(query, max_results=7)
-            for result in search_results:
-                all_content += f"\n\n--- Social Source: {result['title']} ({result['href']}) ---\n{result['body']}"
-                sources.add(result["href"])
+            search_results = self.social_tool.search(query, max_results=3)
+            if search_results:
+                for result in search_results:
+                    all_content += f"\n\n--- Social Source: {result['title']} ({result['link']}) ---\n{result['snippet']}"
+                    sources.add(result["link"])
 
         if not all_content:
             return {"analysis": {"category": category, "error": "No content could be gathered."}, "sources": []}
@@ -167,10 +171,13 @@ class MarketResearchAgent:
         
         Output ONLY the JSON object.
         """
-        analysis = yield from self.llm.analyze_json(prompt)
-        if "error" not in analysis:
+        analysis = self.llm.analyze_json(prompt)
+        analysis = analysis if isinstance(analysis, dict) else {"error": "Invalid analysis result"}
+        
+        if "error" not in analysis and analysis is not None:
             analysis["category"] = category
-            yield {"type": "agent_end", "agent": self.name, "phase": "RESEARCH_CATEGORY", "message": f"Successfully analyzed category: {category}", "details": {"category": category}}
+            # yield {"type": "agent_end", "agent": self.name, "phase": "RESEARCH_CATEGORY", "message": f"Successfully analyzed category: {category}", "details": {"category": category}}
+        
         return {"analysis": analysis, "sources": list(sources)}
 
 
@@ -182,7 +189,7 @@ class RegulatoryComplianceAgent:
         self.name = "Regulatory Compliance Agent (RCA)"
 
     def check_compliance(self, category: str, jurisdiction: str):
-        yield {"type": "agent_start", "agent": self.name, "phase": "CHECK_COMPLIANCE", "message": f"Checking compliance for '{category}' in '{jurisdiction}'", "details": {"category": category, "jurisdiction": jurisdiction}}
+        # yield {"type": "agent_start", "agent": self.name, "phase": "CHECK_COMPLIANCE", "message": f"Checking compliance for '{category}' in '{jurisdiction}'", "details": {"category": category, "jurisdiction": jurisdiction}}
         high_risk_keywords = ["vape", "delta", "kratom", "tobacco", "smoking", "hemp", "cbd", "adult", "thca", "hhc"]
         if not any(keyword in category.lower() for keyword in high_risk_keywords):
             return {"analysis": {"status": "Go", "risk_level": "Low", "summary": "Standard consumer product regulations apply. No specific restrictions identified."}, "sources": []}
@@ -190,13 +197,14 @@ class RegulatoryComplianceAgent:
         search_queries = [f"laws and regulations for selling {category} in {jurisdiction}", f"new {category} legislation {jurisdiction} 2025", f"{category} FDA regulations USA federal", f"{jurisdiction} Department of Revenue {category} rules"]
         all_content, sources = "", set()
         for query in search_queries:
-            search_results = yield from self.search_tool.search(query, max_results=3)
-            for result in search_results:
-                if any(domain in result["href"] for domain in [".gov", ".org", "fda.gov", "ga.gov"]):
-                    content = yield from self.scraper_tool.scrape(result["href"])
+            search_results = self.search_tool.search(query, max_results=3)
+            if search_results:
+                for result in search_results:
+                    # if any(domain in result["link"] for domain in [".gov", ".org", "fda.gov", "ga.gov"]):
+                    content = self.scraper_tool.scrape(result["link"])
                     if content:
-                        all_content += f"\n\n--- Source: {result['title']} ({result['href']}) ---\n{content}"
-                        sources.add(result["href"])
+                        all_content += f"\n\n--- Source: {result['title']} ({result['link']}) ---\n{content}"
+                        sources.add(result["link"])
 
         if not all_content:
             return {"analysis": {"status": "Watch", "risk_level": "Medium", "summary": "Could not find definitive regulatory information from official sources. Manual review required."}, "sources": []}
@@ -212,8 +220,8 @@ class RegulatoryComplianceAgent:
         
         Output ONLY the JSON object.
         """
-        status = yield from self.llm.analyze_json(prompt)
-        yield {"type": "agent_end", "agent": self.name, "phase": "CHECK_COMPLIANCE", "message": f"Successfully checked compliance for: {category}", "details": {"category": category}}
+        status = self.llm.analyze_json(prompt)
+        # yield {"type": "agent_end", "agent": self.name, "phase": "CHECK_COMPLIANCE", "message": f"Successfully checked compliance for: {category}", "details": {"category": category}}
         return {"analysis": status, "sources": list(sources)}
 
 
@@ -225,16 +233,17 @@ class CompetitiveIntelligenceAgent:
         self.name = "Competitive Intelligence Agent (CIA)"
 
     def analyze_competitors(self, category: str):
-        yield {"type": "agent_start", "agent": self.name, "phase": "ANALYZE_COMPETITORS", "message": f"Analyzing competitors for: {category}", "details": {"category": category}}
+        # yield {"type": "agent_start", "agent": self.name, "phase": "ANALYZE_COMPETITORS", "message": f"Analyzing competitors for: {category}", "details": {"category": category}}
         search_queries = [f"top wholesale distributors for {category} USA", f"major online retailers for {category}"]
         all_content, sources = "", set()
         for query in search_queries:
-            search_results = yield from self.search_tool.search(query, max_results=7)
-            for result in search_results:
-                content = yield from self.scraper_tool.scrape(result["href"])
-                if content:
-                    all_content += f"\n\n--- Competitor Source: {result['title']} ({result['href']}) ---\n{content}"
-                    sources.add(result["href"])
+            search_results = self.search_tool.search(query, max_results=3)
+            if search_results:
+                for result in search_results:
+                    content = self.scraper_tool.scrape(result["link"])
+                    if content:
+                        all_content += f"\n\n--- Competitor Source: {result['title']} ({result['link']}) ---\n{content}"
+                        sources.add(result["link"])
 
         if not all_content:
             return {"analysis": {"error": "Could not find competitor information."}, "sources": []}
@@ -250,8 +259,8 @@ class CompetitiveIntelligenceAgent:
 
         Output ONLY the JSON object.
         """
-        analysis = yield from self.llm.analyze_json(prompt)
-        yield {"type": "agent_end", "agent": self.name, "phase": "ANALYZE_COMPETITORS", "message": f"Successfully analyzed competitors for: {category}", "details": {"category": category}}
+        analysis = self.llm.analyze_json(prompt)
+        # yield {"type": "agent_end", "agent": self.name, "phase": "ANALYZE_COMPETITORS", "message": f"Successfully analyzed competitors for: {category}", "details": {"category": category}}
         return {"analysis": analysis, "sources": list(sources)}
 
 
@@ -263,14 +272,14 @@ class SupplierDiscoveryAgent:
         self.name = "Supplier Discovery Agent (SDA)"
 
     def find_suppliers(self, products: list):
-        yield {"type": "agent_start", "agent": self.name, "phase": "FIND_SUPPLIERS", "message": "Finding suppliers for top products.", "details": {"products": products}}
+        # yield {"type": "agent_start", "agent": self.name, "phase": "FIND_SUPPLIERS", "message": "Finding suppliers for top products.", "details": {"products": products}}
         if not products:
             return {}
 
         suppliers = {}
         for product in products:
             query = f'"{product}" wholesale supplier distributor USA'
-            search_results = yield from self.search_tool.search(query, max_results=3)
+            search_results = self.search_tool.search(query, max_results=3)
 
             if not search_results:
                 suppliers[product] = [{"name": "No direct suppliers found via search.", "url": "#"}]
@@ -288,13 +297,13 @@ class SupplierDiscoveryAgent:
             Example: [{{"name": "Global Vapes Wholesale", "url": "https://globalvapes.com"}}]
             Output ONLY the JSON object.
             """
-            supplier_list = yield from self.llm.analyze_json(prompt)
+            supplier_list = self.llm.analyze_json(prompt)
             if "error" in supplier_list or not isinstance(supplier_list, list):
                 suppliers[product] = [{"name": "Could not identify suppliers from search.", "url": "#"}]
             else:
                 suppliers[product] = supplier_list
 
-        yield {"type": "agent_end", "agent": self.name, "phase": "FIND_SUPPLIERS", "message": "Finished supplier discovery.", "details": {}}
+        # yield {"type": "agent_end", "agent": self.name, "phase": "FIND_SUPPLIERS", "message": "Finished supplier discovery.", "details": {}}
         return suppliers
 
 
@@ -336,7 +345,7 @@ class ReportingAgent:
         - Market Trends: {market.get("emerging_trends", "N/A")}
         - Consumer Sentiment: {market.get("consumer_sentiment", "N/A")}
         - Trending Products: {market.get("currently_trending_products", "N/A")}
-        - Regulatory Status ({JURISDICTION}): {compliance.get("status", "N/A")} ({compliance.get("risk_level", "N/A")} Risk)
+        - Regulatory Status ({compliance.get("status", "N/A")} ({compliance.get("risk_level", "N/A")} Risk)
         - Competitor Focus: {competition.get("competitor_focus", "N/A")}
         - Calculated Opportunity Score: {item["opportunity_score"]}/100
 
@@ -359,7 +368,9 @@ class ReportingAgent:
         
         Provide only the text for the executive summary.
         """
-        executive_summary = yield from self.llm.analyze(summary_prompt)
+        executive_summary = self.llm.analyze(summary_prompt)
+        if executive_summary:
+            executive_summary = executive_summary.strip().replace("\n", "<br>")
 
         sorted_data = sorted(all_data, key=lambda x: x["opportunity_score"], reverse=True)
 
@@ -372,11 +383,11 @@ class ReportingAgent:
             if any("error" in d for d in [market, compliance, competition]):
                 continue
 
-            sentiment_colors = {"Very Positive": "bg-green-100 text-green-800", "Positive": "bg-blue-100 text-blue-800", "Mixed": "bg-yellow-100 text-yellow-800", "Cautious": "bg-orange-100 text-orange-800", "Negative": "bg-red-100 text-red-800"}
-            risk_colors = {"Low": "bg-green-100 text-green-800", "Medium": "bg-yellow-100 text-yellow-800", "High": "bg-red-100 text-red-800"}
-            status_colors = {"Go": "bg-green-100 text-green-800", "Watch": "bg-orange-100 text-orange-800", "No-Go": "bg-red-100 text-red-800"}
+            sentiment_colors = {"Very Positive": "bg-green-100 text-green-800 border border-green-500 shadow-inner", "Positive": "bg-blue-100 text-blue-800 border border-blue-500 shadow-inner", "Mixed": "bg-yellow-100 text-yellow-800 border border-yellow-500 shadow-inner", "Cautious": "bg-orange-100 text-orange-800 border border-orange-500 shadow-inner", "Negative": "bg-red-100 text-red-800 border border-red-500 shadow-inner"}
+            risk_colors = {"Low": "bg-green-100 text-green-800 border border-green-500 shadow-inner", "Medium": "bg-yellow-100 text-yellow-800 border border-yellow-500 shadow-inner", "High": "bg-red-100 text-red-800 border border-red-500 shadow-inner"}
+            status_colors = {"Go": "bg-green-100 text-green-800 border border-green-500 shadow-inner", "Watch": "bg-orange-100 text-orange-800 border border-orange-500 shadow-inner", "No-Go": "bg-red-100 text-red-800 border border-red-500 shadow-inner"}
 
-            recommendation = yield from self._get_recommendation(item)
+            recommendation = self._get_recommendation(item)
 
             market_sources = item["market_data"]["sources"]
             compliance_sources = item["compliance_data"]["sources"]
@@ -386,7 +397,7 @@ class ReportingAgent:
             sources_html = "".join([f'<li class="truncate"><a href="{source}" target="_blank" class="text-blue-600 hover:underline">{source}</a></li>' for source in all_sources])
 
             report_sections_html += f"""
-            <div class="border-t-2 border-white bg-gradient-to-br from-{self.theme}-50/50 to-white p-6 rounded-lg shadow-md mb-8 break-inside-avoid">
+            <div class="border-t-2 border-white bg-gradient-to-br from-{self.theme}-50 via-white to-white p-6 rounded-lg shadow-md mb-8 break-inside-avoid">
                 <div class="flex justify-between items-start mb-4">
                     <h2 class="text-2xl font-bold text-gray-800">{item["category"]}</h2>
                     <div class="text-right">
@@ -397,7 +408,7 @@ class ReportingAgent:
                 <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
                     <div class="bg-{self.theme}-600 h-2.5 rounded-full" style="width: {item["opportunity_score"]}%"></div>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200 shadow-inner">
+                <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-300 shadow-inner">
                     <h3 class="font-bold text-lg text-gray-900 mb-2">Actionable Recommendation</h3>
                     <p class="text-gray-700">{recommendation}</p>
                 </div>
@@ -408,7 +419,7 @@ class ReportingAgent:
                         <p class="mb-2"><strong class="font-medium text-gray-700">Trends:</strong> {", ".join(market.get("emerging_trends", ["N/A"]))}</p>
                         <p class="text-sm text-gray-600 mt-2"><strong class="font-medium text-gray-700">Drivers:</strong> {market.get("key_drivers", "N/A")}</p>
                     </div>
-                    <div class="bg-green-50 border border-green-300 p-4 rounded-lg shadow-inner">
+                    <div class="bg-green-50 border border-green-500 p-4 rounded-lg shadow-inner">
                         <h4 class="font-semibold text-green-900 mb-3">Product Intelligence</h4>
                         <p class="mb-2"><strong class="font-medium text-gray-700">Trending Now:</strong> {", ".join(market.get("currently_trending_products", ["N/A"]))}</p>
                         <p><strong class="font-medium text-gray-700">Innovations:</strong> {", ".join(market.get("upcoming_innovations", ["N/A"]))}</p>
@@ -430,7 +441,7 @@ class ReportingAgent:
 
         supplier_html = ""
         if supplier_data:
-            supplier_html += '<div class="bg-white p-6 rounded-lg shadow-md mb-8 break-inside-avoid">'
+            supplier_html += '<div class="border-t-2 border-white bg-gradient-to-br from-'+self.theme+'-50 via-white to-white p-6 rounded-lg shadow-md mb-8 break-inside-avoid">'
             supplier_html += '<h2 class="text-2xl font-bold text-gray-800 mb-4">Potential Supplier Discovery</h2>'
             supplier_html += '<p class="text-gray-600 mb-6">The following potential B2B suppliers were identified for high-opportunity products. Further vetting is required.</p>'
             supplier_html += '<ul class="space-y-4">'
@@ -451,6 +462,8 @@ class ReportingAgent:
                 @import url('https://rsms.me/inter/inter.css');
                 html {{ font-family: 'Inter', sans-serif; }}
                 body {{ background-color: #f3f4f6; }}
+                *:-webkit-scrollbar {{ display: none; }}
+                * {{ -ms-overflow-style: none; scrollbar-width: none; }}
             </style>
         </head>
         <body class="p-4 sm:p-6 md:p-8">
@@ -462,7 +475,7 @@ class ReportingAgent:
                 </header>
                 <div class="mb-8 border-t-2 border-white bg-gradient-to-br from-{self.theme}-50 to-white rounded-lg bg-white p-6 shadow-md">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Executive Summary</h2>
-                    <div class="prose max-w-none text-gray-700">{executive_summary.strip().replace("\n", "<br>")}</div>
+                    <div class="prose max-w-none text-gray-700">{executive_summary}</div>
                 </div>
                 <main class="columns-1 md:columns-2 gap-8">
                     {supplier_html}
@@ -499,17 +512,20 @@ class Orchestrator:
             try:
                 yield {"type": "progress", "phase": "CATEGORY_START", "message": f"Starting to process category: {category}", "details": {"category": category}}
 
-                market_result = yield from self.market_agent.research_category(category)
-                compliance_result = yield from self.regulatory_agent.check_compliance(category, JURISDICTION)
-                competition_result = yield from self.competition_agent.analyze_competitors(category)
+                market_result = self.market_agent.research_category(category)
+                compliance_result = self.regulatory_agent.check_compliance(category, JURISDICTION)
+                competition_result = self.competition_agent.analyze_competitors(category)
+                print(f"Market Result: {market_result}")
+                print(f"Compliance Result: {compliance_result}")
+                print(f"Competition Result: {competition_result}")
 
                 market_analysis = market_result.get("analysis", {})
                 compliance_analysis = compliance_result.get("analysis", {})
                 competition_analysis = competition_result.get("analysis", {})
 
-                if "error" in market_analysis or "error" in compliance_analysis or "error" in competition_analysis:
-                    yield {"type": "warning", "phase": "CATEGORY_SKIP", "message": f"Skipping report generation for '{category}' due to data gathering or analysis errors.", "details": {"category": category}}
-                    continue
+                # if "error" in market_analysis or "error" in compliance_analysis or "error" in competition_analysis:
+                #     yield {"type": "warning", "phase": "CATEGORY_SKIP", "message": f"Skipping report generation for '{category}' due to data gathering or analysis errors.", "details": {"category": category}}
+                #     continue
 
                 yield {"type": "progress", "phase": "SCORE_CALCULATION", "message": f"Calculating opportunity score for: {category}", "details": {"category": category}}
                 opportunity_score = self.reporting_agent._calculate_opportunity_score(market_analysis, compliance_analysis)
@@ -536,10 +552,10 @@ class Orchestrator:
                 break
 
         yield {"type": "progress", "phase": "SUPPLIER_DISCOVERY", "message": "Starting supplier discovery for top-ranked products."}
-        supplier_data = yield from self.supplier_agent.find_suppliers(list(top_products_to_source))
+        supplier_data = self.supplier_agent.find_suppliers(list(top_products_to_source))
 
         yield {"type": "progress", "phase": "REPORT_GENERATION", "message": "Synthesizing all data and generating the final HTML report."}
         final_report = yield from self.reporting_agent.generate_report(all_category_data, supplier_data)
 
         yield {"type": "orchestrator_end", "phase": "WORKFLOW_COMPLETE", "message": "Report generation complete."}
-        return final_report
+        yield {"finalReport":final_report, "type": "report", "phase": "FINAL_REPORT", "message": "Final HTML report generated successfully."}

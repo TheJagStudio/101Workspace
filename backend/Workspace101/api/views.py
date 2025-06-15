@@ -1227,7 +1227,6 @@ class AIReportView(APIView):
                     if isinstance(status_update, dict):
                         if 'finalReport' in status_update:
                             final_report = status_update['finalReport']
-                        print("Status Update:", status_update["type"])
                         yield json.dumps(status_update) + "|||"
                 
                 if final_report:

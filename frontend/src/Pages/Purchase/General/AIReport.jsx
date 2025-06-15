@@ -174,6 +174,7 @@ const AIReport = () => {
 			{isStatusLoading && (
 				<div className="absolute top-0 left-0 h-full w-full overflow-hidden flex items-center justify-center backdrop-blur-md bg-gray-900/25">
 					<div className={`w-full max-w-xl p-6 relative rounded-2xl flex flex-col transition-all bg-gradient-to-br ${gradient} shadow-inner ${shadow} border ${border} border-dashed`}>
+						<video src="https://cdn.dribbble.com/userupload/17608183/file/original-a9b30b0413131d806620dc5db95c99f1.mp4" autoPlay loop muted className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-20" />
 						<div className="flex items-center mb-4">
 							<Icon className={`h-8 w-8 mr-3 ${text}`} />
 							<h1 className={`text-2xl font-bold ${text}`}>{loadingStatus.title}</h1>
@@ -183,13 +184,13 @@ const AIReport = () => {
 							<p className="text-lg font-medium text-gray-700">{loadingStatus.message}</p>
 							<p className="text-sm text-indigo-900 truncate mt-1 h-5">{loadingStatus.subMessage}</p>
 
-							<div className="mt-4 w-full bg-white rounded-full h-2.5">
+							{/* <div className="mt-4 w-full bg-white rounded-full h-2.5">
 								<div
 									className="bg-green-500 h-full rounded-full transition-all duration-500"
 									style={{ width: `${progress}%` }}
 								/>
 							</div>
-							<p className="text-right text-sm font-semibold text-gray-700 mt-1">{progress}% Complete</p>
+							<p className="text-right text-sm font-semibold text-gray-700 mt-1">{progress}% Complete</p> */}
 						</div>
 					</div>
 				</div>
