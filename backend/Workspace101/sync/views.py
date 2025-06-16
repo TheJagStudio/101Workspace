@@ -706,7 +706,7 @@ def syncSearchData(token):
     all_products = []
     while page <= totalPages:
         response = requests.get(
-            f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=10000",
+            f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=100000",
             headers=headers,
         )
         try:

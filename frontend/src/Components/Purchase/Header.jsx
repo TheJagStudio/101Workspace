@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAtom } from "jotai";
-import { userAtom, activeProductAtom } from "../../Variables";
+import { userAtom, activeProductAtom, searchAtom } from "../../Variables";
 
 const Header = ({ logout }) => {
 	const [user] = useAtom(userAtom);
 	const [activeProduct, setActiveProduct] = useAtom(activeProductAtom);
 	const [showProfileMenu, setShowProfileMenu] = useState(false);
-	const [search, setSearch] = useState("");
+	const [search, setSearch] = useAtom(searchAtom);
 	const [results, setResults] = useState([]);
 	const debounceRef = useRef();
 	const searchInputRef = useRef();
@@ -17,7 +17,26 @@ const Header = ({ logout }) => {
 		}
 	};
 
-	const handleSearchChange = (e) => {
+	const handleSearchChange = () => {
+		const value = search
+		setSearch(value);
+
+		if (debounceRef.current) clearTimeout(debounceRef.current);
+
+		debounceRef.current = setTimeout(() => {
+			if (value.trim().length === 0) {
+				setResults([]);
+				return;
+			}
+			fetch(`${import.meta.env.VITE_SERVER_URL}/api/search-products/?query=${encodeURIComponent(value)}`)
+				.then((res) => res.json())
+				.then((data) => {
+					setResults(data || []);
+				})
+				.catch(() => setResults([]));
+		}, 300);
+	};
+	const handleSearchChangeEvent = (e) => {
 		const value = e.target.value;
 		setSearch(value);
 
@@ -50,6 +69,10 @@ const Header = ({ logout }) => {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, []);
 
+	useEffect(() => {
+		handleSearchChange();
+	}, [search]);
+
 	return (
 		<div className="w-full h-16 bg-white border-b border-gray-200 shadow-lg flex items-center justify-between px-6 z-50">
 
@@ -59,9 +82,10 @@ const Header = ({ logout }) => {
 						type="text"
 						ref={searchInputRef}
 						placeholder="Search Products"
-						onChange={handleSearchChange}
+						onChange={handleSearchChangeEvent}
 						value={search}
-						autoComplete="off"
+						id="search"
+						autoComplete={false}
 						className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-indigo-500 text-sm"
 					/>
 					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500">

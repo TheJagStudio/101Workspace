@@ -30,7 +30,9 @@ from django.db.models.functions import TruncDate, Abs, Cast, Coalesce
 from api.ai_agent.agent import DjangoAIAgent
 import requests
 from django.contrib.auth.models import User
+from collections import defaultdict
 from django.db.models import Sum, F, Avg, Q, Count, When, Case, Value, DecimalField, CharField, OuterRef, Subquery, Max, DateTimeField, Prefetch
+from rest_framework import status
 
 client = typesense.Client(
     {
@@ -121,13 +123,13 @@ class InventorySummaryView(APIView):
         page_size = request.GET.get("page_size", 20)
         dataType = request.GET.get("dataType", "total")
         reverse_sort = request.GET.get("reverse_sort", "true").lower() == "true"
-        loadSubcategories = request.GET.get("loadSubcategories", "false").lower() == "true"
+        loadSubcategories = request.GET.get("loadSubcategories", "False").lower() == "true"
 
         products = Product.objects.all()
         if loadSubcategories:
-            categories = Category.objects.filter(parentId__isnull=False)
+            categories = Category.objects.filter(parentId__isNone=False)
         else:
-            categories = Category.objects.filter(parentId__isnull=True)
+            categories = Category.objects.filter(parentId__isNone=True)
 
         if sort_by == "closing_inventory":
             order_by = "availableQuantity"
@@ -370,9 +372,9 @@ class InventoryReplenishmentView(APIView):
       Options: 'closing_inventory', 'items_sold_per_day', 'items_sold', 'days_cover', 'average_cost', 'inbound_inventory', 'name'.
     - page (int, default=1): The page number for pagination.
     - page_size (int, default=20): The number of items per page.
-    - reverse_sort (str, default='true'): 'true' for descending order, 'false' for ascending.
-    - loadSubcategories (str, default='false'): Only applicable for 'category' report_type.
-      'true' to load subcategories, 'false' to load top-level categories.
+    - reverse_sort (str, default='true'): 'true' for descending order, 'False' for ascending.
+    - loadSubcategories (str, default='False'): Only applicable for 'category' report_type.
+      'true' to load subcategories, 'False' to load top-level categories.
     """
 
     permission_classes = [IsAuthenticated]
@@ -386,7 +388,7 @@ class InventoryReplenishmentView(APIView):
         page = int(request.GET.get("page", 1))
         page_size = int(request.GET.get("page_size", 20))
         reverse_sort = request.GET.get("reverse_sort", "true").lower() == "true"
-        load_subcategories = request.GET.get("loadSubcategories", "false").lower() == "true"
+        load_subcategories = request.GET.get("loadSubcategories", "False").lower() == "true"
 
         # 2. Convert date strings to timezone-aware datetime objects
         start_date = None
@@ -439,7 +441,7 @@ class InventoryReplenishmentView(APIView):
 
         if report_type == "product":
             # Start with all products
-            products_queryset = Product.objects.filter(productName__icontains="VAPORESSO")
+            products_queryset = Product.objects.filter(active=True)
             # Annotate each product with the required aggregated data for the period
             products_data = products_queryset.annotate(
                 # total_sales_quantity: Sum of quantities from all sales within the period
@@ -531,10 +533,10 @@ class InventoryReplenishmentView(APIView):
             categories_queryset = Category.objects.all()
             if not load_subcategories:
                 # Filter for top-level categories if subcategories are not requested
-                categories_queryset = categories_queryset.filter(parentId__isnull=True)
+                categories_queryset = categories_queryset.filter(parentId__isNone=True)
             else:
                 # Filter for subcategories if requested
-                categories_queryset = categories_queryset.filter(parentId__isnull=False)
+                categories_queryset = categories_queryset.filter(parentId__isNone=False)
 
             # Annotate categories with aggregated product data for the period
             # Aggregations are done across all products linked to each category via products_m2m
@@ -644,7 +646,7 @@ class DustyInventoryView(APIView):
         page_size = request.GET.get("page_size", 20)
         dataType = request.GET.get("dataType", "total")
         reverse_sort = request.GET.get("reverse_sort", "true").lower() == "true"
-        loadSubcategories = request.GET.get("loadSubcategories", "false").lower() == "true"
+        loadSubcategories = request.GET.get("loadSubcategories", "False").lower() == "true"
         #
 
         # Parse date filters
@@ -673,13 +675,13 @@ class DustyInventoryView(APIView):
             date_filter["insertedTimestamp__gte"] = start_date_default
             date_filter["insertedTimestamp__lte"] = end_date_default
 
-        # Base querysets
+        # fetch all products where availableQuantity is less than minQuantity
         products = Product.objects.all()
 
         if loadSubcategories:
-            categories = Category.objects.filter(parentId__isnull=False)
+            categories = Category.objects.filter(parentId__isNone=False)
         else:
-            categories = Category.objects.filter(parentId__isnull=True)
+            categories = Category.objects.filter(parentId__isNone=True)
 
         # Define sort field mapping
         if sort_by == "closing_inventory":
@@ -707,7 +709,7 @@ class DustyInventoryView(APIView):
         elif measure == "dusty":
             # Filter for items that haven't sold in the specified threshold days
             cutoff_date = timezone.now() - timedelta(days=days_threshold)
-            dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isnull=True)).values_list("productId", flat=True)
+            dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
             products = products.filter(productId__in=dusty_product_ids, availableQuantity__gt=0)
         else:
             return JsonResponse({"error": "Invalid measure type"}, status=400)
@@ -755,7 +757,7 @@ class DustyInventoryView(APIView):
                 product_aggregation_filter = Q(products_m2m__availableQuantity=0)
             elif measure == "dusty":
                 cutoff_date = timezone.now() - timedelta(days=days_threshold)
-                dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isnull=True)).values_list("productId", flat=True)
+                dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
                 product_aggregation_filter = Q(products_m2m__productId__in=dusty_product_ids, products_m2m__availableQuantity__gt=0)
 
             # Annotate categories with dusty inventory metrics
@@ -791,7 +793,7 @@ class DustyInventoryView(APIView):
             filtered_products = products
             if measure == "dusty":
                 cutoff_date = timezone.now() - timedelta(days=days_threshold)
-                dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isnull=True)).values_list("productId", flat=True)
+                dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
                 filtered_products = Product.objects.filter(productId__in=dusty_product_ids, availableQuantity__gt=0)
 
             total_closing_inventory = filtered_products.aggregate(total=Sum(Case(When(availableQuantity__lt=9999999, then=Abs(F("availableQuantity"))), default=0, output_field=DecimalField())))["total"] or 0
@@ -870,7 +872,7 @@ class DustyInventoryView(APIView):
                     category_products = Product.objects.filter(categories__in=[category.categoryId])
                     if measure == "dusty":
                         cutoff_date = timezone.now() - timedelta(days=days_threshold)
-                        dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isnull=True)).values_list("productId", flat=True)
+                        dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
                         category_products = category_products.filter(productId__in=dusty_product_ids, availableQuantity__gt=0)
 
                     # Calculate metrics for category
@@ -1018,17 +1020,29 @@ class POMakerView(APIView):
             vendor = Vendor.objects.filter(id=vendorId).first()
 
         def get_all_child_categories(parent_id):
-            children = Category.objects.filter(parentId=parent_id)
-            all_children = list(children)
-            for child in children:
-                all_children.extend(get_all_child_categories(child.categoryId))
-            return all_children
+            all_categories = Category.objects.all().iterator()
+
+            children_map = defaultdict(list)
+            for cat in all_categories:
+                if cat.parentId:
+                    children_map[cat.parentId].append(cat)
+
+            all_descendants = []
+            nodes_to_visit = list(children_map.get(parent_id, []))
+
+            while nodes_to_visit:
+                node = nodes_to_visit.pop()
+                all_descendants.append(node)
+                children = children_map.get(node.categoryId, [])
+                nodes_to_visit.extend(children)
+
+            return all_descendants
 
         categoryChildList = get_all_child_categories(category.categoryId)
         if not categoryChildList:
             categoryChildList = [category]
 
-        products = Product.objects.filter(categories__in=categoryChildList, availableQuantity__lt=10).distinct()
+        products = Product.objects.filter(categories__in=categoryChildList, availableQuantity__lt=F("minQuantity"), active=True, availableQuantity__gt=0, minQuantity__gt=0).distinct()
         if not products.exists():
             return JsonResponse({"error": "No products found for the given category."}, status=404)
         if vendorId is not None and vendorId != "":
@@ -1065,6 +1079,8 @@ class POMakerView(APIView):
                 "name": product.productName,
                 "sku": product.sku,
                 "costPrice": product.costPrice,
+                "availableQuantity": product.availableQuantity,
+                "minQuantity": product.minQuantity,
                 "standardPrice": product.standardPrice,
                 "profitPercentage": (product.standardPrice - product.costPrice) * 100 / product.standardPrice if product.standardPrice > 0 else 0,
                 "imageUrl": product.imageUrl,
@@ -1098,49 +1114,48 @@ class dataMaker(APIView):
         """
         Generate data for testing purposes.
         """
-        end_date = datetime.datetime.now()
-        start_date = end_date - timedelta(days=90)
+        path = "./extra/data/"
+        # get all files in the path
+        import os
 
-
-        sales_data = InvoiceLineItem.objects.filter(
-            orderId__insertedTimestamp__gte=start_date,
-            orderId__insertedTimestamp__lte=end_date,
-        ).values('productId__productId', 'productId__productName').annotate(
-            total_quantity_sold=Sum('quantity')
-        ).order_by('productId__productId')
-
-        if not sales_data.exists():
-            return JsonResponse({"message": "No sales data found for the last 3 months."}, status=404)
-
-   
-        number_of_days = (end_date - start_date).days
-
-        if number_of_days <= 0:
-            return JsonResponse({"error": "Invalid date range for calculation."}, status=400)
-
-
-        import csv
-        writer = csv.writer(open('sales_data.csv', 'w', newline='',encoding='utf-8'))
-        writer.writerow(['Product ID', 'Product Name', 'Total Quantity Sold (3 months)', 'Average Daily Sales', 'Minimum Quantity (10x Avg)'])
-
-        for row in sales_data:
-            product_id = row['productId__productId']
-            product_name = row['productId__productName']
-            total_quantity_sold = row['total_quantity_sold']
-            
-            # Handle cases where total_quantity_sold might be None or 0
-            if total_quantity_sold is None:
-                total_quantity_sold = 0
-
-            average_daily_sales = total_quantity_sold / number_of_days
-            min_quantity = 10 * average_daily_sales
-
-            # You might want to round min_quantity to an integer
-            min_quantity_rounded = round(min_quantity)
-
-            writer.writerow([product_id, product_name, total_quantity_sold, f"{average_daily_sales:.2f}", min_quantity_rounded])
-
-
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        productArr = []
+        i = 0
+        for file in files:
+            with open(os.path.join(path, file), "r") as f:
+                data = json.load(f)
+            product = Product.objects.get(productId=data["id"])
+            if product:
+                product.urlAlias = data["urlAlias"]
+                product.shortDescription = data["shortDescription"]
+                product.fullDescription = data["fullDescription"]
+                product.avgCostPrice = data["avgCostPrice"]
+                product.latestCostPrice = data["latestCostPrice"]
+                product.stdPrice = data["stdPrice"]
+                product.tier1Price = data["tier1Price"]
+                product.tier2Price = data["tier2Price"]
+                product.tier3Price = data["tier3Price"]
+                product.tier4Price = data["tier4Price"]
+                product.tier5Price = data["tier5Price"]
+                product.upc1 = data["upc1"]
+                product.upc2 = data["upc2"]
+                product.singleUpc = data["singleUpc"]
+                product.vendorUpc = data["vendorUpc"]
+                product.metaKeyword = data["metaKeyword"]
+                product.childProductList = data["childProductList"]
+                product.quantity = data["quantity"]
+                product.reorderQuantity = data["reorderQuantity"]
+                product.minQuantity = data["minQuantity"]
+                product.caseQuantity = data["caseQuantity"]
+                product.boxQuantity = data["boxQuantity"]
+                productArr.append(product)
+                i += 1
+            if len(productArr) == 1000:
+                Product.objects.bulk_update(productArr, ["urlAlias", "shortDescription", "fullDescription", "avgCostPrice", "latestCostPrice", "stdPrice", "tier1Price", "tier2Price", "tier3Price", "tier4Price", "tier5Price", "upc1", "upc2", "singleUpc", "vendorUpc", "metaKeyword", "childProductList", "quantity", "reorderQuantity", "minQuantity", "caseQuantity", "boxQuantity"])
+                productArr = []
+                print(f"Updated {i} products so far...")
+        if len(productArr) > 0:
+            Product.objects.bulk_update(productArr, ["urlAlias", "shortDescription", "fullDescription", "avgCostPrice", "latestCostPrice", "stdPrice", "tier1Price", "tier2Price", "tier3Price", "tier4Price", "tier5Price", "upc1", "upc2", "singleUpc", "vendorUpc", "metaKeyword", "childProductList", "quantity", "reorderQuantity", "minQuantity", "caseQuantity", "boxQuantity"])
         return JsonResponse({"message": "Data generation completed."})
 
 
@@ -1193,7 +1208,7 @@ class AIReportView(APIView):
         """
         Handle GET requests for AI reports.
         """
-        reportName  = request.GET.get("reportName", None)
+        reportName = request.GET.get("reportName", None)
         if not reportName:
             return Response({"error": "reportName parameter is required"}, status=400)
         try:
@@ -1203,7 +1218,7 @@ class AIReportView(APIView):
             return Response({"error": "Report not found"}, status=404)
         except Exception as e:
             return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
-    
+
     def post(self, request):
         """
         Handle POST requests to create or update AI reports.
@@ -1225,24 +1240,219 @@ class AIReportView(APIView):
 
                 for status_update in orchestrator.run():
                     if isinstance(status_update, dict):
-                        if 'finalReport' in status_update:
-                            final_report = status_update['finalReport']
+                        if "finalReport" in status_update:
+                            final_report = status_update["finalReport"]
                         yield json.dumps(status_update) + "|||"
-                
+
                 if final_report:
-                    AIReport.objects.update_or_create(
-                        reportName=report_name,
-                        defaults={'htmlContent': final_report}
-                    )
-                    yield json.dumps({
-                        "message": "Report generation completed",
-                        "report": final_report
-                    }) + "|||"
+                    AIReport.objects.update_or_create(reportName=report_name, defaults={"htmlContent": final_report})
+                    yield json.dumps({"message": "Report generation completed", "report": final_report}) + "|||"
 
             except Exception as e:
                 yield json.dumps({"error": f"An unexpected error occurred: {str(e)}"}) + "|||"
 
-        return StreamingHttpResponse(
-            streaming_content=stream_response(),
-            content_type='application/json'
-        )
+        return StreamingHttpResponse(streaming_content=stream_response(), content_type="application/json")
+
+
+# ===========================================================================================================
+
+
+class SummerSaleUserRegistration(APIView):
+    permission_classes = []
+
+    def _get_api_headers(self):
+        try:
+            token_obj = SalesgentToken.objects.first()
+            if not token_obj:
+                raise ValueError("Access Token not found in the database.")
+            access_token = token_obj.accessToken
+            return {
+                "Authorization": f"Bearer {access_token}",
+                "Accept": "application/json",
+            }
+        except Exception as e:
+            raise ConnectionError(f"Could not configure API headers: {e}")
+
+    def _create_erp_customer(self, customer_data, headers):
+        api_url = "https://erp.101distributorsga.com/api/customer"
+
+        payload = {
+            "customerDto": {
+                "tier": 1,
+                "paymentTermsId": 1,
+                "taxable": 1,
+                "active": True,
+                "saveProductPrice": True,
+                "signUpStoreId": 1,
+                "countryCode": 1,
+                "customerStoreAddressList": [
+                    {
+                        "countryId": 1,
+                        "active": True,
+                        "defaultAddress": True,
+                        "billingAddress": True,
+                        "shippingAddress": True,
+                        "sameAsBillingAddress": True,
+                        "address1": customer_data.get("address1"),
+                        "address2": customer_data.get("address2", ""),
+                        "city": customer_data.get("city"),
+                        "stateId": int(customer_data.get("stateId")),
+                        "state": customer_data.get("state"),
+                        "zip": customer_data.get("zip"),
+                        "county": customer_data.get("county", ""),
+                    }
+                ],
+                "firstName": customer_data.get("firstName"),
+                "lastName": customer_data.get("lastName"),
+                "email": customer_data.get("email"),
+                "phone": "".join(filter(str.isdigit, customer_data.get("phone", ""))),
+                "taxId": customer_data.get("taxId", ""),
+                "tobaccoId": customer_data.get("tobaccoId", ""),
+                "vaporTaxId": customer_data.get("vaporTaxId", ""),
+                "salesTaxId": customer_data.get("salesTaxId", ""),
+                "drivingLicenseNumber": customer_data.get("drivingLicenseNumber", ""),
+                "hempLicenseNumber": customer_data.get("hempLicenseNumber", ""),
+                "feinNumber": customer_data.get("feinNumber", ""),
+                "tobaccoLicenseExpirationDate": customer_data.get("tobaccoLicenseExpirationDate", ""),
+                "vaporTaxExpirationDate": customer_data.get("vaporTaxExpirationDate", ""),
+                "salesTaxIdExpirationDate": customer_data.get("salesTaxIdExpirationDate", ""),
+                "voidCheckNumber": customer_data.get("voidCheckNumber", ""),
+                "hempLicenseExpirationDate": customer_data.get("hempLicenseExpirationDate", ""),
+                "verified": customer_data.get("verified", ""),
+                "viewSpecificCategory": customer_data.get("viewSpecificCategory", ""),
+                "viewSpecificProduct": customer_data.get("viewSpecificProduct", ""),
+                "company": customer_data.get("company"),
+                "dbaName": customer_data.get("dbaName", ""),
+                "notes": customer_data.get("notes", ""),
+                "primarySalesRepresentativeId": customer_data.get("primarySalesRepresentativeId", ""),
+                "primaryBusiness": customer_data.get("primaryBusiness", ""),
+                "websiteReference": "Word of mouth",
+                "createdBy": 20,
+            }
+        }
+
+        response = requests.post(api_url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()
+
+    def _upload_erp_document(self, customer_id, file_field_name, file_object, headers):
+        DOC_TYPE_MAP = {
+            "ach_form_document": {"id": 60},
+            "business_license_document": {"id": 55},
+            "credit_card_auth_document": {"id": 61},
+            "driving_license_document": {"id": 58},
+            "fein_license_document": {"id": 56},
+            "hemp_license_document": {"id": 220},
+            "sales_tax_certificate_document": {"id": 57},
+            "tobacco_license_document": {"id": 54},
+            "void_check_document": {"id": 59},
+        }
+        api_url = "https://erp.101distributorsga.com/api/attachment"
+        doc_meta = DOC_TYPE_MAP.get(file_field_name)
+        if not doc_meta:
+            return {"status": "error", "message": f"Unknown document type: {file_field_name}"}
+
+        attachment_obj_data = {
+            "name": file_object.name,
+            "recordId": customer_id,
+            "moduleId": 4,
+            "fieldName": "customer_document",
+            "fieldId": 651,
+            "active": True,
+            "documentTypeId": doc_meta["id"],
+        }
+
+        files_payload = {
+            "attachmentObj": (None, json.dumps(attachment_obj_data), "application/json"),
+            "file": (file_object.name, file_object.read(), file_object.content_type),
+        }
+
+        upload_headers = headers.copy()
+
+        response = requests.post(api_url, headers=upload_headers, files=files_payload)
+        response.raise_for_status()
+        return {"status": "success", "data": response.json()}
+
+    def _validate_request_data(self, data, files):
+        DOC_TYPE_MAP = {
+            "ach_form_document": {"id": 60},
+            "business_license_document": {"id": 55},
+            "credit_card_auth_document": {"id": 61},
+            "driving_license_document": {"id": 58},
+            "fein_license_document": {"id": 56},
+            "hemp_license_document": {"id": 220},
+            "sales_tax_certificate_document": {"id": 57},
+            "tobacco_license_document": {"id": 54},
+            "void_check_document": {"id": 59},
+        }
+        errors = {}
+        required_fields = ["firstName", "lastName", "email", "phone", "company", "address1", "city", "stateId", "state", "zip"]
+
+        for field in required_fields:
+            if not data.get(field):
+                errors[field] = "This field may not be blank."
+
+        if data.get("email") and "@" not in data.get("email"):
+            errors["email"] = "Enter a valid email."
+
+        try:
+            if data.get("stateId"):
+                int(data["stateId"])
+        except (ValueError, TypeError):
+            errors["stateId"] = "A valid integer is required."
+
+        for doc_name in DOC_TYPE_MAP.keys():
+            if doc_name in files and files[doc_name].size == 0:
+                errors[doc_name] = "The submitted file is empty."
+
+        return errors
+
+    def post(self, request):
+        data = request.data
+        files = request.FILES
+        DOC_TYPE_MAP = {
+            "ach_form_document": {"id": 60},
+            "business_license_document": {"id": 55},
+            "credit_card_auth_document": {"id": 61},
+            "driving_license_document": {"id": 58},
+            "fein_license_document": {"id": 56},
+            "hemp_license_document": {"id": 220},
+            "sales_tax_certificate_document": {"id": 57},
+            "tobacco_license_document": {"id": 54},
+            "void_check_document": {"id": 59},
+        }
+
+        validation_errors = self._validate_request_data(data, files)
+        if validation_errors:
+            return Response(validation_errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            headers = self._get_api_headers()
+
+            created_customer_response = self._create_erp_customer(data, headers)
+            customer_id = created_customer_response.get("result", {}).get("id")
+
+            if not customer_id:
+                return Response({"error": "Failed to create customer or retrieve customer ID from ERP response."}, status=status.HTTP_502_BAD_GATEWAY)
+
+            upload_results = {}
+            for field_name, file_obj in files.items():
+                if field_name in DOC_TYPE_MAP:
+                    try:
+                        result = self._upload_erp_document(customer_id, field_name, file_obj, headers)
+                        upload_results[field_name] = result
+                    except Exception as e:
+                        upload_results[field_name] = {"status": "error", "message": f"Upload failed for {file_obj.name}: {str(e)}"}
+
+            return Response({"message": "User registration successful.", "customer_data": created_customer_response, "document_upload_results": upload_results}, status=status.HTTP_201_CREATED)
+
+        except requests.exceptions.HTTPError as err:
+            try:
+                error_details = err.response.json()
+            except json.JSONDecodeError:
+                error_details = f"HTTP Error: {err.response.status_code} - {err.response.text}"
+            return Response({"error": error_details}, status=err.response.status_code)
+        except (requests.exceptions.RequestException, ConnectionError) as err:
+            return Response({"error": f"API Connection Error: {err}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as err:
+            return Response({"error": f"An unexpected error occurred: {err}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

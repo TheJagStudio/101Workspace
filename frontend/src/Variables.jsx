@@ -30,3 +30,4 @@ export const errorsAtom = atom([])
 export const warningsAtom = atom([])
 export const successAtom = atom([])
 export const infoAtom = atom([])
+export const searchAtom = atom("");

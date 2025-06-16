@@ -60,4 +60,5 @@ urlpatterns = [
     ),
     path("dataMaker/", views.dataMaker.as_view(), name="dataMaker"),
     path("vacuum-sqlite/", views.vacuum_sqlite_database.as_view(), name="vacuum_sqlite"),
+    path("summer-sale-registration/", views.SummerSaleUserRegistration.as_view(), name="SummerSaleUserRegistrationView"),
 ]

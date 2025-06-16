@@ -29,9 +29,9 @@ SECRET_KEY = "django-insecure-0mk0!p468jvsr@i=rt=d(_etd$ej2hzk--vo1&cxrgd4-ex1!f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*","217.196.49.245","workspace.101distributors.com"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*","217.196.49.245","workspace.101distributors.com","101distributors.com"]
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173","http://217.196.49.245:5173","http://217.196.49.245:9876","http://workspace.101distributors.com","https://workspace.101distributors.com"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173","http://217.196.49.245:5173","http://217.196.49.245:9876","http://workspace.101distributors.com","https://workspace.101distributors.com","https://101distributors.com"]
 CORS_ALLOW_CREDENTIALS = True
 
 
@@ -171,7 +171,7 @@ from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,

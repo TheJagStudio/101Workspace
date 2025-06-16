@@ -2,7 +2,7 @@ import { useState, useEffect, use } from 'react';
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from '../../../utils/api';
 import { useAtom } from 'jotai';
-import { glossaryAtom, isSidebarOpenAtom, warningsAtom, infoAtom } from "../../../Variables";
+import {  isSidebarOpenAtom, warningsAtom, infoAtom,searchAtom } from "../../../Variables";
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
@@ -61,7 +61,7 @@ const VendorList = ({ data, setSelectedVendors, index }) => {
 				</svg>
 			</button>
 			{openDropdown && (
-				<div className="absolute -left-1 z-20 pt-1 pl-1 w-full ">
+				<div className={"absolute -left-1 z-20  pl-1 w-full " + (index > 4 ? "bottom-full pb-1" : "top-full pt-1")}>
 					<div className='py-1 bg-white border border-gray-300 rounded shadow-xl max-h-40 overflow-auto'>
 						{data.map((item, idx) => {
 							return (
@@ -80,7 +80,7 @@ const VendorList = ({ data, setSelectedVendors, index }) => {
 				</div>
 			)}
 			{openDropdown && (
-				<div className='absolute z-20 top-0 -left-0 pr-1 -translate-x-full'>
+				<div className={'absolute z-20 -left-0 pr-1 -translate-x-full' + (index > 4 ? " bottom-0 pb-1" : " top-0")}>
 					<div className='flex flex-col max-w-48 w-fit h-fit overflow-hidden bg-white border border-gray-300 rounded-md shadow-xl items-center justify-start'>
 						<div className="text-gray-700 w-48 text-xs font-bold bg-gray-100 p-2 border-b border-gray-300 ">{hoveredVendor?.name}</div>
 						<div className='flex flex-col items-center justify-start w-48 overflow-y-auto max-h-36'>
@@ -125,6 +125,7 @@ const VendorList = ({ data, setSelectedVendors, index }) => {
 
 const PO = () => {
 	const [loading, setLoading] = useState(false);
+	const [search, setSearch] = useAtom(searchAtom);
 	const [categories, setCategories] = useState([]);
 	const [currentMasterCategory, setCurrentMasterCategory] = useState(null);
 	const [currentCategory, setCurrentCategory] = useState(null);
@@ -174,6 +175,9 @@ const PO = () => {
 			}
 			setSelectedVendors(selectedVendorsTemp);
 			setTotalPages(response["totalPages"]);
+			if (response.data.length === 0 && page > 1) {
+				setPage(1)
+			}
 			setLoading(false);
 		} catch (error) {
 			console.error('Error fetching PO data:', error);
@@ -300,7 +304,7 @@ const PO = () => {
 					Search
 				</button>
 			</div>
-			<div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
+			<div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-fit max-h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
 				{loading && (
 					<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/25 backdrop-blur-md z-20">
 						<Loader height={60} width={60} />
@@ -312,6 +316,7 @@ const PO = () => {
 							<tr className="border-b border-gray-300 bg-gray-100 leading-4">
 								<th className="text-center py-4 px-1">SR</th>
 								<th className="text-left p-4 border-l border-gray-300 w-[50%]">Product</th>
+								<th className="text-center p-4 border-l border-gray-300">Available Quantity/<br/>Min Quantity</th>
 								<th className="text-center p-4 border-l border-gray-300">Cost Price</th>
 								<th className="text-center p-4 border-l border-gray-300">
 									Selling Price
@@ -329,16 +334,20 @@ const PO = () => {
 									<td className="py-2 px-1 w-fit text-center">
 										<p className="text-sm text-gray-600">{item.index}</p>
 									</td>
-									<td className={"py-2 px-2 w-[50%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
+									<td onClick={()=>{
+										setSearch(item?.name);
+										document.querySelector("#search")?.focus();
+									}} className={"py-2 px-2 w-[50%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
 										<div className="flex items-center">
-											{pageSize <= 50 && <img src={item?.imageUrl || "/static/images/default.png"} alt="" className="w-8 h-8 mr-2" />}
-											<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer mix-blend-darken">
+											{pageSize <= 50 && <img src={item?.imageUrl || "/static/images/default.png"} alt="" className="w-8 h-8 mr-2 mix-blend-multiply" />}
+											<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
 												({item?.id})
 											</a>
 											<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
 										</div>
 									</td>
-									<td className={"text-center py-2 px-2 border-l items-start " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatNumber(item?.costPrice)}</td>
+									<td className={"text-center py-2 px-2 border-l items-start " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatNumber(item?.availableQuantity)}/{formatNumber(item?.minQuantity)}</td>
+									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.costPrice)}</td>
 									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.standardPrice)}</td>
 									<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatPercentage(item?.profitPercentage)}</td>
 									<td className={"text-left py-1 px-1 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>

@@ -4,8 +4,8 @@ from django.contrib import admin
 
 class Product(models.Model):
     productId = models.IntegerField(primary_key=True)
-    sku = models.CharField(max_length=500,null=True, blank=True)
-    upc = models.CharField(max_length=500,null=True, blank=True)
+    sku = models.CharField(max_length=500, null=True, blank=True)
+    upc = models.CharField(max_length=500, null=True, blank=True)
     productName = models.CharField(max_length=255)
     availableQuantity = models.IntegerField(null=True, blank=True)
     imageUrl = models.URLField(max_length=500, blank=True, null=True)
@@ -30,6 +30,28 @@ class Product(models.Model):
     TotalGrossMarginPrecentage = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     TotalRevenue = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     inventoryList = models.ManyToManyField("InventoryData", related_name="products", blank=True)
+    urlAlias = models.CharField(max_length=500, null=True, blank=True)
+    shortDescription = models.TextField(null=True, blank=True)
+    fullDescription = models.TextField(null=True, blank=True)
+    avgCostPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    latestCostPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    stdPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tier1Price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tier2Price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tier3Price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tier4Price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tier5Price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    upc1 = models.CharField(max_length=20, null=True, blank=True)
+    upc2 = models.CharField(max_length=20, null=True, blank=True)
+    singleUpc = models.CharField(max_length=20, null=True, blank=True)
+    vendorUpc = models.CharField(max_length=20, null=True, blank=True)
+    metaKeyword = models.CharField(max_length=500, null=True, blank=True)
+    childProductList = models.JSONField(null=True, blank=True)
+    quantity = models.IntegerField(null=True, blank=True)
+    reorderQuantity = models.IntegerField(null=True, blank=True)
+    minQuantity = models.IntegerField(null=True, blank=True)
+    caseQuantity = models.IntegerField(null=True, blank=True)
+    boxQuantity = models.IntegerField(null=True, blank=True)
     lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     def __str__(self):
@@ -155,6 +177,7 @@ class Vendor(models.Model):
     def __str__(self):
         return str(self.name)
 
+
 class Customer(models.Model):
     id = models.AutoField(primary_key=True)
     insertedTimestamp = models.DateTimeField(null=True, blank=True)
@@ -170,7 +193,7 @@ class Customer(models.Model):
     dueAmount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     excessAmount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     active = models.BooleanField(default=True)
-    verified    = models.BooleanField(default=False)
+    verified = models.BooleanField(default=False)
     viewSpecificCategory = models.BooleanField(default=False)
     viewSpecificProduct = models.BooleanField(default=False)
     salesRepresentativeName = models.CharField(max_length=255, null=True, blank=True)
@@ -184,7 +207,7 @@ class Customer(models.Model):
     sendDuePaymentReminder = models.BooleanField(default=False)
     rewardable = models.BooleanField(default=False)
     saveProductPrice = models.BooleanField(default=False)
-        
+
     def __str__(self):
         """String representation of the Customer model."""
         return f"{self.name} ({self.company or 'N/A'})"
@@ -192,8 +215,7 @@ class Customer(models.Model):
     class Meta:
         verbose_name = "Customer"
         verbose_name_plural = "Customers"
-        ordering = ['name']
-
+        ordering = ["name"]
 
 
 class Invoice(models.Model):
@@ -237,7 +259,8 @@ class Invoice(models.Model):
 
     def __str__(self):
         return str(self.id)
-    
+
+
 class ProductHistory(models.Model):
     productId = models.ForeignKey(
         Product,
@@ -340,27 +363,28 @@ class PurchaseHistory(models.Model):
         db_column="productId",
         related_name="purchase_history",
     )
-    upc = models.CharField(max_length=500,null=True,blank=True)
-    sku = models.CharField(max_length=500,null=True,blank=True)
+    upc = models.CharField(max_length=500, null=True, blank=True)
+    sku = models.CharField(max_length=500, null=True, blank=True)
     name = models.CharField(max_length=255)
-    purchasedQuantity = models.IntegerField(null=True,blank=True)
-    passedQuantity = models.IntegerField(null=True,blank=True)
-    failedQuantity = models.IntegerField(null=True,blank=True)
-    costPrice = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
-    totalCostPrice = models.DecimalField(max_digits=12, decimal_places=2,null=True,blank=True)
+    purchasedQuantity = models.IntegerField(null=True, blank=True)
+    passedQuantity = models.IntegerField(null=True, blank=True)
+    failedQuantity = models.IntegerField(null=True, blank=True)
+    costPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    totalCostPrice = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     vendorId = models.ForeignKey(
         Vendor,
         on_delete=models.CASCADE,
         db_column="vendorId",
         related_name="purchase_history",
     )
-    vendorName = models.CharField(max_length=255,null=True,blank=True)
-    billId = models.CharField(max_length=500,null=True,blank=True)
-    purchaseOrderInsertedTimestamp = models.DateTimeField(null=True,blank=True)
+    vendorName = models.CharField(max_length=255, null=True, blank=True)
+    billId = models.CharField(max_length=500, null=True, blank=True)
+    purchaseOrderInsertedTimestamp = models.DateTimeField(null=True, blank=True)
     billInsertedTimestamp = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.purchaseOrderId} - {self.productId.productName}"
+
 
 class SalesgentToken(models.Model):
     id = models.AutoField(primary_key=True)
@@ -371,11 +395,12 @@ class SalesgentToken(models.Model):
     def __str__(self):
         return self.accessToken
 
+
 class AIReport(models.Model):
     reportName = models.CharField(max_length=255, unique=True)
     htmlContent = models.TextField()
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.reportName
