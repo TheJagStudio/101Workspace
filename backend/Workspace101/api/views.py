@@ -1280,7 +1280,7 @@ class SummerSaleUserRegistration(APIView):
             "customerDto": {
                 "tier": 1,
                 "paymentTermsId": 1,
-                "taxable": customer_data.get("taxable", 1),
+                "taxable": int(customer_data.get("taxable", 1)),
                 "active": True,
                 "saveProductPrice": True,
                 "signUpStoreId": 1,
