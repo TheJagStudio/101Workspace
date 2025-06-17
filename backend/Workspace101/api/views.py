@@ -1276,12 +1276,13 @@ class SummerSaleUserRegistration(APIView):
 
     def _create_erp_customer(self, customer_data, headers):
         api_url = "https://erp.101distributorsga.com/api/customer"
-
+        state_stateId_map = {"Alabama": "1", "Alaska": "2", "Arizona": "3", "Arkansas": "4", "California": "5", "Colorado": "6", "Connecticut": "7", "Delaware": "8", "District Of Columbia": "9", "Florida": "10", "Georgia": "11", "Hawaii": "12", "Idaho": "13", "Illinois": "14", "Indiana": "15", "Iowa": "16", "Kansas": "17", "Kentucky": "18", "Louisiana": "19", "Maine": "20", "Maryland": "21", "Massachusetts": "22", "Michigan": "23", "Minnesota": "24", "Mississippi": "25", "Missouri": "26", "Montana": "27", "Nebraska": "28", "Nevada": "29", "New Hampshire": "30", "New Jersey": "31", "New Mexico": "32", "New York": "33", "North Carolina": "34", "North Dakota": "35", "Ohio": "36", "Oklahoma": "37", "Oregon": "38", "Pennsylvania": "39", "Rhode Island": "40", "South Carolina": "41", "South Dakota": "42", "Tennessee": "43", "Texas": "44", "Utah": "45", "Vermont": "46", "Virginia": "47", "Washington": "48", "West Virginia": "49", "Wisconsin": "50", "Wyoming": "51", "American Samoa": "52", "Guam": "53", "Northern Mariana Islands": "54", "Puerto Rico": "55", "United States Minor Outlying Islands": "56", "Virgin Islands": "57"}
+        state_id = state_stateId_map.get(str(customer_data.get("address_1[state]", "")).strip(), "Georgia")
         payload = {
             "customerDto": {
                 "tier": 1,
                 "paymentTermsId": 1,
-                "taxable": int(customer_data.get("taxable", 1)),
+                "taxable": 1 if state_id == "11" else 0,
                 "active": True,
                 "saveProductPrice": True,
                 "signUpStoreId": 1,
@@ -1297,7 +1298,7 @@ class SummerSaleUserRegistration(APIView):
                         "address1": customer_data.get("address_1[address_line_1]"),
                         "address2": customer_data.get("address_1[address_line_2]", ""),
                         "city": customer_data.get("address_1[city]"),
-                        "stateId": int(customer_data.get("stateId"), 11),
+                        "stateId": int(state_id, 11),
                         "state": customer_data.get("address_1[state]"),
                         "zip": customer_data.get("address_1[zip]"),
                         "county": customer_data.get("county", ""),
