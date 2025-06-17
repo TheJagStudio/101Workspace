@@ -33,6 +33,7 @@ from django.contrib.auth.models import User
 from collections import defaultdict
 from django.db.models import Sum, F, Avg, Q, Count, When, Case, Value, DecimalField, CharField, OuterRef, Subquery, Max, DateTimeField, Prefetch
 from rest_framework import status
+from django.shortcuts import redirect
 
 client = typesense.Client(
     {
@@ -1293,36 +1294,36 @@ class SummerSaleUserRegistration(APIView):
                         "billingAddress": True,
                         "shippingAddress": True,
                         "sameAsBillingAddress": True,
-                        "address1": customer_data.get("address1"),
-                        "address2": customer_data.get("address2", ""),
-                        "city": customer_data.get("city"),
+                        "address1": customer_data.get("address_1[address_line_1]"),
+                        "address2": customer_data.get("address_1[address_line_2]", ""),
+                        "city": customer_data.get("address_1[city]"),
                         "stateId": int(customer_data.get("stateId")),
-                        "state": customer_data.get("state"),
-                        "zip": customer_data.get("zip"),
+                        "state": customer_data.get("address_1[state]"),
+                        "zip": customer_data.get("address_1[zip]"),
                         "county": customer_data.get("county", ""),
                     }
                 ],
-                "firstName": customer_data.get("firstName"),
-                "lastName": customer_data.get("lastName"),
+                "firstName": customer_data.get("names[first_name]"),
+                "lastName": customer_data.get("names[last_name]"),
                 "email": customer_data.get("email"),
-                "phone": int(customer_data.get("phone", "")),
+                "phone": int(customer_data.get("phone", "").replace("-", "")),
                 "taxId": customer_data.get("taxId", ""),
-                "tobaccoId": customer_data.get("tobaccoId", ""),
+                "tobaccoId": customer_data.get("input_text_3", ""),
                 "vaporTaxId": customer_data.get("vaporTaxId", ""),
                 "salesTaxId": customer_data.get("salesTaxId", ""),
-                "drivingLicenseNumber": customer_data.get("drivingLicenseNumber", ""),
-                "hempLicenseNumber": customer_data.get("hempLicenseNumber", ""),
-                "feinNumber": customer_data.get("feinNumber", ""),
+                "drivingLicenseNumber": customer_data.get("input_text_7", ""),
+                "hempLicenseNumber": customer_data.get("input_text_5", ""),
+                "feinNumber": customer_data.get("input_text_4", ""),
                 "tobaccoLicenseExpirationDate": customer_data.get("tobaccoLicenseExpirationDate", ""),
                 "vaporTaxExpirationDate": customer_data.get("vaporTaxExpirationDate", ""),
                 "salesTaxIdExpirationDate": customer_data.get("salesTaxIdExpirationDate", ""),
-                "voidCheckNumber": customer_data.get("voidCheckNumber", ""),
+                "voidCheckNumber": customer_data.get("input_text_6", ""),
                 "hempLicenseExpirationDate": customer_data.get("hempLicenseExpirationDate", ""),
                 "verified": True,
                 "viewSpecificCategory": True,
                 "viewSpecificProduct": True,
-                "company": customer_data.get("company"),
-                "dbaName": customer_data.get("dbaName", ""),
+                "company": customer_data.get("input_text"),
+                "dbaName": customer_data.get("input_text_1", ""),
                 "notes": customer_data.get("notes", ""),
                 "primarySalesRepresentativeId": customer_data.get("primarySalesRepresentativeId", ""),
                 "primaryBusiness": customer_data.get("primaryBusiness", ""),
@@ -1330,6 +1331,60 @@ class SummerSaleUserRegistration(APIView):
                 "createdBy": 20,
             }
         }
+        # payload = {
+        #     "customerDto": {
+        #         "tier": 1,
+        #         "paymentTermsId": 1,
+        #         "taxable": int(customer_data.get("taxable", 1)),
+        #         "active": True,
+        #         "saveProductPrice": True,
+        #         "signUpStoreId": 1,
+        #         "countryCode": 1,
+        #         "customerStoreAddressList": [
+        #             {
+        #                 "countryId": 1,
+        #                 "active": True,
+        #                 "defaultAddress": True,
+        #                 "billingAddress": True,
+        #                 "shippingAddress": True,
+        #                 "sameAsBillingAddress": True,
+        #                 "address1": customer_data.get("address1"),
+        #                 "address2": customer_data.get("address2", ""),
+        #                 "city": customer_data.get("city"),
+        #                 "stateId": int(customer_data.get("stateId")),
+        #                 "state": customer_data.get("state"),
+        #                 "zip": customer_data.get("zip"),
+        #                 "county": customer_data.get("county", ""),
+        #             }
+        #         ],
+        #         "firstName": customer_data.get("firstName"),
+        #         "lastName": customer_data.get("lastName"),
+        #         "email": customer_data.get("email"),
+        #         "phone": int(customer_data.get("phone", "")),
+        #         "taxId": customer_data.get("taxId", ""),
+        #         "tobaccoId": customer_data.get("tobaccoId", ""),
+        #         "vaporTaxId": customer_data.get("vaporTaxId", ""),
+        #         "salesTaxId": customer_data.get("salesTaxId", ""),
+        #         "drivingLicenseNumber": customer_data.get("drivingLicenseNumber", ""),
+        #         "hempLicenseNumber": customer_data.get("hempLicenseNumber", ""),
+        #         "feinNumber": customer_data.get("feinNumber", ""),
+        #         "tobaccoLicenseExpirationDate": customer_data.get("tobaccoLicenseExpirationDate", ""),
+        #         "vaporTaxExpirationDate": customer_data.get("vaporTaxExpirationDate", ""),
+        #         "salesTaxIdExpirationDate": customer_data.get("salesTaxIdExpirationDate", ""),
+        #         "voidCheckNumber": customer_data.get("voidCheckNumber", ""),
+        #         "hempLicenseExpirationDate": customer_data.get("hempLicenseExpirationDate", ""),
+        #         "verified": True,
+        #         "viewSpecificCategory": True,
+        #         "viewSpecificProduct": True,
+        #         "company": customer_data.get("company"),
+        #         "dbaName": customer_data.get("dbaName", ""),
+        #         "notes": customer_data.get("notes", ""),
+        #         "primarySalesRepresentativeId": customer_data.get("primarySalesRepresentativeId", ""),
+        #         "primaryBusiness": customer_data.get("primaryBusiness", ""),
+        #         "websiteReference": "Word of mouth",
+        #         "createdBy": 20,
+        #     }
+        # }
 
         response = requests.post(api_url, headers=headers, json=payload)
         response.raise_for_status()
@@ -1434,17 +1489,27 @@ class SummerSaleUserRegistration(APIView):
 
             if not customer_id:
                 return Response({"error": "Failed to create customer or retrieve customer ID from ERP response."}, status=status.HTTP_502_BAD_GATEWAY)
-
+            field_DOC_map = {
+                "achFormDocument": "ach_form_document",
+                "file-upload": "business_license_document",
+                "creditCardAuthDocument": "credit_card_auth_document",
+                "file-upload_5": "driving_license_document",
+                "file-upload_2": "fein_license_document",
+                "file-upload_3": "hemp_license_document",
+                "salesTaxCertificateDocument": "sales_tax_certificate_document",
+                "file-upload_1": "tobacco_license_document",
+                "file-upload_4": "void_check_document",
+            }
             upload_results = {}
             for field_name, file_obj in files.items():
-                if field_name in DOC_TYPE_MAP:
+                if field_DOC_map[field_name] in DOC_TYPE_MAP:
                     try:
                         result = self._upload_erp_document(customer_id, field_name, file_obj, headers)
                         upload_results[field_name] = result
                     except Exception as e:
                         upload_results[field_name] = {"status": "error", "message": f"Upload failed for {file_obj.name}: {str(e)}"}
 
-            return Response({"message": "User registration successful.", "customer_data": created_customer_response, "document_upload_results": upload_results}, status=status.HTTP_201_CREATED)
+            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
 
         except requests.exceptions.HTTPError as err:
             try:

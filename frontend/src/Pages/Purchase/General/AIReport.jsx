@@ -139,6 +139,14 @@ const AIReport = () => {
 								setTimeout(() => setIsStatusLoading(false), 5000);
 								return;
 							}
+
+							if (data.phase === 'FINAL_REPORT') {
+								setLoadingStatus({ title: "Workflow Completed", message: "Report generation successful!", subMessage: "", type: 'status' });
+								// Keep modal open for a few seconds to show success
+								setReport(data.finalReport);
+								setTimeout(() => setIsStatusLoading(false), 5000);
+								return;
+							}
 						}
 
 					} catch (e) {

@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import time
 import traceback
+import re
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -24,14 +25,66 @@ PRODUCT_CATEGORIES = ["Vape Devices and Vaporizers (Disposable and Refillable)",
 JURISDICTION = "Georgia, USA"
 
 
+# def SearpApiFunction(query: str, max_results: int = 10):
+#     url = "https://google.serper.dev/search"
+
+#     payload = json.dumps({"q": query, "location": "Atlanta, Georgia, United States"})
+#     headers = {"X-API-KEY": searpApi, "Content-Type": "application/json"}
+
+#     response = requests.request("POST", url, headers=headers, data=payload)
+#     return response.json().get("organic", [])[:max_results]
+
+def parse_search_results(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    search_results = []
+    result_items = soup.find_all('li', class_='b_algo')
+    for item in result_items:
+        try:
+            link_tag = item.find('div', class_='b_tpcn').find('a')
+            link = link_tag['href']
+            title_tag = item.find('h2').find('a')
+            title = title_tag.text.strip()
+            description_tag = item.find('div', class_='b_caption')
+            description = description_tag.find('p').text.strip() if description_tag else ""
+
+            search_results.append({
+                'link': link,
+                'title': title,
+                'snippet': description,
+            })
+        except AttributeError:
+            print("Skipping result due to missing elements.")
+            continue
+    return search_results
+def scrape_bing_results(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
+        response = requests.get(url=url, headers=headers)
+
+        soup_bing = BeautifulSoup(response.content.decode('utf-8'), "lxml")
+        return soup_bing
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching or parsing URL: {e}")
+        return None
+    
 def SearpApiFunction(query: str, max_results: int = 10):
-    url = "https://google.serper.dev/search"
-
-    payload = json.dumps({"q": query, "location": "Atlanta, Georgia, United States"})
-    headers = {"X-API-KEY": searpApi, "Content-Type": "application/json"}
-
-    response = requests.request("POST", url, headers=headers, data=payload)
-    return response.json().get("organic", [])[:max_results]
+    url = f"https://www.bing.com/search?q={query}"
+    soup = scrape_bing_results(url)
+    if soup:
+        results = parse_search_results(soup.prettify())
+        tempResults = []
+        for result in results:
+            response = requests.get(result['link'])
+            url = response.text.split('var u = "')[1].split('"')[0]
+            tempResults.append({
+                'link': url,
+                'title': result['title'],
+                'snippet': result['snippet'],
+            })
+        # print(f"Found {len(results)} results for query: {query}")
+        return tempResults[:max_results]
+    else:
+        return []
 
 class WebSearchTool:
     """A tool for performing general web searches using DuckDuckGo."""
@@ -59,23 +112,37 @@ class SocialMediaSearchTool:
             return []
 
 
+# class WebScraperTool:
+#     """A tool for scraping and cleaning content from a URL."""
+
+#     def scrape(self, url: str):
+#         # yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Scraping URL: {url}", "details": {"url": url}}
+#         try:
+#             payload = json.dumps({
+#             "url":  url,
+#             })
+#             headers = {
+#                 'X-API-KEY':  searpApi,
+#                 'Content-Type': 'application/json'
+#             }
+
+#             response = requests.request("POST", "https://scrape.serper.dev", headers=headers, data=payload)
+
+#             return response.json().get("text", "")[:8000]
+#         except requests.RequestException as e:
+#             # yield {"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error scraping URL: {url}", "details": {"url": url, "error": str(e)}}
+#             return None
 class WebScraperTool:
     """A tool for scraping and cleaning content from a URL."""
-
     def scrape(self, url: str):
         # yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Scraping URL: {url}", "details": {"url": url}}
         try:
-            payload = json.dumps({
-            "url":  url,
-            })
-            headers = {
-                'X-API-KEY':  searpApi,
-                'Content-Type': 'application/json'
-            }
-
-            response = requests.request("POST", "https://scrape.serper.dev", headers=headers, data=payload)
-
-            return response.json().get("text", "")[:8000]
+            response = requests.get(url)
+            soup_bing = BeautifulSoup(response.content.decode('utf-8'), "lxml")
+            htmlContent = str(soup_bing.get_text()).strip()
+            htmlContent = re.sub(r'\s{2,}', ' ', htmlContent)
+            # print(f"Scraped content from {url[:50]}... with length {len(htmlContent)} characters.")
+            return htmlContent[:8000]  # Limit to 8000 characters
         except requests.RequestException as e:
             # yield {"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error scraping URL: {url}", "details": {"url": url, "error": str(e)}}
             return None
@@ -515,9 +582,6 @@ class Orchestrator:
                 market_result = self.market_agent.research_category(category)
                 compliance_result = self.regulatory_agent.check_compliance(category, JURISDICTION)
                 competition_result = self.competition_agent.analyze_competitors(category)
-                print(f"Market Result: {market_result}")
-                print(f"Compliance Result: {compliance_result}")
-                print(f"Competition Result: {competition_result}")
 
                 market_analysis = market_result.get("analysis", {})
                 compliance_analysis = compliance_result.get("analysis", {})
