@@ -1442,7 +1442,7 @@ class SummerSaleUserRegistration(APIView):
             "void_check_document": {"id": 59},
         }
         errors = {}
-        required_fields = ["names[first_name]", "names[last_name]", "email", "phone", "input_text", "address_1[address_line_1]", "address_1[city]", "stateId", "address_1[state]", "address_1[zip]"]
+        required_fields = ["names[first_name]", "names[last_name]", "email", "phone", "input_text", "address_1[address_line_1]", "address_1[city]", "address_1[state]", "address_1[zip]"]
 
         for field in required_fields:
             if not data.get(field):
@@ -1450,12 +1450,6 @@ class SummerSaleUserRegistration(APIView):
 
         if data.get("email") and "@" not in data.get("email"):
             errors["email"] = "Enter a valid email."
-
-        try:
-            if data.get("stateId"):
-                int(data["stateId"])
-        except (ValueError, TypeError):
-            errors["stateId"] = "A valid integer is required."
 
         for doc_name in DOC_TYPE_MAP.keys():
             if doc_name in files and files[doc_name].size == 0:
