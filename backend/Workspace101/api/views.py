@@ -1409,7 +1409,7 @@ class SummerSaleUserRegistration(APIView):
             return {"status": "error", "message": f"Unknown document type: {file_field_name}"}
 
         attachment_obj_data = {
-            "name": file_object["name"],
+            "name": file_object.name,
             "recordId": customer_id,
             "moduleId": 4,
             "fieldName": "customer_document",
@@ -1420,7 +1420,7 @@ class SummerSaleUserRegistration(APIView):
 
         files_payload = {
             "attachmentObj": (None, json.dumps(attachment_obj_data), "application/json"),
-            "file": (file_object["name"], file_object["content"], file_object["content_type"]),
+            "file": (file_object.name, file_object.read(), file_object.content_type),
         }
 
         upload_headers = headers.copy()
@@ -1452,77 +1452,14 @@ class SummerSaleUserRegistration(APIView):
             errors["email"] = "Enter a valid email."
 
         for doc_name in DOC_TYPE_MAP.keys():
-            if doc_name in files and files[doc_name]["size"] == 0:
+            if doc_name in files and files[doc_name].size == 0:
                 errors[doc_name] = "The submitted file is empty."
 
         return errors
 
     def post(self, request):
-        field_DOC_map = {
-                "achFormDocument": "ach_form_document",
-                "file-upload": "business_license_document",
-                "creditCardAuthDocument": "credit_card_auth_document",
-                "file-upload_5": "driving_license_document",
-                "file-upload_2": "fein_license_document",
-                "file-upload_3": "hemp_license_document",
-                "salesTaxCertificateDocument": "sales_tax_certificate_document",
-                "file-upload_1": "tobacco_license_document",
-                "file-upload_4": "void_check_document",
-            }
         data = request.data
-        fileUrls = [{"url":data[key],"name":key} for key in field_DOC_map.keys() if key in data]
-        files = []
-        # these is a list of urls which are needed to be downloaded
-        for file_info in fileUrls:
-            try:
-                response = requests.get(file_info["url"], allow_redirects=True)
-                fileExtension = response.headers["Content-Type"]
-                size = response.headers.get("Content-Length", 0)
-                file_info["field_name"] = field_DOC_map[file_info["name"]]
-                file_info["name"] = file_info["field_name"]
-                if "application/pdf" in fileExtension:
-                    file_info["name"] += ".pdf"
-                elif "image" in fileExtension:
-                    if "png" in fileExtension:
-                        file_info["name"] += ".png"
-                    elif "gif" in fileExtension:
-                        file_info["name"] += ".gif"
-                    elif "jpeg" in fileExtension or "jpg" in fileExtension:
-                        file_info["name"] += ".jpeg" if "jpeg" in fileExtension else ".jpg"
-                    elif "bmp" in fileExtension:
-                        file_info["name"] += ".bmp"
-                    elif "webp" in fileExtension:
-                        file_info["name"] += ".webp"
-                    elif "svg" in fileExtension:
-                        file_info["name"] += ".svg"
-                    else:
-                        file_info["name"] += ".jpg"
-                elif "text" in fileExtension:
-                    file_info["name"] += ".txt"
-                elif "application/vnd.openxmlformats-officedocument.wordprocessingml.document" in fileExtension:
-                    file_info["name"] += ".docx"
-                elif "application/msword" in fileExtension:
-                    file_info["name"] += ".doc"
-                elif "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in fileExtension:
-                    file_info["name"] += ".xlsx"
-                elif "application/vnd.ms-excel" in fileExtension:
-                    file_info["name"] += ".xls"
-                else:
-                    file_info["name"] += ".bin"
-                if response.status_code == 200 and response.content:
-                    file = {
-                        "name": file_info["name"],
-                        "field_name": file_info["field_name"],
-                        "content_type": response.headers.get("Content-Type", "application/octet-stream"),
-                        "content": response.content,
-                        "size": int(size) if size.isdigit() else 0,
-                        "content_length": int(size) if size.isdigit() else 0,
-                    }               
-                    files.append(file)
-            except requests.exceptions.RequestException as e:
-                print(f"Error downloading file from {file_info['url']}: {e}")
-                files.append(None)
-       
+        files = request.FILES
         DOC_TYPE_MAP = {
             "ach_form_document": {"id": 60},
             "business_license_document": {"id": 55},
@@ -1547,16 +1484,16 @@ class SummerSaleUserRegistration(APIView):
 
             if not customer_id:
                 return Response({"error": "Failed to create customer or retrieve customer ID from ERP response."}, status=status.HTTP_502_BAD_GATEWAY)
-            
+
             upload_results = {}
-            for fileObj in files:
-                field_name = fileObj["field_name"]
+            for file_key, fileObj in files.items():
+                field_name = file_key.replace("file_", "")
                 if field_name in DOC_TYPE_MAP:
                     try:
                         result = self._upload_erp_document(customer_id, field_name, fileObj, headers)
                         upload_results[field_name] = result
                     except Exception as e:
-                        upload_results[field_name] = {"status": "error", "message": f"Upload failed for {fileObj['field_name']}: {str(e)}"}
+                        upload_results[field_name] = {"status": "error", "message": f"Upload failed for {fileObj.name}: {str(e)}"}
             return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
 
         except requests.exceptions.HTTPError as err:
