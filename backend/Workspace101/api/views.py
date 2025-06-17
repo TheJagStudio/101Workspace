@@ -1297,7 +1297,7 @@ class SummerSaleUserRegistration(APIView):
                         "address1": customer_data.get("address_1[address_line_1]"),
                         "address2": customer_data.get("address_1[address_line_2]", ""),
                         "city": customer_data.get("address_1[city]"),
-                        "stateId": int(customer_data.get("stateId")),
+                        "stateId": int(customer_data.get("stateId"), 11),
                         "state": customer_data.get("address_1[state]"),
                         "zip": customer_data.get("address_1[zip]"),
                         "county": customer_data.get("county", ""),
@@ -1441,7 +1441,7 @@ class SummerSaleUserRegistration(APIView):
             "void_check_document": {"id": 59},
         }
         errors = {}
-        required_fields = ["firstName", "lastName", "email", "phone", "company", "address1", "city", "stateId", "state", "zip"]
+        required_fields = ["names[first_name]", "names[last_name]", "email", "phone", "input_text", "address_1[address_line_1]", "address_1[city]", "stateId", "address_1[state]", "address_1[zip]"]
 
         for field in required_fields:
             if not data.get(field):
@@ -1508,7 +1508,7 @@ class SummerSaleUserRegistration(APIView):
                         upload_results[field_name] = result
                     except Exception as e:
                         upload_results[field_name] = {"status": "error", "message": f"Upload failed for {file_obj.name}: {str(e)}"}
-
+            print("Upload results:", upload_results)
             return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
 
         except requests.exceptions.HTTPError as err:
