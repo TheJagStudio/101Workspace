@@ -1315,7 +1315,7 @@ class SummerSaleUserRegistration(APIView):
                 "firstName": customer_data.get("names[first_name]"),
                 "lastName": customer_data.get("names[last_name]"),
                 "email": customer_data.get("email"),
-                "phone": int(customer_data.get("phone", "").replace("-", "")),
+                "phone": int(customer_data.get("phone", "").replace("-", "").replace("(", "").replace(")", "")),
                 "taxId": customer_data.get("taxId", ""),
                 "tobaccoId": customer_data.get("input_text_3", ""),
                 "vaporTaxId": customer_data.get("vaporTaxId", ""),
@@ -1328,14 +1328,14 @@ class SummerSaleUserRegistration(APIView):
                 "salesTaxIdExpirationDate": customer_data.get("salesTaxIdExpirationDate", ""),
                 "voidCheckNumber": customer_data.get("input_text_6", ""),
                 "hempLicenseExpirationDate": customer_data.get("hempLicenseExpirationDate", ""),
-                "verified": True,
+                "verified": False,
                 "viewSpecificCategory": True,
                 "viewSpecificProduct": True,
                 "company": customer_data.get("input_text"),
                 "dbaName": customer_data.get("input_text_1", ""),
                 "notes": customer_data.get("notes", ""),
-                "primarySalesRepresentativeId": customer_data.get("primarySalesRepresentativeId", ""),
-                "primaryBusiness": customer_data.get("primaryBusiness", ""),
+                "primarySalesRepresentativeId": int(customer_data.get("dropdown", "")),
+                "primaryBusiness": customer_data.get("input_text_8", ""),
                 "websiteReference": "Word of mouth",
                 "createdBy": 20,
             }
@@ -1516,58 +1516,66 @@ class SummerSaleUserRegistration(APIView):
             return Response({"error": f"An unexpected error occurred: {err}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# class HempLicenseAPIView(APIView):
-#     permission_classes = []
-#     def post(self, request):
-#         image_url = request.data.get("image_url", None)
-#         prompt = 'Give me following details:\n- Hemp License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}'
-#         headers = {
-#             'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
-#             'Cache-Control': 'no-cache',
-#             'Connection': 'keep-alive',
-#             'Content-Type': 'application/json',
-#             'Origin': 'https://deepinfra.com',
-#             'Pragma': 'no-cache',
-#             'Referer': 'https://deepinfra.com/',
-#             'Sec-Fetch-Dest': 'empty',
-#             'Sec-Fetch-Mode': 'cors',
-#             'Sec-Fetch-Site': 'same-site',
-#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-#             'X-Deepinfra-Source': 'model-embed',
-#             'accept': 'text/event-stream',
-#             'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-#             'sec-ch-ua-mobile': '?0',
-#             'sec-ch-ua-platform': '"Windows"',
-#         }
+class LicenseValidatorAPIView(APIView):
+    permission_classes = []
+    def post(self, request):
+        image_url = request.data.get("image_url", None)
+        name = request.data.get("name", None)
+        prompts = {
+            "hemp_license_document": 'Give me following details:\n- Hemp License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
+            "tobacco_license_document": 'Give me following details:\n- Tobacco License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
+            "business_license_document": 'Give me following details:\n- Business License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
+            "fein_license_document": 'Give me following details:\n- Employer Identification Number (EIN)\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"feinNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}\n\n Note: EIN is a 9-digit number with a dash in between issued by the IRS.',
+            "driving_license_document": 'Give me following details:\n- Driving License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
+            "void_check_document": 'Give me following details:\n- Void Check Number\n- Bank Name\n\nin below format:\n{\n"checkNumber":"...",\n"bankName":"..."\n}'
+        }
+        prompt = prompts.get(name, None)
+        headers = {
+            'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            'Origin': 'https://deepinfra.com',
+            'Pragma': 'no-cache',
+            'Referer': 'https://deepinfra.com/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+            'X-Deepinfra-Source': 'model-embed',
+            'accept': 'text/event-stream',
+            'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+        }
 
-#         json_data = {
-#             'model': 'google/gemma-3-4b-it',
-#             'messages': [
-#                 {
-#                     'role': 'user',
-#                     'content': [
-#                         {
-#                             'type': 'image_url',
-#                             'image_url': {
-#                                 'url': image_url
-#                             },
-#                         },
-#                         {
-#                             'type': 'text',
-#                             'text': prompt,
-#                         },
-#                     ],
-#                 },
-#             ],
-#             'stream': False,
-#             'response_format': {
-#                 'type': 'json_object',
-#             },
-#         }
-#         response = requests.post('https://api.deepinfra.com/v1/openai/chat/completions', headers=headers, json=json_data)
-#         jsonData = json.loads(response.json()["choices"][0]["message"]["content"])
-#         print(jsonData)
-#         return JsonResponse(jsonData, status=200)
+        json_data = {
+            'model': 'google/gemma-3-4b-it',
+            'messages': [
+                {
+                    'role': 'user',
+                    'content': [
+                        {
+                            'type': 'image_url',
+                            'image_url': {
+                                'url': image_url
+                            },
+                        },
+                        {
+                            'type': 'text',
+                            'text': prompt,
+                        },
+                    ],
+                },
+            ],
+            'stream': False,
+            'response_format': {
+                'type': 'json_object',
+            },
+        }
+        response = requests.post('https://api.deepinfra.com/v1/openai/chat/completions', headers=headers, json=json_data)
+        jsonData = json.loads(response.json()["choices"][0]["message"]["content"])
+        return JsonResponse(jsonData, status=200)
 
 
 class OllamaApiView(APIView):

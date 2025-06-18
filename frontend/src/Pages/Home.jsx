@@ -68,6 +68,10 @@ const Home = () => {
 					<img src="/static/images/101-logo-delivery.png" alt="Logo" className="w-auto h-16" />
 					<p className="text-5xl font-semibold text-green-600">Delivery</p>
 				</Link>
+				<Link to="/catalog" className="bg-gradient-to-br from-yellow-50 to-yellow-200 shadow-md hover:shadow-xl shadow-yellow-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-yellow-500 rounded-xl h-fit w-fit px-3 py-2 flex items-center justify-center transition-all">
+					<img src="/static/images/101-logo-catalog.png" alt="Logo" className="w-auto h-16" />
+					<p className="text-5xl font-semibold text-yellow-600">Catalog</p>
+				</Link>
 			</div>
 		</div>
 	);

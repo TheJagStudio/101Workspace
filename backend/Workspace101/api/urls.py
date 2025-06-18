@@ -61,6 +61,6 @@ urlpatterns = [
     path("dataMaker/", views.dataMaker.as_view(), name="dataMaker"),
     path("vacuum-sqlite/", views.vacuum_sqlite_database.as_view(), name="vacuum_sqlite"),
     path("summer-sale-registration/", views.SummerSaleUserRegistration.as_view(), name="SummerSaleUserRegistrationView"),
-    # path("hemp-license/", views.HempLicenseAPIView.as_view(), name="HempLicenseAPIView"),
+    path("license-validator/", views.LicenseValidatorAPIView.as_view(), name="LicenseValidatorAPIView"),
     path("ollama-api/", views.OllamaApiView.as_view(), name="OllamaApiView"),
 ]
