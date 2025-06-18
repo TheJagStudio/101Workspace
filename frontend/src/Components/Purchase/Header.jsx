@@ -104,7 +104,9 @@ const Header = ({ logout }) => {
 									setActiveProduct(item?.document);
 								}} key={item?.document.id || idx} className="flex flex-row flex-nowrap gap-2 w-full items-center justify-start px-4 py-1 h-12 hover:bg-indigo-50 cursor-pointer text-sm">
 									<img src={item?.document.imageUrl || "/static/images/default.png"} alt={item?.document.productName} className="w-10 h-10 rounded mr-2 inline-block" />
-									<div dangerouslySetInnerHTML={{ __html: item?.highlight.productName.snippet }} className="truncate-2"></div>
+									{item?.highlight?.productName?.snippet ? (<div dangerouslySetInnerHTML={{ __html: item?.highlight?.productName?.snippet }} className="truncate-2"></div>) : (
+										<div className="truncate-2">{item?.document.productName}<div dangerouslySetInnerHTML={{ __html: item?.highlight?.sku?.snippet ? item?.highlight?.sku?.snippet : item?.highlight?.upc?.snippet }} className="truncate-2"></div></div>
+									)}
 								</div>
 							))}
 						</div>
@@ -156,7 +158,7 @@ const Header = ({ logout }) => {
 					</div>
 				)}
 			</div>
-		</div>
+		</div >
 	);
 };
 

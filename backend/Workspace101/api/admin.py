@@ -41,8 +41,8 @@ class categoryFilter(SimpleListFilter):
 
 class ProductAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["inventoryList", "categories"]
-    list_display = ("productId", "sku", "productName", "availableQuantity", "standardPrice", "active")
-    search_fields = ("productName", "sku", "productId")
+    list_display = ("productId", "sku","upc", "productName", "availableQuantity", "standardPrice", "active")
+    search_fields = ("productName", "sku","upc", "productId")
     list_filter = ("active", "ecommerce", InventoryStatusFilter,categoryFilter)
 
 

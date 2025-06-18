@@ -34,7 +34,7 @@ def syncProducts(token):
         "sec-ch-ua-platform": '"Windows"',
     }
     productList = []
-    
+
     while i <= totalPages:
         try:
             response = requests.get(
@@ -67,12 +67,12 @@ def syncProducts(token):
             print(f"Error fetching products from page {i + 1}: {e}")
             yield 100
         yield 15 + (i * 15) / totalPages
-    
+
     totalProducts = len(productList)
-    for i in range(0,totalProducts,1000):
+    for i in range(0, totalProducts, 1000):
         product_categories_map = {}
         productObjList = []
-        for product in productList[i:i+1000]:
+        for product in productList[i : i + 1000]:
             upc = product.get("upc", "")
             if upc is not None and upc != "":
                 categories = []
@@ -121,21 +121,11 @@ def syncProducts(token):
                     products_to_create,
                     ignore_conflicts=False,
                 )
-                category_relations = [
-                    Product.categories.through(
-                        product_id=product.productId,
-                        category_id=category.categoryId
-                    )
-                    for product in products_to_update
-                    for category in product_categories_map.get(product.productId, [])
-                ]
-                
+                category_relations = [Product.categories.through(product_id=product.productId, category_id=category.categoryId) for product in products_to_update for category in product_categories_map.get(product.productId, [])]
+
                 # Bulk create the many-to-many relationships
                 if category_relations:
-                    Product.categories.through.objects.bulk_create(
-                        category_relations,
-                        ignore_conflicts=True
-                    )
+                    Product.categories.through.objects.bulk_create(category_relations, ignore_conflicts=True)
         else:
             with transaction.atomic():
                 Product.objects.bulk_update(
@@ -157,23 +147,13 @@ def syncProducts(token):
                 # Clear existing category relationships and create new ones
                 product_ids = [p.productId for p in products_to_update]
                 Product.categories.through.objects.filter(product_id__in=product_ids).delete()
-                
+
                 # Create new category relationships
-                category_relations = [
-                    Product.categories.through(
-                        product_id=product.productId,
-                        category_id=category.categoryId
-                    )
-                    for product in products_to_update
-                    for category in product_categories_map.get(product.productId, [])
-                ]
-                
+                category_relations = [Product.categories.through(product_id=product.productId, category_id=category.categoryId) for product in products_to_update for category in product_categories_map.get(product.productId, [])]
+
                 # Bulk create the many-to-many relationships
                 if category_relations:
-                    Product.categories.through.objects.bulk_create(
-                        category_relations,
-                        ignore_conflicts=True
-                    )
+                    Product.categories.through.objects.bulk_create(category_relations, ignore_conflicts=True)
         yield 30 + (i * 70) / totalProducts
 
 
@@ -665,7 +645,12 @@ def syncSearchData(token):
                     "host": "thejagstudio-typesense.hf.space",
                     "port": "443",
                     "protocol": "https",
-                }
+                },
+                {
+                    "host": "185.28.22.68",
+                    "port": "7860",
+                    "protocol": "http",
+                },
             ],
             "connection_timeout_seconds": 2,
         }
@@ -673,7 +658,7 @@ def syncSearchData(token):
 
     # Prepare collection schema
     collection_name = "101"
-    schema = {"name": collection_name, "fields": [{"name": "id", "type": "int32"}, {"name": "productId", "type": "int32"}, {"name": "sku", "type": "string"}, {"name": "upc", "type": "string"}, {"name": "productName", "type": "string"}, {"name": "availableQuantity", "type": "int32"}, {"name": "eta", "type": "string"}, {"name": "imageUrl", "type": "string"}, {"name": "masterProductId", "type": "int32"}, {"name": "masterProductName", "type": "string"}, {"name": "standardPrice", "type": "float"}, {"name": "tierPrice", "type": "float"}, {"name": "costPrice", "type": "float"}, {"name": "ecommerce", "type": "bool"}, {"name": "active", "type": "bool"}, {"name": "compositeProduct", "type": "bool"}, {"name": "stateRestricted", "type": "bool"}, {"name": "customerGroupRestricted", "type": "bool"}, {"name": "categories", "type": "string", "facet": True}, {"name": "trackInventory", "type": "bool"}, {"name": "trackInventoryByImei", "type": "bool"}, {"name": "insertedTimestamp", "type": "string"}, {"name": "size", "type": "int32"}], "default_sorting_field": "availableQuantity"}
+    schema = {"name": collection_name, "fields": [{"name": "id", "type": "auto"}, {"name": "productId", "type": "auto"}, {"name": "sku", "type": "auto"}, {"name": "upc", "type": "auto"}, {"name": "productName", "type": "auto"}, {"name": "availableQuantity", "type": "int32"}, {"name": "eta", "type": "auto"}, {"name": "imageUrl", "type": "auto"}, {"name": "masterProductId", "type": "auto"}, {"name": "masterProductName", "type": "auto"}, {"name": "standardPrice", "type": "auto"}, {"name": "tierPrice", "type": "auto"}, {"name": "costPrice", "type": "auto"}, {"name": "ecommerce", "type": "auto"}, {"name": "active", "type": "auto"}, {"name": "compositeProduct", "type": "auto"}, {"name": "stateRestricted", "type": "auto"}, {"name": "customerGroupRestricted", "type": "auto"}, {"name": "categories", "type": "auto", "facet": True}, {"name": "trackInventory", "type": "auto"}, {"name": "trackInventoryByImei", "type": "auto"}, {"name": "insertedTimestamp", "type": "auto"}, {"name": "size", "type": "auto"}], "default_sorting_field": "availableQuantity"}
 
     # Delete collection if exists
     try:
@@ -706,7 +691,7 @@ def syncSearchData(token):
     all_products = []
     while page <= totalPages:
         response = requests.get(
-            f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=100000",
+            f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=1000",
             headers=headers,
         )
         try:
@@ -723,6 +708,8 @@ def syncSearchData(token):
             except:
                 product["masterProductId"] = 0
             product["categories"] = str(product["categories"])
+            if product["upc"] == "DAG-0001":
+                print(product)
             all_products.append(product)
         percent = (page / totalPages) * 50
         page += 1
@@ -730,6 +717,9 @@ def syncSearchData(token):
 
     # Import to Typesense in chunks of 1000
     for i in range(0, len(all_products), 1000):
+        for product in all_products[i : i + 1000]:
+            if product["upc"] == "DAG-0001":
+                print(product)
         client.collections[collection_name].documents.import_(all_products[i : i + 1000], {"action": "create"})
         percent = 50 + ((i + 1000) / len(all_products)) * 50
         yield percent

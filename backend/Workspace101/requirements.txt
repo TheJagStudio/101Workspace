@@ -8,3 +8,4 @@ psycopg2-binary
 google-genai
 typesense
 beautifulsoup4
+ollama

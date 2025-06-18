@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -34,6 +34,7 @@ from collections import defaultdict
 from django.db.models import Sum, F, Avg, Q, Count, When, Case, Value, DecimalField, CharField, OuterRef, Subquery, Max, DateTimeField, Prefetch
 from rest_framework import status
 from django.shortcuts import redirect
+from ollama import Client as OllamaClient
 
 client = typesense.Client(
     {
@@ -43,11 +44,17 @@ client = typesense.Client(
                 "host": "thejagstudio-typesense.hf.space",
                 "port": "443",
                 "protocol": "https",
-            }
+            },
+            {
+                "host": "185.28.22.68",
+                "port": "7860",
+                "protocol": "http",
+            },
         ],
         "connection_timeout_seconds": 2,
     }
 )
+ollamaClient = OllamaClient(host="http://217.196.49.245:11434")
 ai_agent = DjangoAIAgent()
 
 
@@ -57,7 +64,7 @@ class SearchProductsView(APIView):
         Search products based on query parameters.
         """
         query = request.GET.get("query", "")
-        search_parameters = {"q": query, "query_by": "productName", "limit": 5}
+        search_parameters = {"q": query, "query_by": "productName,sku,upc", "limit": 5}
         try:
             data = client.collections["101"].documents.search(search_parameters)
             return JsonResponse(data["hits"], safe=False)
@@ -1276,8 +1283,9 @@ class SummerSaleUserRegistration(APIView):
 
     def _create_erp_customer(self, customer_data, headers):
         api_url = "https://erp.101distributorsga.com/api/customer"
-        state_stateId_map = {"Alabama": "1", "Alaska": "2", "Arizona": "3", "Arkansas": "4", "California": "5", "Colorado": "6", "Connecticut": "7", "Delaware": "8", "District Of Columbia": "9", "Florida": "10", "Georgia": "11", "Hawaii": "12", "Idaho": "13", "Illinois": "14", "Indiana": "15", "Iowa": "16", "Kansas": "17", "Kentucky": "18", "Louisiana": "19", "Maine": "20", "Maryland": "21", "Massachusetts": "22", "Michigan": "23", "Minnesota": "24", "Mississippi": "25", "Missouri": "26", "Montana": "27", "Nebraska": "28", "Nevada": "29", "New Hampshire": "30", "New Jersey": "31", "New Mexico": "32", "New York": "33", "North Carolina": "34", "North Dakota": "35", "Ohio": "36", "Oklahoma": "37", "Oregon": "38", "Pennsylvania": "39", "Rhode Island": "40", "South Carolina": "41", "South Dakota": "42", "Tennessee": "43", "Texas": "44", "Utah": "45", "Vermont": "46", "Virginia": "47", "Washington": "48", "West Virginia": "49", "Wisconsin": "50", "Wyoming": "51", "American Samoa": "52", "Guam": "53", "Northern Mariana Islands": "54", "Puerto Rico": "55", "United States Minor Outlying Islands": "56", "Virgin Islands": "57"}
-        state_id = state_stateId_map.get(str(customer_data.get("address_1[state]", "")).strip(), 11)
+        state_stateId_map = {"1": "Alabama", "2": "Alaska", "3": "Arizona", "4": "Arkansas", "5": "California", "6": "Colorado", "7": "Connecticut", "8": "Delaware", "9": "District Of Columbia", "10": "Florida", "11": "Georgia", "12": "Hawaii", "13": "Idaho", "14": "Illinois", "15": "Indiana", "16": "Iowa", "17": "Kansas", "18": "Kentucky", "19": "Louisiana", "20": "Maine", "21": "Maryland", "22": "Massachusetts", "23": "Michigan", "24": "Minnesota", "25": "Mississippi", "26": "Missouri", "27": "Montana", "28": "Nebraska", "29": "Nevada", "30": "New Hampshire", "31": "New Jersey", "32": "New Mexico", "33": "New York", "34": "North Carolina", "35": "North Dakota", "36": "Ohio", "37": "Oklahoma", "38": "Oregon", "39": "Pennsylvania", "40": "Rhode Island", "41": "South Carolina", "42": "South Dakota", "43": "Tennessee", "44": "Texas", "45": "Utah", "46": "Vermont", "47": "Virginia", "48": "Washington", "49": "West Virginia", "50": "Wisconsin", "51": "Wyoming", "52": "American Samoa", "53": "Guam", "54": "Northern Mariana Islands", "55": "Puerto Rico", "56": "United States Minor Outlying Islands", "57": "Virgin Islands"}
+        state = state_stateId_map.get(str(customer_data.get("address_1[state]", "")).strip(), "Georgia") 
+        state_id = int(customer_data.get("address_1[state]"), 11)
         payload = {
             "customerDto": {
                 "tier": 1,
@@ -1298,8 +1306,8 @@ class SummerSaleUserRegistration(APIView):
                         "address1": customer_data.get("address_1[address_line_1]"),
                         "address2": customer_data.get("address_1[address_line_2]", ""),
                         "city": customer_data.get("address_1[city]"),
-                        "stateId": int(state_id, 11),
-                        "state": customer_data.get("address_1[state]"),
+                        "stateId": state_id,
+                        "state": state,
                         "zip": customer_data.get("address_1[zip]"),
                         "county": customer_data.get("county", ""),
                     }
@@ -1506,3 +1514,88 @@ class SummerSaleUserRegistration(APIView):
             return Response({"error": f"API Connection Error: {err}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as err:
             return Response({"error": f"An unexpected error occurred: {err}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# class HempLicenseAPIView(APIView):
+#     permission_classes = []
+#     def post(self, request):
+#         image_url = request.data.get("image_url", None)
+#         prompt = 'Give me following details:\n- Hemp License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}'
+#         headers = {
+#             'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
+#             'Cache-Control': 'no-cache',
+#             'Connection': 'keep-alive',
+#             'Content-Type': 'application/json',
+#             'Origin': 'https://deepinfra.com',
+#             'Pragma': 'no-cache',
+#             'Referer': 'https://deepinfra.com/',
+#             'Sec-Fetch-Dest': 'empty',
+#             'Sec-Fetch-Mode': 'cors',
+#             'Sec-Fetch-Site': 'same-site',
+#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+#             'X-Deepinfra-Source': 'model-embed',
+#             'accept': 'text/event-stream',
+#             'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+#             'sec-ch-ua-mobile': '?0',
+#             'sec-ch-ua-platform': '"Windows"',
+#         }
+
+#         json_data = {
+#             'model': 'google/gemma-3-4b-it',
+#             'messages': [
+#                 {
+#                     'role': 'user',
+#                     'content': [
+#                         {
+#                             'type': 'image_url',
+#                             'image_url': {
+#                                 'url': image_url
+#                             },
+#                         },
+#                         {
+#                             'type': 'text',
+#                             'text': prompt,
+#                         },
+#                     ],
+#                 },
+#             ],
+#             'stream': False,
+#             'response_format': {
+#                 'type': 'json_object',
+#             },
+#         }
+#         response = requests.post('https://api.deepinfra.com/v1/openai/chat/completions', headers=headers, json=json_data)
+#         jsonData = json.loads(response.json()["choices"][0]["message"]["content"])
+#         print(jsonData)
+#         return JsonResponse(jsonData, status=200)
+
+
+class OllamaApiView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        """
+        Handle POST requests to the Ollama API.
+        """
+        try:
+            prompt = request.GET.get("prompt", "Why is the sky blue?")
+
+            def LLM(prompt):
+                stream = ollamaClient.chat(
+                    model="qwen3:0.6b",
+                    # model="gemma3:4b",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        },
+                    ],
+                    stream=True,
+                )
+                for chunk in stream:
+                    yield chunk
+
+            return StreamingHttpResponse(streaming_content=LLM(prompt), content_type="application/json")
+
+        except requests.exceptions.RequestException as e:
+            return Response({"error": str(e)}, status=500)
