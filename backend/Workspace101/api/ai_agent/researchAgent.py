@@ -205,7 +205,7 @@ class MarketResearchAgent:
         all_content, sources = "", set()
 
         for query in search_queries:
-            search_results = self.search_tool.search(query, max_results=3)
+            search_results = self.search_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
                     content = self.scraper_tool.scrape(result["link"])
@@ -214,7 +214,7 @@ class MarketResearchAgent:
                         sources.add(result["link"])
 
         for query in social_queries:
-            search_results = self.social_tool.search(query, max_results=3)
+            search_results = self.social_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
                     all_content += f"\n\n--- Social Source: {result['title']} ({result['link']}) ---\n{result['snippet']}"
@@ -264,7 +264,7 @@ class RegulatoryComplianceAgent:
         search_queries = [f"laws and regulations for selling {category} in {jurisdiction}", f"new {category} legislation {jurisdiction} 2025", f"{category} FDA regulations USA federal", f"{jurisdiction} Department of Revenue {category} rules"]
         all_content, sources = "", set()
         for query in search_queries:
-            search_results = self.search_tool.search(query, max_results=3)
+            search_results = self.search_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
                     # if any(domain in result["link"] for domain in [".gov", ".org", "fda.gov", "ga.gov"]):
@@ -304,7 +304,7 @@ class CompetitiveIntelligenceAgent:
         search_queries = [f"top wholesale distributors for {category} USA", f"major online retailers for {category}"]
         all_content, sources = "", set()
         for query in search_queries:
-            search_results = self.search_tool.search(query, max_results=3)
+            search_results = self.search_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
                     content = self.scraper_tool.scrape(result["link"])
@@ -346,7 +346,7 @@ class SupplierDiscoveryAgent:
         suppliers = {}
         for product in products:
             query = f'"{product}" wholesale supplier distributor USA'
-            search_results = self.search_tool.search(query, max_results=3)
+            search_results = self.search_tool.search(query, max_results=7)
 
             if not search_results:
                 suppliers[product] = [{"name": "No direct suppliers found via search.", "url": "#"}]

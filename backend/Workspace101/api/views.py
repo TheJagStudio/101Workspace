@@ -1122,48 +1122,10 @@ class dataMaker(APIView):
         """
         Generate data for testing purposes.
         """
-        path = "./extra/data/"
-        # get all files in the path
-        import os
-
-        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-        productArr = []
-        i = 0
-        for file in files:
-            with open(os.path.join(path, file), "r") as f:
-                data = json.load(f)
-            product = Product.objects.get(productId=data["id"])
-            if product:
-                product.urlAlias = data["urlAlias"]
-                product.shortDescription = data["shortDescription"]
-                product.fullDescription = data["fullDescription"]
-                product.avgCostPrice = data["avgCostPrice"]
-                product.latestCostPrice = data["latestCostPrice"]
-                product.stdPrice = data["stdPrice"]
-                product.tier1Price = data["tier1Price"]
-                product.tier2Price = data["tier2Price"]
-                product.tier3Price = data["tier3Price"]
-                product.tier4Price = data["tier4Price"]
-                product.tier5Price = data["tier5Price"]
-                product.upc1 = data["upc1"]
-                product.upc2 = data["upc2"]
-                product.singleUpc = data["singleUpc"]
-                product.vendorUpc = data["vendorUpc"]
-                product.metaKeyword = data["metaKeyword"]
-                product.childProductList = data["childProductList"]
-                product.quantity = data["quantity"]
-                product.reorderQuantity = data["reorderQuantity"]
-                product.minQuantity = data["minQuantity"]
-                product.caseQuantity = data["caseQuantity"]
-                product.boxQuantity = data["boxQuantity"]
-                productArr.append(product)
-                i += 1
-            if len(productArr) == 1000:
-                Product.objects.bulk_update(productArr, ["urlAlias", "shortDescription", "fullDescription", "avgCostPrice", "latestCostPrice", "stdPrice", "tier1Price", "tier2Price", "tier3Price", "tier4Price", "tier5Price", "upc1", "upc2", "singleUpc", "vendorUpc", "metaKeyword", "childProductList", "quantity", "reorderQuantity", "minQuantity", "caseQuantity", "boxQuantity"])
-                productArr = []
-                print(f"Updated {i} products so far...")
-        if len(productArr) > 0:
-            Product.objects.bulk_update(productArr, ["urlAlias", "shortDescription", "fullDescription", "avgCostPrice", "latestCostPrice", "stdPrice", "tier1Price", "tier2Price", "tier3Price", "tier4Price", "tier5Price", "upc1", "upc2", "singleUpc", "vendorUpc", "metaKeyword", "childProductList", "quantity", "reorderQuantity", "minQuantity", "caseQuantity", "boxQuantity"])
+        # Query for products where singleUpc != upc
+        products = Product.objects.exclude(singleUpc=models.F('upc'))
+        for product in products:
+            print(product.productName)
         return JsonResponse({"message": "Data generation completed."})
 
 

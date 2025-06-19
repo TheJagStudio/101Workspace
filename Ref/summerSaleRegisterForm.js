@@ -63,7 +63,7 @@ uploadHolders.forEach((holder, index) => {
 
             span.textContent = fileName;
             const callApi = async (base64Image) => {
-                const apiUrl = 'http://127.0.0.1:8000/api/license-validator/'; 
+                const apiUrl = 'https://workspace.101distributors.com/backend/api/license-validator/'; 
                 
                 console.log("Calling API with image data...");
                 const response = await fetch(apiUrl, {
