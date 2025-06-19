@@ -33,8 +33,8 @@ import SalesmanHome from "./Pages/Tracker/SalesmanHome";
 import SalesmanHistory from "./Pages/Tracker/SalesmanHistory";
 import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
 import Notification from "./Components/utils/Notification";
-import CatalogHome from "./Pages/Catalog/CatalogHome";
-import CatalogOutlet from "./Outlets/CatalogOutlet";
+// import CatalogHome from "./Pages/Catalog/CatalogHome";
+// import CatalogOutlet from "./Outlets/CatalogOutlet";
 
 
 function App() {
@@ -135,9 +135,9 @@ function App() {
 					<Route path="customers" element={<DeliveryCustomer />} />
 					<Route path="reports" element={<DeliveryReport />} />
 				</Route>
-				<Route path="/catalog" element={user?.is_active ? <CatalogOutlet /> : <Navigate to="/login" replace />} >
+				{/* <Route path="/catalog" element={user?.is_active ? <CatalogOutlet /> : <Navigate to="/login" replace />} >
 					<Route index element={<CatalogHome />} />
-				</Route>
+				</Route> */}
 				<Route path="*" element={<Navigate to="/404" replace />} />
 				<Route path="/404" element={<NotFound />} />
 			</Routes>
