@@ -6,8 +6,6 @@ import {
   AlignStartVertical,
   AlignCenterVertical,
   AlignEndVertical,
-  SpaceHorizontally,
-  SpaceVertically
 } from 'lucide-react';
 
 const AlignmentTools = ({ onAlign, selectedElements, disabled }) => {
@@ -69,7 +67,7 @@ const AlignmentTools = ({ onAlign, selectedElements, disabled }) => {
         className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
         title="Distribute Horizontally"
       >
-        <SpaceHorizontally size={16} />
+        {/* <SpaceHorizontally size={16} /> */}
       </button>
       <button
         onClick={() => onAlign('distributeY')}
@@ -77,7 +75,7 @@ const AlignmentTools = ({ onAlign, selectedElements, disabled }) => {
         className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
         title="Distribute Vertically"
       >
-        <SpaceVertically size={16} />
+        {/* <SpaceVertically size={16} /> */}
       </button>
     </div>
   );

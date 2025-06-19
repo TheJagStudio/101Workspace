@@ -42,8 +42,6 @@ import {
     AlignStartVertical,
     AlignCenterVertical,
     AlignEndVertical,
-    SpaceHorizontally,
-    SpaceVertically
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -52,7 +50,7 @@ import PropertiesPanel from '../../components/PropertiesPanel';
 import ShapeElement from '../../components/ShapeElement';
 import PageThumbnail from '../../components/PageThumbnail';
 import AlignmentTools from '../../components/AlignmentTools';
-import { alignElements } from '../../utils/elementAlignment';
+import {alignElements} from '../../utils/elementAlignment';
 
 // A custom hook to keep state in sync with localStorage
 const useLocalStorageState = (key, defaultValue) => {
@@ -571,7 +569,7 @@ export default function CatalogHome() {
                             transform: `scale(${transform.scale}) translate(${transform.x}px, ${transform.y}px)`
                         }}
                         onDragOver={(e) => e.preventDefault()}
-                        onDrop={handleDrop}
+                        // onDrop={handleDrop}
                         onClick={() => {
                             setSelectedElement(null);
                             setSelectedElements(new Set());
@@ -638,7 +636,7 @@ export default function CatalogHome() {
                             />
                         ))}
                         <button
-                            onClick={addPage}
+                            // onClick={addPage}
                             className="w-[85px] h-[110px] border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
                         >
                             <Plus size={24} />
@@ -650,7 +648,7 @@ export default function CatalogHome() {
             {/* Right Properties Panel */}
             <PropertiesPanel
                 selectedElement={selectedElement}
-                onElementUpdate={handleElementUpdate}
+                // onElementUpdate={handleElementUpdate}
                 activePage={pages[activePage]}
             />
         </div>

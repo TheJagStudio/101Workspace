@@ -1,4 +1,4 @@
-const getElementBounds = (element) => ({
+export const getElementBounds = (element) => ({
     left: element.position.x,
     right: element.position.x + element.size.width,
     top: element.position.y,
@@ -9,7 +9,7 @@ const getElementBounds = (element) => ({
     centerY: element.position.y + element.size.height / 2
 });
 
-const alignElements = (elements, type) => {
+export const alignElements = (elements, type) => {
     if (elements.length < 2) return elements;
 
     const bounds = elements.map(getElementBounds);
