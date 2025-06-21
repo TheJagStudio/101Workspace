@@ -175,9 +175,9 @@ class InventorySummaryView(APIView):
 
         products = Product.objects.all()
         if loadSubcategories:
-            categories = Category.objects.filter(parentId__isNone=False)
+            categories = Category.objects.filter(parentId__isnull=False)
         else:
-            categories = Category.objects.filter(parentId__isNone=True)
+            categories = Category.objects.filter(parentId__isnull=True)
 
         if sort_by == "closing_inventory":
             order_by = "availableQuantity"
@@ -581,10 +581,10 @@ class InventoryReplenishmentView(APIView):
             categories_queryset = Category.objects.all()
             if not load_subcategories:
                 # Filter for top-level categories if subcategories are not requested
-                categories_queryset = categories_queryset.filter(parentId__isNone=True)
+                categories_queryset = categories_queryset.filter(parentId__isnull=True)
             else:
                 # Filter for subcategories if requested
-                categories_queryset = categories_queryset.filter(parentId__isNone=False)
+                categories_queryset = categories_queryset.filter(parentId__isnull=False)
 
             # Annotate categories with aggregated product data for the period
             # Aggregations are done across all products linked to each category via products_m2m
@@ -727,9 +727,9 @@ class DustyInventoryView(APIView):
         products = Product.objects.all()
 
         if loadSubcategories:
-            categories = Category.objects.filter(parentId__isNone=False)
+            categories = Category.objects.filter(parentId__isnull=False)
         else:
-            categories = Category.objects.filter(parentId__isNone=True)
+            categories = Category.objects.filter(parentId__isnull=True)
 
         # Define sort field mapping
         if sort_by == "closing_inventory":
