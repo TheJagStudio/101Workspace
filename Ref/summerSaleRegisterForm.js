@@ -307,7 +307,7 @@ if (message ) {
 	popup.style.transform = "translate(50%, -50%)";
 	popup.style.backgroundColor = statusData === "success" ? "#d4edda" : "#f8d7da";
 	popup.style.color = statusData === "success" ? "#155724" : "#721c24";
-	popup.style.padding = "14px";
+	popup.style.padding = "30px";
 	popup.style.border = statusData === "success" ? "1px solid #c3e6cb" : "1px solid #f5c6cb";
 	popup.style.borderRadius = "5px";
 	popup.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.1)";
@@ -318,14 +318,33 @@ if (message ) {
 
 	let newP = document.createElement("p");
 	newP.textContent = message;
+	newP.style.lineHeight = "30px";
 	popup.appendChild(newP);
+
+	let closeButton = document.createElement("button");
+	closeButton.innerHTML = "Close";
+	
+	closeButton.style.padding = "5px";
+	closeButton.style.backgroundColor = statusData === "success" ? "#28a745" : "#dc3545";
+	closeButton.style.color = "#fff";
+	closeButton.style.border = "none";
+	closeButton.style.borderRadius = "5px";
+	closeButton.style.position = "absolute";
+	closeButton.style.top = "10px";	
+	closeButton.style.right = "10px";
+	closeButton.style.cursor = "pointer";
+	closeButton.addEventListener("click", () => {
+		// remove the param from the url
+		const newUrl = window.location.href.split('?')[0];
+		history.replaceState(null, '', newUrl);
+		popup.remove();
+	});
+
+	popup.appendChild(closeButton);
+	
 	popup.style.display = "flex";
 	popup.style.alignItems = "center";
 	popup.style.justifyContent = "center";
 	popup.style.fontFamily = "Arial, sans-serif";
 	document.body.appendChild(popup);
-	// remove the popup after 5 seconds
-	setTimeout(() => {
-		popup.remove();
-	}, 5000);
 }
