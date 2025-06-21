@@ -33,6 +33,7 @@ import SalesmanHome from "./Pages/Tracker/SalesmanHome";
 import SalesmanHistory from "./Pages/Tracker/SalesmanHistory";
 import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
 import Notification from "./Components/utils/Notification";
+import SearchProduct from "./Pages/Purchase/General/SearchProduct";
 // import CatalogHome from "./Pages/Catalog/CatalogHome";
 // import CatalogOutlet from "./Outlets/CatalogOutlet";
 
@@ -107,6 +108,7 @@ function App() {
 				<Route path="/signup" element={<Signup />} />
 				<Route path="/purchase" element={user?.is_active ? <PurchaseOutlet logout={logout} /> : <Navigate to="/login" replace />}>
 					<Route path="" element={<AIReport />} />
+					<Route path="search" element={<SearchProduct />} />
 					<Route path="po" element={<PO />} />
 					<Route path="report" element={<AIReport />} />
 					<Route path="summary" element={<Summary />} />

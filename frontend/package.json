@@ -27,6 +27,7 @@
     "react-color": "^2.19.3",
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0",
+    "react-photo-view": "^1.2.7",
     "react-qr-barcode-scanner": "^2.1.6",
     "react-router-dom": "^7.6.1",
     "react-syntax-highlighter": "^15.6.1",

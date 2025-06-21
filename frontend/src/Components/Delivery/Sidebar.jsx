@@ -176,8 +176,8 @@ const Sidebar = () => {
                                         >
                                             <span
                                                 className={`w-5 h-5 mr-3 flex items-center justify-center ${location.pathname === item?.to
-                                                        ? "text-green-600"
-                                                        : "text-gray-500"
+                                                    ? "text-green-600"
+                                                    : "text-gray-500"
                                                     }`}
                                             >
                                                 {item?.icon}

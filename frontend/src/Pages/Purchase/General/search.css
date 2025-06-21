@@ -1,0 +1,13 @@
+.gridjs-footer{
+    box-shadow: none;
+    border-left-width: 1px;
+    border-right-width: 1px;
+}
+.gridjs-wrapper{
+    box-shadow: none;
+    border-left-width: 1px;
+    border-right-width: 1px;
+}
+.gridjs-th {
+    padding: 14px 10px !important;
+}

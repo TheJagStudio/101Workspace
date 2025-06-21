@@ -11,8 +11,7 @@ if (form) {
 	attributesToRemove.forEach((attrName) => {
 		form.removeAttribute(attrName);
 	});
-	form.setAttribute("action", "http://127.0.0.1:8000/api/summer-sale-registration/");
-	// form.setAttribute("action", "https://workspace.101distributors.com/backend/api/summer-sale-registration/");
+	form.setAttribute("action", "https://workspace.101distributors.com/backend/api/summer-sale-registration/");
 	form.setAttribute("class", "frm-fluent-form ff-el-form-top ffs_default ff-form-loaded");
 	form.setAttribute("enctype", "multipart/form-data");
 } else {
@@ -49,20 +48,112 @@ uploadHolders.forEach((holder, index) => {
 			attributesToRemove.push(attr.name);
 		}
 	}
+	let inputFieldMap = {
+		business_license_document: ["input_text_2", "licenseNumber"],
+		tobacco_license_document: ["input_text_3", "licenseNumber"],
+		fein_license_document: ["input_text_4", "feinNumber"],
+		hemp_license_document: ["input_text_5", "licenseNumber"],
+		driving_license_document: ["input_text_7", "licenseNumber"],
+		void_check_document: ["input_text_6", "bankName"],
+	};
 	input.addEventListener("change", () => {
 		if (input.files && input.files.length > 0) {
 			const fileName = input.files[0].name;
+			const file = input.files[0];
 			span.textContent = fileName;
+			// const callApi = async (base64Image) => {
+			//     const apiUrl = 'https://workspace.101distributors.com/backend/api/license-validator/';
+
+			//     console.log("Calling API with image data...");
+			//     const response = await fetch(apiUrl, {
+			//         method: 'POST',
+			//         headers: {
+			//             'Content-Type': 'application/json',
+			//         },
+			//         body: JSON.stringify({
+			//             image_url: base64Image,
+			//             name: input.getAttribute("name")
+			//         })
+			//     });
+
+			//     if (!response.ok) {
+			//         throw new Error(`API call failed with status: ${response.status}`);
+			//     }
+
+			//     const data = await response.json();
+			//     document.getElementsByName(inputFieldMap[input.getAttribute("name")][0])[0].value = data?.[inputFieldMap[input.getAttribute("name")][1]]
+			//     console.log(`License Found! ${JSON.stringify(data)}`);
+			//     const expiryDate = new Date(data.expiryDate);
+			//     const currentDate = new Date();
+
+			//     if (expiryDate < currentDate) {
+			//         input.value = '';
+			//         alert("The expiry date has passed.");
+			//     } else {
+			//         console.log("The expiry date has not yet passed.");
+			//     }
+			// };
+
+			// try {
+			//     if (file.type === "application/pdf") {
+			//         console.log("Processing PDF file...");
+			//         const fileReader = new FileReader();
+
+			//         fileReader.onload = async function() {
+			//             const typedarray = new Uint8Array(this.result);
+
+			//             const pdf = await pdfjsLib.getDocument(typedarray).promise;
+			//             const page = await pdf.getPage(1);
+
+			//             const viewport = page.getViewport({ scale: 1.5 });
+			//             const canvas = document.createElement('canvas');
+			//             const context = canvas.getContext('2d');
+			//             canvas.height = viewport.height;
+			//             canvas.width = viewport.width;
+
+			//             await page.render({ canvasContext: context, viewport: viewport }).promise;
+			//             const base64Image = canvas.toDataURL('image/jpeg');
+			//             await callApi(base64Image);
+			//         };
+
+			//         fileReader.readAsArrayBuffer(file);
+
+			//     }
+			//     else if (file.type.startsWith("image/")) {
+			//         console.log("Processing image file...");
+			//         const reader = new FileReader();
+			//         reader.onloadend = async function () {
+			//             const base64Image = reader.result;
+			//             await callApi(base64Image);
+			//         }
+			//         reader.readAsDataURL(file);
+			//     }
+			//     else {
+			//         alert("Unsupported file type. Please upload a PDF or an image.");
+			//         span.textContent = originalButtonText;
+			//     }
+			// } catch (error) {
+			//     console.error("An error occurred:", error);
+			//     alert("Something went wrong while processing the file. Please try again.");
+			//     span.textContent = originalButtonText;
+			// }
 		} else {
 			span.textContent = originalButtonText;
+			// save to local storage as json
+			let localData = localStorage.getItem("dataForm");
+			if (localData) {
+				localData = JSON.parse(localData);
+			} else {
+				localData = {};
+			}
+			localData[input.getAttribute("name")] = fileName;
+			localStorage.setItem("dataForm", JSON.stringify(localData));
 		}
 	});
 	attributesToRemove.forEach((attrName) => {
 		input.removeAttribute(attrName);
 	});
 });
-
-
 
 const stateInput = document.getElementById("ff_12_address_1_state_");
 if (stateInput) {
@@ -94,25 +185,6 @@ if (stateInput) {
 } else {
 	console.error('State input with ID "ff_12_address_1_state_" not found.');
 }
-
-// select all inputs with type text, email, tel, number, textarea, and select
-const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="number"], textarea, select');
-inputs.forEach((input) => {
-    input.addEventListener("change", () => {
-        const value = input.value;
-        if (value) {
-            let localData = localStorage.getItem("dataForm");
-            if (localData) {
-                localData = JSON.parse(localData);
-            } else {
-                localData = {};
-            }
-            localData[input.getAttribute("name")] = value;
-            localStorage.setItem("dataForm", JSON.stringify(localData));
-        }
-    });
-});
-
 // load the dataForm from local storage
 let localData = localStorage.getItem("dataForm");
 if (localData) {

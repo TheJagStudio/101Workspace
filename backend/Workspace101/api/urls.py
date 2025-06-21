@@ -9,6 +9,11 @@ urlpatterns = [
         name="SearchProductsView",
     ),
     path(
+        "products/",
+        views.ProductListingView.as_view(),
+        name="ProductListingView",
+    ),
+    path(
         "sync-salesgent-token/",
         views.SyncSalesgentTokenView.as_view(),
         name="SyncSalesgentTokenView",

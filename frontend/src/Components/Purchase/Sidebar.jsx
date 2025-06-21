@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAtom } from "jotai";
 import { isSidebarOpenAtom } from "../../Variables";
+import { SearchIcon } from "lucide-react";
 
 const Sidebar = () => {
 	const [activeItem, setActiveItem] = useState("report");
@@ -37,6 +38,12 @@ const Sidebar = () => {
 				<div className="py-4 border-b border-gray-200">
 					<div className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"} mb-2`}>GENERAL</div>
 					<ul>
+						<li className="mb-1">
+							<Link to="/purchase/search" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "search" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("search")}>
+								<SearchIcon className={`w-5 h-5 mr-3 ${activeItem === "search" ? "text-indigo-500" : "text-gray-500"}`} />
+								{!collapsed && "Search"}
+							</Link>
+						</li>
 						<li className="mb-1">
 							<Link to="/purchase/report" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Dashboard" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Dashboard")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Dashboard" ? "text-indigo-500" : "text-gray-500"}`}>

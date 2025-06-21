@@ -64,12 +64,52 @@ class SearchProductsView(APIView):
         Search products based on query parameters.
         """
         query = request.GET.get("query", "")
-        search_parameters = {"q": query, "query_by": "productName,sku,upc", "limit": 5}
+        search_parameters = {"q": query, "query_by": "productName,sku,upc"}
         try:
             data = client.collections["101"].documents.search(search_parameters)
             return JsonResponse(data["hits"], safe=False)
         except typesense.exceptions.ObjectNotFound:
             return JsonResponse({"error": "Typesense collection not found."}, status=404)
+
+class ProductListingView(APIView):
+    def get(self, request):
+        """
+        List products with optional filtering and sorting.
+        """
+        query = request.GET.get("search", "")
+        order_by = request.GET.get("order", "productName")
+        direction = request.GET.get("dir", "asc")
+        limit = int(request.GET.get("limit", 10))
+        offset = int(request.GET.get("offset", 0))
+
+        products = Product.objects.filter(active=True)
+
+        if query:
+            products = products.filter(productName__icontains=query)
+
+        if order_by == "productName":
+            products = products.order_by(order_by if direction == "asc" else f"-{order_by}")
+        elif order_by == "availableQuantity":
+            products = products.order_by(order_by if direction == "asc" else f"-{order_by}")
+        elif order_by == "standardPrice":
+            products = products.order_by(order_by if direction == "asc" else f"-{order_by}")
+        elif order_by == "insertedTimestamp":
+            products = products.order_by("lastSyncTimestamp" if direction == "asc" else f"-lastSyncTimestamp")
+        elif order_by == "upc":
+            products = products.order_by(order_by if direction == "asc" else f"-{order_by}")
+        else:
+            return JsonResponse({"error": "Invalid order parameter"}, status=400)
+
+        total_count = products.count()
+        products = products[offset:offset + limit]
+
+        data = {
+            "products": list(products.values()),
+            "total_count": total_count,
+            "limit": limit,
+            "offset": offset,
+        }
+        return JsonResponse(data, safe=False)
 
 
 class SyncSalesgentTokenView(APIView):
@@ -1226,6 +1266,17 @@ class AIReportView(APIView):
 
 # ===========================================================================================================
 
+def notifyMe(message, channel):
+    try:
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        data = message
+        response = requests.post(f'https://thejagstudio-ntfy.hf.space/{channel}', headers=headers, data=data)
+        print(response.text)
+    except Exception as e:
+        print(f"Error notifying: {e}")
+    return
 
 class SummerSaleUserRegistration(APIView):
     permission_classes = []
@@ -1246,8 +1297,9 @@ class SummerSaleUserRegistration(APIView):
     def _create_erp_customer(self, customer_data, headers):
         api_url = "https://erp.101distributorsga.com/api/customer"
         state_stateId_map = {"1": "Alabama", "2": "Alaska", "3": "Arizona", "4": "Arkansas", "5": "California", "6": "Colorado", "7": "Connecticut", "8": "Delaware", "9": "District Of Columbia", "10": "Florida", "11": "Georgia", "12": "Hawaii", "13": "Idaho", "14": "Illinois", "15": "Indiana", "16": "Iowa", "17": "Kansas", "18": "Kentucky", "19": "Louisiana", "20": "Maine", "21": "Maryland", "22": "Massachusetts", "23": "Michigan", "24": "Minnesota", "25": "Mississippi", "26": "Missouri", "27": "Montana", "28": "Nebraska", "29": "Nevada", "30": "New Hampshire", "31": "New Jersey", "32": "New Mexico", "33": "New York", "34": "North Carolina", "35": "North Dakota", "36": "Ohio", "37": "Oklahoma", "38": "Oregon", "39": "Pennsylvania", "40": "Rhode Island", "41": "South Carolina", "42": "South Dakota", "43": "Tennessee", "44": "Texas", "45": "Utah", "46": "Vermont", "47": "Virginia", "48": "Washington", "49": "West Virginia", "50": "Wisconsin", "51": "Wyoming", "52": "American Samoa", "53": "Guam", "54": "Northern Mariana Islands", "55": "Puerto Rico", "56": "United States Minor Outlying Islands", "57": "Virgin Islands"}
+        state_id = customer_data.get("address_1[state]", "").strip()
         state = state_stateId_map.get(str(customer_data.get("address_1[state]", "")).strip(), "Georgia") 
-        state_id = int(customer_data.get("address_1[state]"), 11)
+        state_id = state_id if state_id else "11" 
         payload = {
             "customerDto": {
                 "tier": 1,
@@ -1464,18 +1516,29 @@ class SummerSaleUserRegistration(APIView):
                         upload_results[field_name] = result
                     except Exception as e:
                         upload_results[field_name] = {"status": "error", "message": f"Upload failed for {fileObj.name}: {str(e)}"}
+            
+            message = f"New customer registration: {data.get('names[first_name]', '')} {data.get('names[last_name]', '')} ({data.get('email', '')}) \n from {data.get('address_1[city]', '')}, {data.get('address_1[state]', '')} \n Phone: {data.get('phone', '')}"
+            notifyMe(message,"101")
             return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
 
         except requests.exceptions.HTTPError as err:
             try:
                 error_details = err.response.json()
+                message = error_details.get("error", "An error occurred while processing your request.").get("message", "Unknown error")
+                notifyMe(message,"101-error")
             except json.JSONDecodeError:
                 error_details = f"HTTP Error: {err.response.status_code} - {err.response.text}"
-            return Response({"error": error_details}, status=err.response.status_code)
+                message = error_details
+                notifyMe(message,"101-error")
+            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
         except (requests.exceptions.RequestException, ConnectionError) as err:
-            return Response({"error": f"API Connection Error: {err}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            message = f"API Connection Error: {err}"
+            notifyMe(message,"101-error")
+            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_502_BAD_GATEWAY)
         except Exception as err:
-            return Response({"error": f"An unexpected error occurred: {err}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            message = f"An unexpected error occurred: {err}"
+            notifyMe(message,"101-error")
+            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
 
 
 class LicenseValidatorAPIView(APIView):

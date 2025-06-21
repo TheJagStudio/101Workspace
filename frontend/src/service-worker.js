@@ -113,18 +113,18 @@ const fetchTrackerSettings = async (config) => {
         if (!response.ok) throw new Error('Failed to fetch settings');
         return await response.json();
     } catch (error) {
-        console.error('[Service Worker] Error fetching settings:', error);
+        // console.error('[Service Worker] Error fetching settings:', error);
         return null;
     }
 };
 
 // Main function to perform the location ping
 const performLocationPing = async () => {
-    console.log("[Service Worker] Executing background location ping.");
+    // console.log("[Service Worker] Executing background location ping.");
 
     const openRequest = indexedDB.open("tracker-db", 1);
 
-    openRequest.onerror = () => console.error("[Service Worker] Error opening IndexedDB.");
+    // openRequest.onerror = () => console.error("[Service Worker] Error opening IndexedDB.");
     openRequest.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains("config")) {
@@ -142,7 +142,7 @@ const performLocationPing = async () => {
 
             // Only run if a salesman has enabled tracking in the app
             if (!config || !config.isTracking || !config.isSalesman) {
-                console.log("[Service Worker] Tracking is disabled. Skipping ping.");
+                // console.log("[Service Worker] Tracking is disabled. Skipping ping.");
                 const registration = await self.registration;
                 await registration.periodicSync.unregister("location-sync");
                 return;
@@ -217,13 +217,13 @@ const performLocationPing = async () => {
                     throw new Error(`Server responded with status: ${response.status}`);
                 }
 
-                console.log("[Service Worker] Location ping sent successfully.");
+                // console.log("[Service Worker] Location ping sent successfully.");
             } catch (error) {
-                console.error("[Service Worker] Error during location update:", error);
+                // console.error("[Service Worker] Error during location update:", error);
             }
 
         } catch (error) {
-            console.error("[Service Worker] Failed to perform location ping:", error);
+            // console.error("[Service Worker] Failed to perform location ping:", error);
         } finally {
             db.close();
         }
@@ -235,7 +235,7 @@ self.addEventListener("periodicsync", (event) => {
     if (event.tag === "location-sync") {
         event.waitUntil(
             performLocationPing().catch(error => {
-                console.error("[Service Worker] Periodic sync failed:", error);
+                // console.error("[Service Worker] Periodic sync failed:", error);
             })
         );
     }
@@ -246,7 +246,7 @@ self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'FORCE_LOCATION_UPDATE') {
         event.waitUntil(
             performLocationPing().catch(error => {
-                console.error("[Service Worker] Forced location update failed:", error);
+                // console.error("[Service Worker] Forced location update failed:", error);
             })
         );
     }
