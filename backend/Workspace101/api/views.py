@@ -1519,7 +1519,8 @@ class SummerSaleUserRegistration(APIView):
             
             message = f"New customer registration: {data.get('names[first_name]', '')} {data.get('names[last_name]', '')} ({data.get('email', '')}) \n from {data.get('address_1[city]', '')}, {data.get('address_1[state]', '')} \n Phone: {data.get('phone', '')}"
             notifyMe(message,"101")
-            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
+            success_message = "Your account has been created successfully. For activation, please contact the registration counter."
+            return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={success_message}&status=success", status_code=status.HTTP_302_FOUND)
 
         except requests.exceptions.HTTPError as err:
             try:
@@ -1534,15 +1535,16 @@ class SummerSaleUserRegistration(APIView):
                 error_details = f"HTTP Error: {err.response.status_code} - {err.response.text}"
                 message = error_details
                 notifyMe(message,"101-error")
-            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
+            errorMessage = f"Error: {message}"
+            return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={errorMessage}&status=error", status_code=status.HTTP_302_FOUND)
         except (requests.exceptions.RequestException, ConnectionError) as err:
             message = f"API Connection Error: {err}"
             notifyMe(message,"101-error")
-            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_502_BAD_GATEWAY)
+            return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={message}&status=error", status_code=status.HTTP_502_BAD_GATEWAY)
         except Exception as err:
             message = f"An unexpected error occurred: {err}"
             notifyMe(message,"101-error")
-            return redirect(to="https://101distributors.com/mega-trade-show-customer-registration/", status_code=status.HTTP_302_FOUND)
+            return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={message}&status=error", status_code=status.HTTP_302_FOUND)
 
 
 class LicenseValidatorAPIView(APIView):
