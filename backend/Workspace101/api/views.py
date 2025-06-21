@@ -1524,7 +1524,11 @@ class SummerSaleUserRegistration(APIView):
         except requests.exceptions.HTTPError as err:
             try:
                 error_details = err.response.json()
-                message = error_details.get("error", "An error occurred while processing your request.").get("message", "Unknown error")
+                try:
+                    userDetailsMsg = f"User Details: {data.get('names[first_name]', '')} {data.get('names[last_name]', '')} ({data.get('email', '')}) \n from {data.get('address_1[city]', '')}, {data.get('address_1[state]', '')} \n Phone: {data.get('phone', '')}"
+                except:
+                    userDetailsMsg = "User Details: Not available"
+                message = error_details.get("error", "An error occurred while processing your request.").get("message", "Unknown error")  + f"\n\n{userDetailsMsg}"
                 notifyMe(message,"101-error")
             except json.JSONDecodeError:
                 error_details = f"HTTP Error: {err.response.status_code} - {err.response.text}"
