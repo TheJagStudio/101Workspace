@@ -1494,9 +1494,9 @@ class SummerSaleUserRegistration(APIView):
             "void_check_document": {"id": 59},
         }
 
-        validation_errors = self._validate_request_data(data, files)
-        if validation_errors:
-            return Response(validation_errors, status=status.HTTP_400_BAD_REQUEST)
+        # validation_errors = self._validate_request_data(data, files)
+        # if validation_errors:
+        #     return Response(validation_errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             headers = self._get_api_headers()
