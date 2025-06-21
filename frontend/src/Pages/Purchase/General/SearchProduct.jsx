@@ -103,7 +103,7 @@ const SearchProduct = () => {
             });
 
             // In a real app, VITE_SERVER_URL would be set in your .env file
-            const serverUrl = import.meta.env.VITE_SERVER_URL + "/api/products"
+            const serverUrl = import.meta.env.VITE_SERVER_URL + "/api/products/"
             const data = await apiRequest(`${serverUrl}?${params.toString()}`);
 
             // Use the mock response
