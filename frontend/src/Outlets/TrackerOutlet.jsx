@@ -263,11 +263,11 @@ const TrackerOutlet = ({ logout }) => {
                     console.error("User is not a salesman or superadmin, redirecting to login.");
                 }
             }
-            if (user?.salesmanType === "admin") {
-                navigate("/tracker/admin");
-            } else {
-                navigate("/tracker/salesman/home");
-            }
+            // if (user?.salesmanType === "admin") {
+            //     navigate("/tracker/admin");
+            // } else {
+            //     navigate("/tracker/salesman/home");
+            // }
         }
     }, [user, navigate, logout]);
 

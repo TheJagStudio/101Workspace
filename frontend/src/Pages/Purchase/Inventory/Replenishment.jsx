@@ -117,24 +117,6 @@ const Replenishment = () => {
 	}, [page, pageSize, reverseSort, sortBy, measure]);
 
 	useEffect(() => {
-		async function totalData() {
-			try {
-				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
-				setTotalClosingInventory(data["totalClosingInventory"]);
-				setTotalRevenue(data["totalRevenue"]);
-				setTotalInventoryCost(data["totalInventoryCost"]);
-				setTotalGrossMargin(data["totalGrossMargin"]);
-			} catch (error) {
-				setTableData([]);
-				console.error("Error fetching inventory summary data:", error);
-			}
-			setLoadingTotal(false);
-		}
-		setLoadingTotal(true);
-		totalData();
-	}, [measure]);
-
-	useEffect(() => {
 		setOpenGlossary({
 			open: false,
 			tabData: tabData,
@@ -232,20 +214,10 @@ const Replenishment = () => {
 							<th className="text-center p-4 border-l border-gray-300">Average Cost</th>
 							<th className="text-center p-4 border-l border-gray-300">Inbound Inventory</th>
 						</tr>
-						<tr className="font-semibold bg-gray-100">
-							<td className="py-2 px-1 "></td>
-							<td className="py-2 px-4 w-[50%] border-l border-gray-300">Totals</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatNumber(totalClosingInventory)}</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatNumber(totalRevenue)}</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
-							<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalInventoryCost)}</td>
-						</tr>
 					</thead>
 					<tbody className="h-64 overflow-y-auto">
 						{tableData.map((item, index) => (
-							<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 0 ? "" : "bg-gray-100")} key={index}>
+							<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 1 ? "" : "bg-gray-100")} key={index}>
 								<td className="py-2 px-1 w-fit text-center">
 									<p className="text-sm text-gray-600">{item?.index}</p>
 								</td>
@@ -261,9 +233,9 @@ const Replenishment = () => {
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.itemsSoldPerDay)}</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.itemsSold)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.inventoryCost)}</td>
+								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.daysCover)}</td>
+								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.averageCost)}</td>
+								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.inboundInventory)}</td>
 							</tr>
 						))}
 					</tbody>

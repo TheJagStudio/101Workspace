@@ -304,13 +304,13 @@ const PO = () => {
 					Search
 				</button>
 			</div>
-			<div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-fit max-h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
+			<div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-fit rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
 				{loading && (
 					<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/25 backdrop-blur-md z-20">
 						<Loader height={60} width={60} />
 					</div>
 				)}
-				<div className="h-full overflow-y-auto">
+				<div className="h-fit max-h-[calc(100vh-23rem)] overflow-y-auto">
 					{<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")} borderWidth={2}>
 						<thead className="sticky top-0 bg-white z-10 border-b border-gray-300">
 							<tr className="border-b border-gray-300 bg-gray-100 leading-4">
@@ -328,7 +328,7 @@ const PO = () => {
 							</tr>
 
 						</thead>
-						<tbody className="h-64 overflow-y-auto">
+						<tbody className="overflow-y-auto">
 							{tableData.map((item, index) => (
 								<tr className={"items-start border-b group " + (index % 2 === 0 ? "" : "bg-gray-100") + (selectedVendors[index] !== 0 ? " !bg-red-100 border-red-200 hover:!bg-red-200/75" : " border-gray-300 hover:bg-indigo-50")} key={index}>
 									<td className="py-2 px-1 w-fit text-center">

@@ -296,274 +296,471 @@ def syncVendors(token):
             break
 
 
-def createSingleProduct(product_data):
-    product = Product(
-        sku=product_data.get("sku"),
-        upc=product_data.get("upc"),
-        productName=product_data.get("name"),
-        availableQuantity=product_data.get("availableQuantity"),
-        imageUrl=product_data.get("imageUrl"),
-        masterProductId=product_data.get("masterProductId"),
-        masterProductName=product_data.get("masterProductName"),
-        standardPrice=product_data.get("stdPrice"),
-        tierPrice=product_data.get("tier1Price"),
-        costPrice=product_data.get("costPrice"),
-        ecommerce=product_data.get("ecommerce"),
-        active=product_data.get("active"),
-        compositeProduct=product_data.get("compositeProduct"),
-        stateRestricted=None,
-        customerGroupRestricted=product_data.get("customerSpecific"),
-        trackInventory=product_data.get("trackInventory"),
-        trackInventoryByImei=product_data.get("trackInventoryByImei"),
-        size=product_data.get("size"),
-        returnable=product_data.get("returnable"),
-        minimumSellingPrice=product_data.get("minimumSellingPrice"),
-    )
-    for category in product_data.get("productCategories", []):
-        category_obj = Category.objects.filter(name=category).first()
-        if category_obj:
-            product.categories.add(category_obj)
-    product.save()
-    return product
+# def createSingleProduct(product_data):
+#     product = Product(
+#         sku=product_data.get("sku"),
+#         upc=product_data.get("upc"),
+#         productName=product_data.get("name"),
+#         availableQuantity=product_data.get("availableQuantity"),
+#         imageUrl=product_data.get("imageUrl"),
+#         masterProductId=product_data.get("masterProductId"),
+#         masterProductName=product_data.get("masterProductName"),
+#         standardPrice=product_data.get("stdPrice"),
+#         tierPrice=product_data.get("tier1Price"),
+#         costPrice=product_data.get("costPrice"),
+#         ecommerce=product_data.get("ecommerce"),
+#         active=product_data.get("active"),
+#         compositeProduct=product_data.get("compositeProduct"),
+#         stateRestricted=None,
+#         customerGroupRestricted=product_data.get("customerSpecific"),
+#         trackInventory=product_data.get("trackInventory"),
+#         trackInventoryByImei=product_data.get("trackInventoryByImei"),
+#         size=product_data.get("size"),
+#         returnable=product_data.get("returnable"),
+#         minimumSellingPrice=product_data.get("minimumSellingPrice"),
+#     )
+#     for category in product_data.get("productCategories", []):
+#         category_obj = Category.objects.filter(name=category).first()
+#         if category_obj:
+#             product.categories.add(category_obj)
+#     product.save()
+#     return product
 
 
-def createSingleInventoryData(product, inventoryDataList):
-    inventory_data_objs = []
-    productId = Product.objects.filter(productId=product.productId).first()
-    for inventoryData in inventoryDataList:
-        inventory_data_obj = InventoryData(
-            id=inventoryData.get("id"),
-            productInventoryId=inventoryData.get("productInventoryId"),
-            productId=productId,
-            wareHouseId=inventoryData.get("wareHouseId"),
-            quantity=inventoryData.get("quantity"),
-            availableQuantity=(inventoryData.get("availableQuantity") or 0),
-            costPrice=(inventoryData.get("costPrice") or 0),
-            orderId=inventoryData.get("orderId"),
-            orderLineItemId=inventoryData.get("orderLineItemId"),
-            orderFulfillmentId=inventoryData.get("orderFulfillmentId"),
-            returnOrderId=inventoryData.get("returnOrderId"),
-            purchaseOrderId=inventoryData.get("purchaseOrderId"),
-            billId=inventoryData.get("billId"),
-            transferOrderId=inventoryData.get("transferOrderId"),
-            vendorReturnOrderId=inventoryData.get("vendorReturnOrderId"),
-            compositeProductId=inventoryData.get("compositeProductId"),
-            adjustmentId=inventoryData.get("adjustmentId"),
-            notes=inventoryData.get("notes"),
-            actionType=inventoryData.get("actionType"),
-            salesOrderId=inventoryData.get("salesOrderId"),
-            createdBy=inventoryData.get("createdBy"),
-            insertedTimestamp=inventoryData.get("insertedTimestamp"),
-            employeeName=inventoryData.get("employeeName"),
-            storeName=inventoryData.get("storeName"),
-            warehouseName=inventoryData.get("warehouseName"),
-        )
-        inventory_data_objs.append(inventory_data_obj)
-    if inventory_data_objs:
-        existing_ids = set(InventoryData.objects.filter(id__in=[obj.id for obj in inventory_data_objs]).values_list("id", flat=True))
-        objs_to_update = [obj for obj in inventory_data_objs if obj.id in existing_ids]
-        objs_to_create = [obj for obj in inventory_data_objs if obj.id not in existing_ids]
-        if objs_to_update:
-            InventoryData.objects.bulk_update(
-                objs_to_update,
-                [
-                    "productInventoryId",
-                    "productId",
-                    "wareHouseId",
-                    "quantity",
-                    "availableQuantity",
-                    "costPrice",
-                    "orderId",
-                    "orderLineItemId",
-                    "orderFulfillmentId",
-                    "returnOrderId",
-                    "purchaseOrderId",
-                    "billId",
-                    "transferOrderId",
-                    "vendorReturnOrderId",
-                    "compositeProductId",
-                    "adjustmentId",
-                    "notes",
-                    "actionType",
-                    "salesOrderId",
-                    "createdBy",
-                    "insertedTimestamp",
-                    "employeeName",
-                    "storeName",
-                    "warehouseName",
-                ],
-            )
-        if objs_to_create:
-            InventoryData.objects.bulk_create(objs_to_create, ignore_conflicts=True)
-    # product.inventoryList.set(inventory_data_objs)
-    # product.save()
-    print(f"Updated inventory for product ID: {product.productId} with {len(inventory_data_objs)} records.")
+# def createSingleInventoryData(product, inventoryDataList):
+#     inventory_data_objs = []
+#     productId = Product.objects.filter(productId=product.productId).first()
+#     for inventoryData in inventoryDataList:
+#         inventory_data_obj = InventoryData(
+#             id=inventoryData.get("id"),
+#             productInventoryId=inventoryData.get("productInventoryId"),
+#             productId=productId,
+#             wareHouseId=inventoryData.get("wareHouseId"),
+#             quantity=inventoryData.get("quantity"),
+#             availableQuantity=(inventoryData.get("availableQuantity") or 0),
+#             costPrice=(inventoryData.get("costPrice") or 0),
+#             orderId=inventoryData.get("orderId"),
+#             orderLineItemId=inventoryData.get("orderLineItemId"),
+#             orderFulfillmentId=inventoryData.get("orderFulfillmentId"),
+#             returnOrderId=inventoryData.get("returnOrderId"),
+#             purchaseOrderId=inventoryData.get("purchaseOrderId"),
+#             billId=inventoryData.get("billId"),
+#             transferOrderId=inventoryData.get("transferOrderId"),
+#             vendorReturnOrderId=inventoryData.get("vendorReturnOrderId"),
+#             compositeProductId=inventoryData.get("compositeProductId"),
+#             adjustmentId=inventoryData.get("adjustmentId"),
+#             notes=inventoryData.get("notes"),
+#             actionType=inventoryData.get("actionType"),
+#             salesOrderId=inventoryData.get("salesOrderId"),
+#             createdBy=inventoryData.get("createdBy"),
+#             insertedTimestamp=inventoryData.get("insertedTimestamp"),
+#             employeeName=inventoryData.get("employeeName"),
+#             storeName=inventoryData.get("storeName"),
+#             warehouseName=inventoryData.get("warehouseName"),
+#         )
+#         inventory_data_objs.append(inventory_data_obj)
+#     if inventory_data_objs:
+#         existing_ids = set(InventoryData.objects.filter(id__in=[obj.id for obj in inventory_data_objs]).values_list("id", flat=True))
+#         objs_to_update = [obj for obj in inventory_data_objs if obj.id in existing_ids]
+#         objs_to_create = [obj for obj in inventory_data_objs if obj.id not in existing_ids]
+#         if objs_to_update:
+#             InventoryData.objects.bulk_update(
+#                 objs_to_update,
+#                 [
+#                     "productInventoryId",
+#                     "productId",
+#                     "wareHouseId",
+#                     "quantity",
+#                     "availableQuantity",
+#                     "costPrice",
+#                     "orderId",
+#                     "orderLineItemId",
+#                     "orderFulfillmentId",
+#                     "returnOrderId",
+#                     "purchaseOrderId",
+#                     "billId",
+#                     "transferOrderId",
+#                     "vendorReturnOrderId",
+#                     "compositeProductId",
+#                     "adjustmentId",
+#                     "notes",
+#                     "actionType",
+#                     "salesOrderId",
+#                     "createdBy",
+#                     "insertedTimestamp",
+#                     "employeeName",
+#                     "storeName",
+#                     "warehouseName",
+#                 ],
+#             )
+#         if objs_to_create:
+#             InventoryData.objects.bulk_create(objs_to_create, ignore_conflicts=True)
+#     # product.inventoryList.set(inventory_data_objs)
+#     # product.save()
+#     print(f"Updated inventory for product ID: {product.productId} with {len(inventory_data_objs)} records.")
+
+
+# def syncInventoryData(token):
+#     headers = {
+#         "Accept": "application/json, text/plain",
+#         "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+#         "Authorization": "Bearer " + token,
+#         "Cache-Control": "no-cache",
+#         "Connection": "keep-alive",
+#         "Pragma": "no-cache",
+#         "Referer": "https://erp.101distributorsga.com/",
+#         "Sec-Fetch-Dest": "empty",
+#         "Sec-Fetch-Mode": "cors",
+#         "Sec-Fetch-Site": "same-origin",
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+#         "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+#         "sec-ch-ua-mobile": "?0",
+#         "sec-ch-ua-platform": '"Windows"',
+#     }
+#     today = datetime.now()
+#     start_date = (today - timedelta(days=6)).strftime("%Y-%m-%d+%H:%M:%S")
+#     end_date = today.strftime("%Y-%m-%d+%H:%M:%S")
+#     response = requests.get(
+#         "https://erp.101distributorsga.com/api/order/list?storeIds=1,2&startDate=" + start_date + "&endDate=" + end_date + "&page=0&size=500&showEmployeeSpecificData=false",
+#         headers=headers,
+#     )
+#     data = response.json()
+#     uniqueProducts = []
+#     if data["hasError"]:
+#         print("Error fetching inventory data:", data)
+#         yield 100
+#     else:
+#         invoices = data["result"]["content"]
+#         totalInvoices = len(invoices)
+#         i = 0
+#         for invoice in invoices:
+#             invoiceId = invoice["id"]
+#             salesOrderId = invoice.get("salesOrderId", None)
+#             headers = {
+#                 "Accept": "application/json, text/plain",
+#                 "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+#                 "Authorization": "Bearer " + token,
+#                 "Cache-Control": "no-cache",
+#                 "Connection": "keep-alive",
+#                 "Pragma": "no-cache",
+#                 "Referer": "https://erp.101distributorsga.com/",
+#                 "Sec-Fetch-Dest": "empty",
+#                 "Sec-Fetch-Mode": "cors",
+#                 "Sec-Fetch-Site": "same-origin",
+#                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+#                 "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+#                 "sec-ch-ua-mobile": "?0",
+#                 "sec-ch-ua-platform": '"Windows"',
+#             }
+
+#             response = requests.get(
+#                 "https://erp.101distributorsga.com/api/order/lineItem/" + str(invoiceId) + "?storeIds=1,2&sortedByProductName=true&showEmployeeSpecificData=false",
+#                 headers=headers,
+#             )
+#             line_items = response.json()["result"]
+#             for line_item in line_items:
+#                 if line_item["productId"] not in uniqueProducts:
+#                     uniqueProducts.append(line_item["productId"])
+#             i += 1
+#             yield (i * 100) / (totalInvoices * 4)
+#     totalUniqueProducts = len(uniqueProducts)
+#     i = 0
+#     for productId in uniqueProducts:
+#         headers = {
+#             "Accept": "application/json, text/plain",
+#             "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+#             "Authorization": "Bearer " + token,
+#             "Cache-Control": "no-cache",
+#             "Connection": "keep-alive",
+#             "Pragma": "no-cache",
+#             "Referer": "https://erp.101distributorsga.com/",
+#             "Sec-Fetch-Dest": "empty",
+#             "Sec-Fetch-Mode": "cors",
+#             "Sec-Fetch-Site": "same-origin",
+#             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+#             "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+#             "sec-ch-ua-mobile": "?0",
+#             "sec-ch-ua-platform": '"Windows"',
+#         }
+
+#         response = requests.get(
+#             f"https://erp.101distributorsga.com/api/inventory/history/{productId}?storeIds=1,2",
+#             headers=headers,
+#         )
+#         data = response.json()["result"]
+#         if data:
+#             product = Product.objects.filter(productId=productId).first()
+#             if product:
+#                 inventoryDataList = []
+#                 for key in data.keys():
+#                     for inventoryData in data[key]:
+#                         inventoryDataList.append(inventoryData)
+#                 createSingleInventoryData(product, inventoryDataList)
+#                 # print(f"Updated inventory for product ID: {productId}")
+#             else:
+#                 headers = {
+#                     "Accept": "application/json, text/plain",
+#                     "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+#                     "Authorization": "Bearer " + token,
+#                     "Cache-Control": "no-cache",
+#                     "Connection": "keep-alive",
+#                     "Pragma": "no-cache",
+#                     "Referer": "https://erp.101distributorsga.com/",
+#                     "Sec-Fetch-Dest": "empty",
+#                     "Sec-Fetch-Mode": "cors",
+#                     "Sec-Fetch-Site": "same-origin",
+#                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+#                     "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+#                     "sec-ch-ua-mobile": "?0",
+#                     "sec-ch-ua-platform": '"Windows"',
+#                 }
+
+#                 response = requests.get(
+#                     "https://erp.101distributorsga.com/api/product/" + str(productId) + "?storeIds=1,2",
+#                     headers=headers,
+#                 )
+#                 productData = response.json()["result"]
+#                 newProduct = createSingleProduct(productData)
+#                 # Create InventoryData objects for the new product and associate them
+#                 inventory_objs = []
+#                 for key in data.keys():
+#                     for inventoryData in data[key]:
+#                         inventory_obj, _ = InventoryData.objects.get_or_create(
+#                             id=inventoryData.get("id"),
+#                             defaults={
+#                                 "productInventoryId": inventoryData.get("productInventoryId"),
+#                                 "productId": newProduct,
+#                                 "wareHouseId": inventoryData.get("wareHouseId"),
+#                                 "quantity": inventoryData.get("quantity"),
+#                                 "availableQuantity": inventoryData.get("availableQuantity") or 0,
+#                                 "costPrice": inventoryData.get("costPrice") or 0,
+#                                 "orderId": inventoryData.get("orderId"),
+#                                 "orderLineItemId": inventoryData.get("orderLineItemId"),
+#                                 "orderFulfillmentId": inventoryData.get("orderFulfillmentId"),
+#                                 "returnOrderId": inventoryData.get("returnOrderId"),
+#                                 "purchaseOrderId": inventoryData.get("purchaseOrderId"),
+#                                 "billId": inventoryData.get("billId"),
+#                                 "transferOrderId": inventoryData.get("transferOrderId"),
+#                                 "vendorReturnOrderId": inventoryData.get("vendorReturnOrderId"),
+#                                 "compositeProductId": inventoryData.get("compositeProductId"),
+#                                 "adjustmentId": inventoryData.get("adjustmentId"),
+#                                 "notes": inventoryData.get("notes"),
+#                                 "actionType": inventoryData.get("actionType"),
+#                                 "salesOrderId": inventoryData.get("salesOrderId"),
+#                                 "createdBy": inventoryData.get("createdBy"),
+#                                 "insertedTimestamp": inventoryData.get("insertedTimestamp"),
+#                                 "employeeName": inventoryData.get("employeeName"),
+#                                 "storeName": inventoryData.get("storeName"),
+#                                 "warehouseName": inventoryData.get("warehouseName"),
+#                             },
+#                         )
+#                         inventory_objs.append(inventory_obj)
+#                 if inventory_objs:
+#                     newProduct.inventoryList.set(inventory_objs)
+#                 newProduct.save()
+#                 print(f"Created new product with ID: {productId} and updated inventory data.")
+#         i += 1
+#         yield ((i * 100) / (totalUniqueProducts * 2)) + 25
+
+#     print(f"Total unique products found: {len(uniqueProducts)}")
 
 
 def syncInventoryData(token):
     headers = {
         "Accept": "application/json, text/plain",
-        "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
         "Authorization": "Bearer " + token,
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Pragma": "no-cache",
-        "Referer": "https://erp.101distributorsga.com/",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-        "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
+        # Add other necessary headers
     }
+
+    # 1. Get all invoices to find unique product IDs
     today = datetime.now()
     start_date = (today - timedelta(days=6)).strftime("%Y-%m-%d+%H:%M:%S")
     end_date = today.strftime("%Y-%m-%d+%H:%M:%S")
-    response = requests.get(
-        "https://erp.101distributorsga.com/api/order/list?storeIds=1,2&startDate=" + start_date + "&endDate=" + end_date + "&page=0&size=500&showEmployeeSpecificData=false",
-        headers=headers,
-    )
-    data = response.json()
-    uniqueProducts = []
-    if data["hasError"]:
-        print("Error fetching inventory data:", data)
+    
+    invoices_url = f"https://erp.101distributorsga.com/api/order/list?storeIds=1,2&startDate={start_date}&endDate={end_date}&page=0&size=500&showEmployeeSpecificData=false"
+    response = requests.get(invoices_url, headers=headers)
+    response.raise_for_status() # Raise an exception for bad status codes
+    invoices = response.json().get("result", {}).get("content", [])
+
+    if not invoices:
+        print("No invoices found in the given date range.")
         yield 100
-    else:
-        invoices = data["result"]["content"]
-        totalInvoices = len(invoices)
-        i = 0
-        for invoice in invoices:
-            invoiceId = invoice["id"]
-            salesOrderId = invoice.get("salesOrderId", None)
-            headers = {
-                "Accept": "application/json, text/plain",
-                "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
-                "Authorization": "Bearer " + token,
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Pragma": "no-cache",
-                "Referer": "https://erp.101distributorsga.com/",
-                "Sec-Fetch-Dest": "empty",
-                "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Site": "same-origin",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-                "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Windows"',
-            }
+        return
 
-            response = requests.get(
-                "https://erp.101distributorsga.com/api/order/lineItem/" + str(invoiceId) + "?storeIds=1,2&sortedByProductName=true&showEmployeeSpecificData=false",
-                headers=headers,
+    unique_product_ids = set()
+    for invoice in invoices:
+        line_items_url = f"https://erp.101distributorsga.com/api/order/lineItem/{invoice['id']}?storeIds=1,2&sortedByProductName=true&showEmployeeSpecificData=false"
+        try:
+            line_items_response = requests.get(line_items_url, headers=headers)
+            line_items_response.raise_for_status()
+            line_items = line_items_response.json().get("result", [])
+            for item in line_items:
+                unique_product_ids.add(item["productId"])
+        except requests.RequestException as e:
+            print(f"Failed to fetch line items for invoice {invoice['id']}: {e}")
+    
+    print(f"Found {len(unique_product_ids)} unique products to sync.")
+    yield 25 # Progress update
+
+    # 2. Fetch all data concurrently from the API
+    products_to_create = []
+    inventory_data_to_process = {} # {productId: [inventory_list]}
+    
+    def fetch_product_data(product_id):
+        # This function fetches both product and inventory history for a single product ID
+        try:
+            # Fetch inventory history
+            inventory_url = f"https://erp.101distributorsga.com/api/inventory/history/{product_id}?storeIds=1,2"
+            inv_res = requests.get(inventory_url, headers=headers)
+            inv_res.raise_for_status()
+            inventory_payload = inv_res.json().get("result")
+
+            # Fetch product details
+            product_url = f"https://erp.101distributorsga.com/api/product/{product_id}?storeIds=1,2"
+            prod_res = requests.get(product_url, headers=headers)
+            prod_res.raise_for_status()
+            product_payload = prod_res.json().get("result")
+            
+            return product_id, {"inventory": inventory_payload, "product": product_payload}
+        except requests.RequestException as e:
+            print(f"Failed to fetch data for product {product_id}: {e}")
+            return product_id, None
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_product = {executor.submit(fetch_product_data, pid): pid for pid in unique_product_ids}
+        for future in as_completed(future_to_product):
+            product_id, data = future.result()
+            if data and data["product"] and data["inventory"]:
+                products_to_create.append(data["product"])
+                
+                inventory_list = []
+                for key in data["inventory"].keys():
+                    inventory_list.extend(data["inventory"][key])
+                inventory_data_to_process[product_id] = inventory_list
+
+    yield 50 # Progress update
+
+    # 3. Process Products: Separate into creates and updates
+    existing_products = Product.objects.filter(
+        productId__in=unique_product_ids
+    ).in_bulk(id_field='productId')
+
+    new_product_objs = []
+    all_category_names = set()
+    
+    for p_data in products_to_create:
+        if p_data.get("productId") not in existing_products:
+            # Collect all category names for bulk fetching later
+            for cat_name in p_data.get("productCategories", []):
+                all_category_names.add(cat_name)
+            
+            new_product_objs.append(Product(
+                productId=p_data.get("productId"),
+                sku=p_data.get("sku"),
+                upc=p_data.get("upc"),
+                productName=p_data.get("name"),
+                availableQuantity=p_data.get("availableQuantity"),
+                imageUrl=p_data.get("imageUrl"),
+                masterProductId=p_data.get("masterProductId"),
+                masterProductName=p_data.get("masterProductName"),
+                standardPrice=p_data.get("stdPrice"),
+                tierPrice=p_data.get("tier1Price"),
+                costPrice=p_data.get("costPrice"),
+                ecommerce=p_data.get("ecommerce"),
+                active=p_data.get("active"),
+                compositeProduct=p_data.get("compositeProduct"),
+                customerGroupRestricted=p_data.get("customerSpecific"),
+                trackInventory=p_data.get("trackInventory"),
+                trackInventoryByImei=p_data.get("trackInventoryByImei"),
+                size=p_data.get("size"),
+                returnable=p_data.get("returnable"),
+                minimumSellingPrice=p_data.get("minimumSellingPrice"),
+            ))
+
+    # Bulk create new products
+    if new_product_objs:
+        created_products = Product.objects.bulk_create(new_product_objs)
+        print(f"Created {len(created_products)} new products.")
+        
+        # Efficiently handle category relationships
+        category_map = {cat.name: cat for cat in Category.objects.filter(name__in=all_category_names)}
+        ProductCategories = Product.categories.through
+        product_category_relations = []
+        
+        for p_obj, p_data in zip(created_products, [p for p in products_to_create if p['productId'] not in existing_products]):
+            for cat_name in p_data.get("productCategories", []):
+                if cat_name in category_map:
+                    product_category_relations.append(
+                        ProductCategories(product_id=p_obj.productId, category_id=category_map[cat_name].categoryId)
+                    )
+        if product_category_relations:
+            ProductCategories.objects.bulk_create(product_category_relations, ignore_conflicts=True)
+
+    yield 75 # Progress update
+
+    # 4. Process InventoryData in bulk
+    all_product_objects = {p.productId: p for p in Product.objects.filter(productId__in=unique_product_ids)}
+    
+    inventory_to_create = []
+    inventory_to_update = []
+    all_inventory_ids = []
+
+    for product_id, inventory_list in inventory_data_to_process.items():
+        for inv_data in inventory_list:
+            all_inventory_ids.append(inv_data.get("id"))
+
+    existing_inv_ids = set(InventoryData.objects.filter(id__in=all_inventory_ids).values_list('id', flat=True))
+
+    for product_id, inventory_list in inventory_data_to_process.items():
+        product_obj = all_product_objects.get(product_id)
+        if not product_obj:
+            continue
+
+        for inv_data in inventory_list:
+            inv_obj = InventoryData(
+                id=inv_data.get("id"),
+                productInventoryId=inv_data.get("productInventoryId"),
+                productId=product_obj,
+                wareHouseId=inv_data.get("wareHouseId"),
+                quantity=inv_data.get("quantity"),
+                availableQuantity=(inv_data.get("availableQuantity") or 0),
+                costPrice=(inv_data.get("costPrice") or 0),
+                orderId=inv_data.get("orderId"),
+                orderLineItemId=inv_data.get("orderLineItemId"),
+                orderFulfillmentId=inv_data.get("orderFulfillmentId"),
+                returnOrderId=inv_data.get("returnOrderId"),
+                purchaseOrderId=inv_data.get("purchaseOrderId"),
+                billId=inv_data.get("billId"),
+                transferOrderId=inv_data.get("transferOrderId"),
+                vendorReturnOrderId=inv_data.get("vendorReturnOrderId"),
+                compositeProductId=inv_data.get("compositeProductId"),
+                adjustmentId=inv_data.get("adjustmentId"),
+                notes=inv_data.get("notes"),
+                actionType=inv_data.get("actionType"),
+                salesOrderId=inv_data.get("salesOrderId"),
+                createdBy=inv_data.get("createdBy"),
+                insertedTimestamp=inv_data.get("insertedTimestamp"),
+                employeeName=inv_data.get("employeeName"),
+                storeName=inv_data.get("storeName"),
+                warehouseName=inv_data.get("warehouseName"),
             )
-            line_items = response.json()["result"]
-            for line_item in line_items:
-                if line_item["productId"] not in uniqueProducts:
-                    uniqueProducts.append(line_item["productId"])
-            i += 1
-            yield (i * 100) / (totalInvoices * 4)
-    totalUniqueProducts = len(uniqueProducts)
-    i = 0
-    for productId in uniqueProducts:
-        headers = {
-            "Accept": "application/json, text/plain",
-            "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
-            "Authorization": "Bearer " + token,
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Pragma": "no-cache",
-            "Referer": "https://erp.101distributorsga.com/",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-            "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-        }
-
-        response = requests.get(
-            f"https://erp.101distributorsga.com/api/inventory/history/{productId}?storeIds=1,2",
-            headers=headers,
-        )
-        data = response.json()["result"]
-        if data:
-            product = Product.objects.filter(productId=productId).first()
-            if product:
-                inventoryDataList = []
-                for key in data.keys():
-                    for inventoryData in data[key]:
-                        inventoryDataList.append(inventoryData)
-                createSingleInventoryData(product, inventoryDataList)
-                # print(f"Updated inventory for product ID: {productId}")
+            if inv_obj.id in existing_inv_ids:
+                inventory_to_update.append(inv_obj)
             else:
-                headers = {
-                    "Accept": "application/json, text/plain",
-                    "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
-                    "Authorization": "Bearer " + token,
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
-                    "Pragma": "no-cache",
-                    "Referer": "https://erp.101distributorsga.com/",
-                    "Sec-Fetch-Dest": "empty",
-                    "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Site": "same-origin",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-                    "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-                    "sec-ch-ua-mobile": "?0",
-                    "sec-ch-ua-platform": '"Windows"',
-                }
+                inventory_to_create.append(inv_obj)
+    
+    update_fields = [f.name for f in InventoryData._meta.get_fields() if f.name != 'id' and not f.auto_created]
 
-                response = requests.get(
-                    "https://erp.101distributorsga.com/api/product/" + str(productId) + "?storeIds=1,2",
-                    headers=headers,
-                )
-                productData = response.json()["result"]
-                newProduct = createSingleProduct(productData)
-                # Create InventoryData objects for the new product and associate them
-                inventory_objs = []
-                for key in data.keys():
-                    for inventoryData in data[key]:
-                        inventory_obj, _ = InventoryData.objects.get_or_create(
-                            id=inventoryData.get("id"),
-                            defaults={
-                                "productInventoryId": inventoryData.get("productInventoryId"),
-                                "productId": newProduct,
-                                "wareHouseId": inventoryData.get("wareHouseId"),
-                                "quantity": inventoryData.get("quantity"),
-                                "availableQuantity": inventoryData.get("availableQuantity") or 0,
-                                "costPrice": inventoryData.get("costPrice") or 0,
-                                "orderId": inventoryData.get("orderId"),
-                                "orderLineItemId": inventoryData.get("orderLineItemId"),
-                                "orderFulfillmentId": inventoryData.get("orderFulfillmentId"),
-                                "returnOrderId": inventoryData.get("returnOrderId"),
-                                "purchaseOrderId": inventoryData.get("purchaseOrderId"),
-                                "billId": inventoryData.get("billId"),
-                                "transferOrderId": inventoryData.get("transferOrderId"),
-                                "vendorReturnOrderId": inventoryData.get("vendorReturnOrderId"),
-                                "compositeProductId": inventoryData.get("compositeProductId"),
-                                "adjustmentId": inventoryData.get("adjustmentId"),
-                                "notes": inventoryData.get("notes"),
-                                "actionType": inventoryData.get("actionType"),
-                                "salesOrderId": inventoryData.get("salesOrderId"),
-                                "createdBy": inventoryData.get("createdBy"),
-                                "insertedTimestamp": inventoryData.get("insertedTimestamp"),
-                                "employeeName": inventoryData.get("employeeName"),
-                                "storeName": inventoryData.get("storeName"),
-                                "warehouseName": inventoryData.get("warehouseName"),
-                            },
-                        )
-                        inventory_objs.append(inventory_obj)
-                if inventory_objs:
-                    newProduct.inventoryList.set(inventory_objs)
-                newProduct.save()
-                print(f"Created new product with ID: {productId} and updated inventory data.")
-        i += 1
-        yield ((i * 100) / (totalUniqueProducts * 2)) + 25
+    if inventory_to_create:
+        InventoryData.objects.bulk_create(inventory_to_create, ignore_conflicts=True)
+        print(f"Bulk created {len(inventory_to_create)} inventory records.")
 
-    print(f"Total unique products found: {len(uniqueProducts)}")
-
+    if inventory_to_update:
+        InventoryData.objects.bulk_update(inventory_to_update, update_fields)
+        print(f"Bulk updated {len(inventory_to_update)} inventory records.")
+    
+    yield 100 # Final progress
 
 def syncCategories(token):
     headers = {

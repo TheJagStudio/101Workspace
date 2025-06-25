@@ -152,13 +152,15 @@ const SearchProduct = () => {
     };
 
     const handleSelectItem = (productId) => {
-        const newSelected = new Set(selectedItems);
-        if (newSelected.has(productId)) {
-            newSelected.delete(productId);
-        } else {
-            newSelected.add(productId);
-        }
-        setSelectedItems(newSelected);
+        setSelectedItems((prevSelected) => {
+            const newSelected = new Set(prevSelected);
+            if (newSelected.has(productId)) {
+                newSelected.delete(productId);
+            } else {
+                newSelected.add(productId);
+            }
+            return newSelected;
+        });
     };
 
     const formatPrice = (price) => {
@@ -177,10 +179,10 @@ const SearchProduct = () => {
     };
 
     return (
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full mx-auto px-4 sm:px-6">
             {/* Search and Filter Bar */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 mb-8 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1 " + (loading ? "opacity-50 pointer-events-none" : "")}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                     {/* Search Input */}
                     <div className="relative flex-1 max-w-md">
                         <input
@@ -188,9 +190,9 @@ const SearchProduct = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search products, UPC codes..."
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 peer rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/75 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 peer rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/75 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
                         />
-                        <Search className="w-8 h-8 text-gray-300 absolute top-2 peer-focus:text-indigo-500 inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-all" />
+                        <Search className="w-8 h-8 text-gray-300 absolute top-1 peer-focus:text-indigo-500 inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-all" />
                         {searchTerm && (
                             <button
                                 onClick={() => setSearchTerm('')}
@@ -204,7 +206,7 @@ const SearchProduct = () => {
                     </div>
 
                     {/* Filter Button */}
-                    <button className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-xl text-gray-700 bg-white/80 hover:bg-white hover:border-gray-300 transition-all duration-200">
+                    <button className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-white/80 hover:bg-white hover:border-gray-300 transition-all duration-200">
                         <FilterIcon />
                         <span className="ml-2">Filters</span>
                     </button>
@@ -212,7 +214,7 @@ const SearchProduct = () => {
             </div>
 
             {/* Main Content */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm overflow-hidden">
+            <div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
                 {/* Loading Overlay */}
                 {loading && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl">
@@ -226,7 +228,7 @@ const SearchProduct = () => {
                         <table className="w-full">
                             {/* Header */}
                             <thead>
-                                <tr className="border-b border-gray-200/50 bg-gray-50/50">
+                                <tr className="border-b border-gray-200/50 bg-gray-50">
                                     <th className="w-12 px-6 py-4">
                                         <label className="inline-flex items-center cursor-pointer">
                                             <input
@@ -272,164 +274,158 @@ const SearchProduct = () => {
                             </thead>
 
                             {/* Body */}
-                            <tbody className="divide-y divide-gray-200/50">
-                                {products.length > 0 ? products.map((product, index) => (
-                                    <tr
-                                        key={product?.id}
-                                        className={`group transition-all duration-200 ${selectedItems.has(product.id) ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-indigo-50'
-                                            }`}
-                                    >
-                                        {/* Custom Checkbox */}
-                                        <td className="px-6 py-4">
-                                            <label className="inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedItems.has(product.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedItems(new Set(products.map(p => p.id)));
-                                                        } else {
-                                                            setSelectedItems(new Set());
-                                                        }
-                                                    }}
-                                                    className="sr-only peer"
-                                                />
-                                                <span className={`w-5 h-5 flex items-center justify-center rounded border-2 transition-colors duration-200
+                            <PhotoProvider>
+                                <tbody className="divide-y divide-gray-200/50">
+                                    {products.length > 0 ? products.map((product, index) => (
+                                        <tr
+                                            key={product?.id}
+                                            className={`group transition-all duration-200  ${selectedItems.has(product.id) ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-indigo-50 even:bg-gray-50'}`}
+                                        >
+                                            {/* Custom Checkbox */}
+                                            <td className="px-6 py-4">
+                                                <label className="inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedItems.has(product.id)}
+                                                        onChange={() => handleSelectItem(product.id)}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <span className={`w-5 h-5 flex items-center justify-center rounded border-2 transition-colors duration-200
                                                     ${selectedItems.has(product.id)
-                                                        ? 'bg-indigo-600 border-indigo-600'
-                                                        : 'bg-white border-gray-300 peer-hover:border-indigo-400'
-                                                    }`}>
-                                                    {selectedItems.has(product.id) && (
-                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    )}
-                                                </span>
-                                            </label>
-                                        </td>
+                                                            ? 'bg-indigo-600 border-indigo-600'
+                                                            : 'bg-white border-gray-300 peer-hover:border-indigo-400'
+                                                        }`}>
+                                                        {selectedItems.has(product.id) && (
+                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            </td>
 
-                                        {/* Product */}
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="relative">
+                                            {/* Product */}
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="relative">
 
-                                                    <PhotoProvider>
+
                                                         <PhotoView src={product?.imageUrl ? product.imageUrl : '/static/images/default.png'}>
                                                             <img
                                                                 src={product?.imageUrl ? product.imageUrl : '/static/images/default.png'}
                                                                 alt={product?.productName}
-                                                                className="w-12 h-12 rounded-xl object-cover shadow-sm"
+                                                                className="w-8 h-8 mr-2"
 
                                                             />
                                                         </PhotoView>
-                                                    </PhotoProvider>
-                                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                                                        <span className="text-white text-xs font-bold">{(currentPage - 1) * limit + index + 1}</span>
+                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                                            <span className="text-white text-xs font-bold">{(currentPage - 1) * limit + index + 1}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-semibold max-w-96 text-gray-900 truncate">
+                                                            {product?.productName}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 md:hidden">
+                                                            UPC: {product?.upc}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-semibold max-w-96 text-gray-900 truncate">
-                                                        {product?.productName}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 md:hidden">
-                                                        UPC: {product?.upc}
-                                                    </p>
+                                            </td>
+
+                                            {/* UPC */}
+                                            <td className="px-6 py-4 hidden md:table-cell">
+                                                <div className="flex items-center space-x-2">
+
+                                                    {product?.upc && (
+                                                        <button
+                                                            type="button"
+                                                            className="p-1 rounded hover:bg-gray-200 transition cursor-pointer"
+                                                            title="Copy UPC"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(product.upc);
+                                                            }}
+                                                        >
+                                                            <Copy className="w-4 h-4 text-gray-500 hover:text-indigo-600 transition" />
+                                                        </button>
+                                                    )}
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                        {product?.upc}
+                                                    </span>
                                                 </div>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        {/* UPC */}
-                                        <td className="px-6 py-4 hidden md:table-cell">
-                                            <div className="flex items-center space-x-2">
+                                            {/* Stock */}
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product?.availableQuantity > 20
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : product.availableQuantity > 0
+                                                            ? 'bg-yellow-100 text-yellow-800'
+                                                            : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                        {product?.availableQuantity}
+                                                    </span>
+                                                </div>
+                                            </td>
 
-                                                {product?.upc && (
-                                                    <button
-                                                        type="button"
-                                                        className="p-1 rounded hover:bg-gray-200 transition cursor-pointer"
-                                                        title="Copy UPC"
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(product.upc);
-                                                        }}
-                                                    >
-                                                        <Copy className="w-4 h-4 text-gray-500 hover:text-indigo-600 transition" />
-                                                    </button>
-                                                )}
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                    {product?.upc}
+                                            {/* Price */}
+                                            <td className="px-6 py-4 text-right">
+                                                <span className="text-lg font-bold text-gray-900">
+                                                    {formatPrice(product.standardPrice)}
                                                 </span>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        {/* Stock */}
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product?.availableQuantity > 20
+                                            {/* Status */}
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product?.active
                                                     ? 'bg-green-100 text-green-800'
-                                                    : product.availableQuantity > 0
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-red-100 text-red-800'
+                                                    : 'bg-gray-100 text-gray-800'
                                                     }`}>
-                                                    {product?.availableQuantity}
+                                                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${product?.active ? 'bg-green-400' : 'bg-gray-400'
+                                                        }`}></span>
+                                                    {product?.active ? 'Active' : 'Inactive'}
                                                 </span>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        {/* Price */}
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="text-lg font-bold text-gray-900">
-                                                {formatPrice(product.standardPrice)}
-                                            </span>
-                                        </td>
+                                            {/* Date */}
+                                            <td className="px-6 py-4 hidden lg:table-cell">
+                                                <span className="text-sm text-gray-600">
+                                                    {formatDate(product.insertedTimestamp)}
+                                                </span>
+                                            </td>
 
-                                        {/* Status */}
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product?.active
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${product?.active ? 'bg-green-400' : 'bg-gray-400'
-                                                    }`}></span>
-                                                {product?.active ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-
-                                        {/* Date */}
-                                        <td className="px-6 py-4 hidden lg:table-cell">
-                                            <span className="text-sm text-gray-600">
-                                                {formatDate(product.insertedTimestamp)}
-                                            </span>
-                                        </td>
-
-                                        {/* Actions */}
-                                        <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => handleEdit(product)}
-                                                className="inline-flex items-center p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
-                                            >
-                                                <EditIcon />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={columns.length + 1} className="px-6 py-16 text-center">
-                                            <div className="flex flex-col items-center space-y-3">
-                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                                    </svg>
+                                            {/* Actions */}
+                                            <td className="px-6 py-4 text-center">
+                                                <button
+                                                    onClick={() => handleEdit(product)}
+                                                    className="inline-flex items-center p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                                                >
+                                                    <EditIcon />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={columns.length + 1} className="px-6 py-16 text-center">
+                                                <div className="flex flex-col items-center space-y-3">
+                                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                                        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-medium text-gray-900">No products found</h3>
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding some products'}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-sm font-medium text-gray-900">No products found</h3>
-                                                    <p className="text-sm text-gray-500 mt-1">
-                                                        {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding some products'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </PhotoProvider>
                         </table>
                     </div>
 

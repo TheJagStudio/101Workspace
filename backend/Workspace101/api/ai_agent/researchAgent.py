@@ -15,86 +15,41 @@ load_dotenv()
 # IMPORTANT: It is recommended to use environment variables for API keys.
 # For this example, we'll use a placeholder. Replace with your actual key or set as an environment variable.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-searpApi = "db2606ec0664d3016ae1660375bce6f1d803b081"
+searpApi = "87bfa430-7de7-4c35-80d9-62ca8da5a2d2"
 
 # Replaced f-string
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}".format(GEMINI_API_KEY)
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key={}".format(GEMINI_API_KEY)
 
 # Expanded and refined product categories
 PRODUCT_CATEGORIES = ["Vape Devices and Vaporizers (Disposable and Refillable)", "E-Liquids (Nicotine and Nicotine-Free)", "Hemp-Derived Products (CBD, CBG, CBN)", "Delta-8, Delta-10, HHC, and THCa Products", "Kratom (Powders, Capsules, Extracts)", "Hookah, Shisha Tobacco, and Charcoals", "Premium Cigars and Rolling Papers", "Energy Drinks and Nootropic Beverages", "Imported and Specialty Snacks (e.g., Mexican Candy)", "Adult Novelty and Wellness Products", "Smoke Shop Supplies (Glassware, Grinders, Displays)"]
 JURISDICTION = "Georgia, USA"
 
 
-# def SearpApiFunction(query: str, max_results: int = 10):
-#     url = "https://google.serper.dev/search"
-
-#     payload = json.dumps({"q": query, "location": "Atlanta, Georgia, United States"})
-#     headers = {"X-API-KEY": searpApi, "Content-Type": "application/json"}
-
-#     response = requests.request("POST", url, headers=headers, data=payload)
-#     return response.json().get("organic", [])[:max_results]
-
-def parse_search_results(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-    search_results = []
-    result_items = soup.find_all('li', class_='b_algo')
-    for item in result_items:
-        try:
-            link_tag = item.find('div', class_='b_tpcn').find('a')
-            link = link_tag['href']
-            title_tag = item.find('h2').find('a')
-            title = title_tag.text.strip()
-            description_tag = item.find('div', class_='b_caption')
-            description = description_tag.find('p').text.strip() if description_tag else ""
-
-            search_results.append({
-                'link': link,
-                'title': title,
-                'snippet': description,
-            })
-        except AttributeError:
-            print("Skipping result due to missing elements.")
-            continue
-    return search_results
-def scrape_bing_results(url):
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
-        response = requests.get(url=url, headers=headers)
-
-        soup_bing = BeautifulSoup(response.content.decode('utf-8'), "lxml")
-        return soup_bing
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching or parsing URL: {e}")
-        return None
-    
 def SearpApiFunction(query: str, max_results: int = 10):
-    url = f"https://www.bing.com/search?q={query}"
-    soup = scrape_bing_results(url)
-    if soup:
-        results = parse_search_results(soup.prettify())
-        tempResults = []
-        for result in results:
-            response = requests.get(result['link'])
-            url = response.text.split('var u = "')[1].split('"')[0]
-            tempResults.append({
-                'link': url,
-                'title': result['title'],
-                'snippet': result['snippet'],
-            })
-        # print(f"Found {len(results)} results for query: {query}")
-        return tempResults[:max_results]
-    else:
-        return []
+    headers = {
+        'content-type': 'application/json',
+        'x-api-key': searpApi, # Use the environment variable
+    }
+
+    json_data = {
+        'query': query,
+        'contents': {
+            'text': True,
+        },
+    }
+
+    response = requests.post('https://api.exa.ai/search', headers=headers, json=json_data)
+    response.raise_for_status() # Raise an exception for HTTP errors
+    return response.json()["results"][:max_results] # Exa API returns "results" directly under root
 
 class WebSearchTool:
-    """A tool for performing general web searches using DuckDuckGo."""
+    """A tool for performing general web searches using Exa.ai."""
 
     def search(self, query: str, max_results: int = 5):
-        # yield {"type": "status", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Searching for query: {query}", "details": {"query": query}}
         try:
             return SearpApiFunction(query, max_results=max_results)
         except Exception as e:
-            # yield {"type": "error", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Error during web search for query: {query}", "details": {"query": query, "error": str(e)}}
+            print({"type": "error", "agent": "WebSearchTool", "phase": "SEARCH", "message": f"Error during web search for query: {query}", "details": {"query": query, "error": str(e)}})
             return []
 
 
@@ -102,49 +57,33 @@ class SocialMediaSearchTool:
     """A tool for searching social media platforms for consumer sentiment."""
 
     def search(self, query: str, max_results: int = 5):
-        # yield {"type": "status", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Searching social media for: {query}", "details": {"query": query}}
         try:
             # Focus on Reddit for candid conversations
             social_query = f"site:reddit.com {query}"
             return SearpApiFunction(social_query, max_results=max_results)
         except Exception as e:
-            # yield {"type": "error", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Error during social media search for: {query}", "details": {"query": query, "error": str(e)}}
+            print({"type": "error", "agent": "SocialMediaSearchTool", "phase": "SOCIAL_SEARCH", "message": f"Error during social media search for: {query}", "details": {"query": query, "error": str(e)}})
             return []
 
 
-# class WebScraperTool:
-#     """A tool for scraping and cleaning content from a URL."""
-
-#     def scrape(self, url: str):
-#         # yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Scraping URL: {url}", "details": {"url": url}}
-#         try:
-#             payload = json.dumps({
-#             "url":  url,
-#             })
-#             headers = {
-#                 'X-API-KEY':  searpApi,
-#                 'Content-Type': 'application/json'
-#             }
-
-#             response = requests.request("POST", "https://scrape.serper.dev", headers=headers, data=payload)
-
-#             return response.json().get("text", "")[:8000]
-#         except requests.RequestException as e:
-#             # yield {"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error scraping URL: {url}", "details": {"url": url, "error": str(e)}}
-#             return None
 class WebScraperTool:
-    """A tool for scraping and cleaning content from a URL."""
-    def scrape(self, url: str):
-        # yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Scraping URL: {url}", "details": {"url": url}}
+    """
+    A placeholder tool. With the updated SearpApiFunction,
+    scraping individual URLs using a separate call is no longer necessary
+    as the 'text' content is already included in the search results.
+    This tool is kept for architectural consistency but its `scrape` method
+    will now simply extract the 'text' from a provided search result dictionary.
+    """
+    def scrape(self, search_result_item: dict):
+        """
+        Extracts the 'text' content directly from a search result item
+        returned by SearpApiFunction.
+        """
+        # yield {"type": "status", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Extracting text from search result: {search_result_item.get('url', 'N/A')}", "details": {"url": search_result_item.get('url', 'N/A')}}
         try:
-            response = requests.get(url)
-            soup_bing = BeautifulSoup(response.content.decode('utf-8'), "lxml")
-            htmlContent = str(soup_bing.get_text()).strip()
-            htmlContent = re.sub(r'\s{2,}', ' ', htmlContent)
-            # print(f"Scraped content from {url[:50]}... with length {len(htmlContent)} characters.")
-            return htmlContent[:8000]  # Limit to 8000 characters
-        except requests.RequestException as e:
-            # yield {"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error scraping URL: {url}", "details": {"url": url, "error": str(e)}}
+            return search_result_item.get("text", "")
+        except Exception as e:
+            print({"type": "error", "agent": "WebScraperTool", "phase": "SCRAPE", "message": f"Error extracting text from search result: {search_result_item.get('url', 'N/A')}", "details": {"result_item": search_result_item, "error": str(e)}})
             return None
 
 
@@ -208,17 +147,21 @@ class MarketResearchAgent:
             search_results = self.search_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
-                    content = self.scraper_tool.scrape(result["link"])
+                    # Directly use the 'text' from the search result, no separate scrape call
+                    content = self.scraper_tool.scrape(result) # Pass the full result item
                     if content:
-                        all_content += f"\n\n--- Web Source: {result['title']} ({result['link']}) ---\n{content}"
-                        sources.add(result["link"])
+                        all_content += f"\n\n--- Web Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}"
+                        sources.add(result.get('url', 'N/A'))
 
         for query in social_queries:
-            search_results = self.social_tool.search(query, max_results=7)
-            if search_results:
-                for result in search_results:
-                    all_content += f"\n\n--- Social Source: {result['title']} ({result['link']}) ---\n{result['snippet']}"
-                    sources.add(result["link"])
+            social_results = self.social_tool.search(query, max_results=7)
+            if social_results:
+                for result in social_results:
+                    # Directly use the 'text' from the social search result
+                    content = self.scraper_tool.scrape(result) # Pass the full result item
+                    if content:
+                        all_content += f"\n\n--- Social Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}" # Use 'url' instead of 'link' for consistency with Exa.ai
+                        sources.add(result.get('url', 'N/A'))
 
         if not all_content:
             return {"analysis": {"category": category, "error": "No content could be gathered."}, "sources": []}
@@ -267,11 +210,11 @@ class RegulatoryComplianceAgent:
             search_results = self.search_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
-                    # if any(domain in result["link"] for domain in [".gov", ".org", "fda.gov", "ga.gov"]):
-                    content = self.scraper_tool.scrape(result["link"])
+                    # if any(domain in result["url"] for domain in [".gov", ".org", "fda.gov", "ga.gov"]): # Using 'url'
+                    content = self.scraper_tool.scrape(result) # Pass the full result item
                     if content:
-                        all_content += f"\n\n--- Source: {result['title']} ({result['link']}) ---\n{content}"
-                        sources.add(result["link"])
+                        all_content += f"\n\n--- Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}"
+                        sources.add(result.get('url', 'N/A'))
 
         if not all_content:
             return {"analysis": {"status": "Watch", "risk_level": "Medium", "summary": "Could not find definitive regulatory information from official sources. Manual review required."}, "sources": []}
@@ -307,10 +250,10 @@ class CompetitiveIntelligenceAgent:
             search_results = self.search_tool.search(query, max_results=7)
             if search_results:
                 for result in search_results:
-                    content = self.scraper_tool.scrape(result["link"])
+                    content = self.scraper_tool.scrape(result) # Pass the full result item
                     if content:
-                        all_content += f"\n\n--- Competitor Source: {result['title']} ({result['link']}) ---\n{content}"
-                        sources.add(result["link"])
+                        all_content += f"\n\n--- Competitor Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}"
+                        sources.add(result.get('url', 'N/A'))
 
         if not all_content:
             return {"analysis": {"error": "Could not find competitor information."}, "sources": []}
@@ -352,13 +295,26 @@ class SupplierDiscoveryAgent:
                 suppliers[product] = [{"name": "No direct suppliers found via search.", "url": "#"}]
                 continue
 
+            # Instead of scraping, we will pass the snippet and title/URL to the LLM
+            # for it to identify suppliers, as full text content might be too large
+            # or redundant for this specific task if the snippet is sufficient.
+            # However, since `SearpApiFunction` now returns full text, we can use that.
+            relevant_results_info = []
+            for res in search_results:
+                relevant_results_info.append({
+                    "title": res.get("title", "N/A"),
+                    "url": res.get("url", "N/A"), # Use 'url'
+                    "text_snippet": res.get("text", "")[:500] # Use a snippet of the text
+                })
+
+
             prompt = f"""
             From the following search results for "{product}", identify up to 2 potential B2B suppliers or distributors.
             For each, provide their name and a direct URL to their website.
             Do not list retailers or informational sites. Focus on wholesale/distribution.
             
-            Search Results:
-            {json.dumps(search_results, indent=2)}
+            Search Results (Title, URL, and Snippet of Text):
+            {json.dumps(relevant_results_info, indent=2)}
 
             Provide a JSON list where each object has a "name" and "url" key.
             Example: [{{"name": "Global Vapes Wholesale", "url": "https://globalvapes.com"}}]
@@ -564,7 +520,7 @@ class Orchestrator:
         self.llm = GeminiLLM(api_url=GEMINI_API_URL)
         self.search_tool = WebSearchTool()
         self.social_tool = SocialMediaSearchTool()
-        self.scraper_tool = WebScraperTool()
+        self.scraper_tool = WebScraperTool() # This scraper tool now just extracts 'text' from the search result object
         self.market_agent = MarketResearchAgent(self.llm, self.search_tool, self.social_tool, self.scraper_tool)
         self.regulatory_agent = RegulatoryComplianceAgent(self.llm, self.search_tool, self.scraper_tool)
         self.competition_agent = CompetitiveIntelligenceAgent(self.llm, self.search_tool, self.scraper_tool)
@@ -586,10 +542,6 @@ class Orchestrator:
                 market_analysis = market_result.get("analysis", {})
                 compliance_analysis = compliance_result.get("analysis", {})
                 competition_analysis = competition_result.get("analysis", {})
-
-                # if "error" in market_analysis or "error" in compliance_analysis or "error" in competition_analysis:
-                #     yield {"type": "warning", "phase": "CATEGORY_SKIP", "message": f"Skipping report generation for '{category}' due to data gathering or analysis errors.", "details": {"category": category}}
-                #     continue
 
                 yield {"type": "progress", "phase": "SCORE_CALCULATION", "message": f"Calculating opportunity score for: {category}", "details": {"category": category}}
                 opportunity_score = self.reporting_agent._calculate_opportunity_score(market_analysis, compliance_analysis)

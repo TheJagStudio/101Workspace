@@ -5,6 +5,8 @@ import Calendar from "../../../Components/utils/Calendar";
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from "../../../utils/api";
 import { glossaryAtom, isSidebarOpenAtom } from "../../../Variables";
+import { PhotoProvider, PhotoView } from 'react-photo-view';
+import 'react-photo-view/dist/react-photo-view.css';
 
 const dropdownOptions = {
 	reportType: [
@@ -316,33 +318,44 @@ const Summary = () => {
 								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalInventoryCost)}</td>
 							</tr>
 						</thead>
-						<tbody className="h-64 overflow-y-auto">
-							{tableData.map((item, index) => (
-								<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 0 ? "" : "bg-gray-100")} key={index}>
-									<td className="py-2 px-1 w-fit text-center">
-										<p className="text-sm text-gray-600">{item?.index}</p>
-									</td>
-									<td className="py-2 px-2 w-[50%] border-l border-gray-300">
-										<div className="flex items-center">
-											{pageSize <= 50 && <img src={item?.imageUrl || "/static/images/default.png"} alt="" className="w-8 h-8 mr-2" />}
-											<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
-												({item?.id})
-											</a>
-											<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
-										</div>
-									</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.revenue)}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.inventoryCost)}</td>
-								</tr>
-							))}
-							{tableData.length === 0 && !loading && (
-								<tr>
-									<td colSpan={6} className="text-center py-4 text-gray-500">No data available</td>
-								</tr>
-							)}
-						</tbody>
+						<PhotoProvider>
+							<tbody className="h-64 overflow-y-auto">
+								{tableData.map((item, index) => (
+									<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 0 ? "" : "bg-gray-100")} key={index}>
+										<td className="py-2 px-1 w-fit text-center">
+											<p className="text-sm text-gray-600">{item?.index}</p>
+										</td>
+										<td className="py-2 px-2 w-[50%] border-l border-gray-300">
+											<div className="flex items-center">
+												{pageSize <= 50 &&
+													<PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}>
+														<img
+															src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}
+															alt={item?.productName}
+															className="w-8 h-8 mr-2"
+
+														/>
+													</PhotoView>}
+
+												<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
+													({item?.id})
+												</a>
+												<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
+											</div>
+										</td>
+										<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>
+										<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.revenue)}</td>
+										<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
+										<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.inventoryCost)}</td>
+									</tr>
+								))}
+								{tableData.length === 0 && !loading && (
+									<tr>
+										<td colSpan={6} className="text-center py-4 text-gray-500">No data available</td>
+									</tr>
+								)}
+							</tbody>
+						</PhotoProvider>
 					</table>
 				</div>
 			</div>
