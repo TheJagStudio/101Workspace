@@ -842,12 +842,7 @@ def syncSearchData(token):
                     "host": "thejagstudio-typesense.hf.space",
                     "port": "443",
                     "protocol": "https",
-                },
-                {
-                    "host": "185.28.22.68",
-                    "port": "7860",
-                    "protocol": "http",
-                },
+                }
             ],
             "connection_timeout_seconds": 2,
         }
