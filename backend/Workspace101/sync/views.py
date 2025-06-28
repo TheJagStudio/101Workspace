@@ -886,6 +886,7 @@ def syncSearchData(token):
             f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=1000",
             headers=headers,
         )
+        products = []
         try:
             products = response.json()["result"]["content"]
             totalPages = response.json()["result"]["totalPages"]
