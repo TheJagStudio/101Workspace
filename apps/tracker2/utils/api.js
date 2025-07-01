@@ -25,7 +25,7 @@ export const refreshToken = async () => {
     }
 
     const response = await fetch(
-      `http://10.1.11.205:8000/api/auth/token/refresh/`,
+      `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/token/refresh/`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

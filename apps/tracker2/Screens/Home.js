@@ -88,7 +88,7 @@ const Home = () => {
 		]);
 	}
 	useEffect(() => {
-		apiRequest(`http://10.1.11.205:8000/api/tracker/salesman/activity/today/`)
+		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/activity/today/`)
 			.then((response) => {
 				setTodaysActivity(response);
 				setIsTracking(response?.is_tracking || false);
@@ -114,7 +114,7 @@ const Home = () => {
 				}
 			});
 
-		apiRequest(`http://10.1.11.205:8000/api/tracker/salesman/planned_routes/today/`)
+		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/planned_routes/today/`)
 			.then((response) => {
 				setTodaysPlannedRoute(response);
 			})
@@ -136,7 +136,7 @@ const Home = () => {
 
 	const handleSearch = () => {
 		if (!searchQuery.trim()) return;
-		apiRequest(`http://10.1.11.205:8000/api/tracker/salesman/places_search/?query=${encodeURIComponent(searchQuery)}`)
+		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/places_search/?query=${encodeURIComponent(searchQuery)}`)
 			.then((data) => {
 				if (data.status === "OK") {
 					setSearchResults(
@@ -166,7 +166,7 @@ const Home = () => {
 			latitude: place?.lat,
 			longitude: place?.lng,
 		};
-		apiRequest(`http://10.1.11.205:8000/api/tracker/salesman/planned_routes/add_stop/`, {
+		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/planned_routes/add_stop/`, {
 			method: "POST",
 			body: JSON.stringify(payload),
 		})
@@ -180,7 +180,7 @@ const Home = () => {
 						},
 					]);
 				}
-				return apiRequest(`http://10.1.11.205:8000/api/tracker/salesman/planned_routes/today/`);
+				return apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/planned_routes/today/`);
 			})
 			.then((response) => {
 				setTodaysPlannedRoute(response);
@@ -213,7 +213,7 @@ const Home = () => {
 	const handleToggleTracking = async () => {
 		const newTrackingStatus = !isTracking;
 		try {
-			await apiRequest(`http://10.1.11.205:8000/api/tracker/salesman/set_tracking_status/`, {
+			await apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/set_tracking_status/`, {
 				method: "POST",
 				body: JSON.stringify({
 					status: newTrackingStatus ? "active" : "offline",

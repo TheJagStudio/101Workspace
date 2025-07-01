@@ -43,8 +43,8 @@ const Login = () => {
         setLoading(true);
         setError("");
         try {
-            
-            const data = await apiRequest('http://10.1.11.205:8000/api/auth/login/', {
+
+            const data = await apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/login/`, {
                 method: "POST",
                 body: JSON.stringify({
                     username: email,

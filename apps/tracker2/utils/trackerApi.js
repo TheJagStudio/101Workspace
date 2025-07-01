@@ -1,6 +1,6 @@
 import { apiRequest } from './api';
 
-const TRACKER_API_BASE = `http://10.1.11.205:8000/api/tracker`;
+const TRACKER_API_BASE = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker`;
 
 // Salesmen API
 export const fetchSalesmen = async () => {
