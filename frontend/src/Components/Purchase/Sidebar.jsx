@@ -12,11 +12,27 @@ const Sidebar = () => {
 		setActiveItem(item);
 	};
 
+	// Add a mapping from path to sidebar item key
+	const pathToItem = {
+		"search": "search",
+		"report": "Dashboard",
+		"po-maker": "PoMaker",
+		"po-list": "PoList",
+		"summary": "Summary",
+		"replenishment": "Replenishment",
+		"performance": "Performance",
+		"dusty-inventory": "Dusty Inventory",
+		"setting": "Setting",
+		// Add more mappings as needed
+	};
+
 	useEffect(() => {
 		const path = window.location.pathname;
-		const item = path.split("/").pop();
-		setActiveItem(item.charAt(0).toUpperCase() + item.slice(1));
-	}, []);
+		const segments = path.split("/");
+		const last = segments[segments.length - 1] || segments[segments.length - 2] || "";
+		const mapped = pathToItem[last] || (last.charAt(0).toUpperCase() + last.slice(1));
+		setActiveItem(mapped);
+	}, [window.location.pathname]);
 
 	return (
 		<div className={`absolute flex flex-col h-screen sm:relative bg-white shadow-lg shadow-gray-200 border-r border-gray-200 transition-all duration-300 z-50  ${collapsed ? "w-0 sm:w-20 " : "w-screen sm:w-64 "}`}>
@@ -53,19 +69,19 @@ const Sidebar = () => {
 							</Link>
 						</li>
 						<li className="mb-1">
-							<Link to="/purchase/po" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Po" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Po")}>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" className={`w-5 h-5 mr-3 ${activeItem === "Po" ? "text-indigo-500" : "text-gray-500"}`}>
+							<Link to="/purchase/po-maker" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "PoMaker" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("PoMaker")}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" className={`w-5 h-5 mr-3 ${activeItem === "PoMaker" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M32 0C14.3 0 0 14.3 0 32S14.3 64 32 64l16 0c8.8 0 16 7.2 16 16l0 288c0 44.2 35.8 80 80 80l18.7 0c-1.8 5-2.7 10.4-2.7 16c0 26.5 21.5 48 48 48s48-21.5 48-48c0-5.6-1-11-2.7-16l197.5 0c-1.8 5-2.7 10.4-2.7 16c0 26.5 21.5 48 48 48s48-21.5 48-48c0-5.6-1-11-2.7-16l66.7 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-464 0c-8.8 0-16-7.2-16-16l0-288C128 35.8 92.2 0 48 0L32 0zM224 32c-17.7 0-32 14.3-32 32l0 224c0 17.7 14.3 32 32 32l128 0c17.7 0 32-14.3 32-32l0-224c0-17.7-14.3-32-32-32L224 32zM416 64l0 64c0 17.7 14.3 32 32 32l64 0c17.7 0 32-14.3 32-32l0-64c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32 14.3-32 32zm32 128c-17.7 0-32 14.3-32 32l0 64c0 17.7 14.3 32 32 32l128 0c17.7 0 32-14.3 32-32l0-64c0-17.7-14.3-32-32-32l-128 0z" />
 								</svg>
 								{!collapsed && "PO Maker"}
 							</Link>
 						</li>
 						<li className="mb-1">
-							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Customers" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Customers")}>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Customers" ? "text-indigo-500" : "text-gray-500"}`}>
-									<path fill="currentColor" d="M10 14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm11-5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM10 2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm11 0a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+							<Link to="/purchase/po-list" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "PoList" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("PoList")}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className={`w-5 h-5 mr-3 ${activeItem === "PoList" ? "text-indigo-500" : "text-gray-500"}`}>
+									<path stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 13h3m-3 3h8m-8 4h8m-8 4h8m1-17V2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v22s0 1 1 1h1m23 2h4a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6m2 27a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1z" />
 								</svg>
-								{!collapsed && "Customers"}
+								{!collapsed && "Generated POs"}
 							</Link>
 						</li>
 						<li className="mb-1">

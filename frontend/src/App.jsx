@@ -23,7 +23,7 @@ import DeliverySetting from "./Pages/Delivery/DeliverySetting";
 import CreateDelivery from "./Pages/Delivery/CreateDelivery";
 import DeliveryCustomer from "./Pages/Delivery/DeliveryCustomer";
 import DeliveryReport from "./Pages/Delivery/DeliveryReport";
-import PO from "./Pages/Purchase/General/PO";
+import POMaker from "./Pages/Purchase/General/POMaker";
 import DustyInventory from "./Pages/Purchase/Inventory/DustyInventory";
 import TrackerDashboard from "./Pages/Tracker/TrackerDashboard";
 import TrackerMap from "./Pages/Tracker/TrackerMap";
@@ -34,6 +34,7 @@ import SalesmanHistory from "./Pages/Tracker/SalesmanHistory";
 import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
 import Notification from "./Components/utils/Notification";
 import SearchProduct from "./Pages/Purchase/General/SearchProduct";
+import POList from "./Pages/Purchase/General/POList";
 // import CatalogHome from "./Pages/Catalog/CatalogHome";
 // import CatalogOutlet from "./Outlets/CatalogOutlet";
 
@@ -109,7 +110,8 @@ function App() {
 				<Route path="/purchase" element={user?.is_active ? <PurchaseOutlet logout={logout} /> : <Navigate to="/login" replace />}>
 					<Route path="" element={<AIReport />} />
 					<Route path="search" element={<SearchProduct />} />
-					<Route path="po" element={<PO />} />
+					<Route path="po-maker" element={<POMaker />} />
+					<Route path="po-list" element={<POList />} />
 					<Route path="report" element={<AIReport />} />
 					<Route path="summary" element={<Summary />} />
 					<Route path="performance" element={<PerformanceDash />} />

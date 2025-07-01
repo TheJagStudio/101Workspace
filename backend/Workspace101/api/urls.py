@@ -63,9 +63,19 @@ urlpatterns = [
         views.POMakerView.as_view(),
         name="POMakerView",
     ),
+    path(
+        "po/",
+        views.POView.as_view(),
+        name="POView",
+    ),
+    path(
+        "po-line-items/<int:po_id>/",
+        views.POLineItemView.as_view(),
+        name="POLineItemView",
+    ),
     path("dataMaker/", views.dataMaker.as_view(), name="dataMaker"),
     path("vacuum-sqlite/", views.vacuum_sqlite_database.as_view(), name="vacuum_sqlite"),
-    path("summer-sale-registration/", views.SummerSaleUserRegistration.as_view(), name="SummerSaleUserRegistrationView"),
-    path("license-validator/", views.LicenseValidatorAPIView.as_view(), name="LicenseValidatorAPIView"),
-    path("ollama-api/", views.OllamaApiView.as_view(), name="OllamaApiView"),
+    # path("summer-sale-registration/", views.SummerSaleUserRegistration.as_view(), name="SummerSaleUserRegistrationView"),
+    # path("license-validator/", views.LicenseValidatorAPIView.as_view(), name="LicenseValidatorAPIView"),
+    # path("ollama-api/", views.OllamaApiView.as_view(), name="OllamaApiView"),
 ]

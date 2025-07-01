@@ -14,6 +14,18 @@ import typesense
 import time
 from django.conf import settings
 
+def notifyMe(message, channel):
+    try:
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        data = message
+        response = requests.post(f'https://thejagstudio-ntfy.hf.space/{channel}', headers=headers, data=data)
+        print(response.text)
+    except Exception as e:
+        print(f"Error notifying: {e}")
+    return
+
 
 def syncProducts(token):
     totalPages = 80
@@ -901,8 +913,6 @@ def syncSearchData(token):
             except:
                 product["masterProductId"] = 0
             product["categories"] = str(product["categories"])
-            if product["upc"] == "DAG-0001":
-                print(product)
             all_products.append(product)
         percent = (page / totalPages) * 50
         page += 1
@@ -910,9 +920,6 @@ def syncSearchData(token):
 
     # Import to Typesense in chunks of 1000
     for i in range(0, len(all_products), 1000):
-        for product in all_products[i : i + 1000]:
-            if product["upc"] == "DAG-0001":
-                print(product)
         client.collections[collection_name].documents.import_(all_products[i : i + 1000], {"action": "create"})
         percent = 50 + ((i + 1000) / len(all_products)) * 50
         yield percent
@@ -1066,6 +1073,7 @@ class syncData(APIView):
         syncType = request.data.get("syncType", "all")
 
         if not token:
+            notifyMe("Sync Error : Token not found. Please check your Salesgent token configuration.", "101-error")
             return Response({"status": "error", "message": "Token is required"}, status=400)
 
         def event_stream():
@@ -1120,6 +1128,7 @@ class syncData(APIView):
 
                 print(f"Error during sync operation ({syncType}): {e}")
                 traceback.print_exc()
+                notifyMe(f"Sync Error: {str(e)}", "101-error")
                 # Send a generic error to the client
                 yield f"data: {json.dumps({'error': f'An error occurred during {syncType} sync: {str(e)}', 'status': 'error'})}\n\n"
 

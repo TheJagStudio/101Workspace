@@ -114,3 +114,12 @@ pre {
   50% { transform: translateY(50%); }
   100% { transform: translateY(-50%); }
 }
+
+.PhotoView-Slider__Backdrop{
+	background-color: #000000BB !important;
+	backdrop-filter: blur(5px);
+}
+.PhotoView__Photo{
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

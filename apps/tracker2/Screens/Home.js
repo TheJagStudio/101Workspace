@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import * as Location from "expo-location";
-import { registerBackgroundTaskAsync, unregisterBackgroundTaskAsync, isTaskRegistered } from "../App";
+import { registerBackgroundTaskAsync, unregisterBackgroundTaskAsync } from '../backgroundTasks.js';
 
 const Home = () => {
 	const [isTracking, setIsTracking] = useState(false);
@@ -21,11 +21,7 @@ const Home = () => {
 	const [todaysActivity, setTodaysActivity] = useState(null);
 	const [todaysPlannedRoute, setTodaysPlannedRoute] = useState(null);
 	const navigation = useNavigation();
-	// const clearStorage = async () => {
-	//     await AsyncStorage.clear();
-	//     console.log("AsyncStorage cleared");
-	// };
-	// clearStorage();
+	
 	useEffect(() => {
 		const checkUser = async () => {
 			const accessToken = await AsyncStorage.getItem("accessToken");
@@ -282,6 +278,15 @@ const Home = () => {
 	return (
 		<SafeAreaView className="flex-1 bg-gray-100">
 			<View className="flex-1 p-4">
+				<TouchableOpacity className="p-2 w-32 ml-auto rounded-md bg-orange-500 my-2" onPress={() => {
+					const clearStorage = async () => {
+						await AsyncStorage.clear();
+					};
+					clearStorage();
+					navigation.replace("login");
+				}}>
+					<Text className="text-white font-bold text-center">Logout</Text>
+				</TouchableOpacity>
 				{/* Search Bar */}
 				<View className="flex-row bg-white rounded-xl items-center p-2 mb-3 border border-gray-300">
 					<TextInput className="flex-1 h-10 p-2 text-md text-gray-900" placeholder="e.g., gas station near stone mountain" value={searchQuery} onChangeText={setSearchQuery} onSubmitEditing={handleSearch} returnKeyType="search" placeholderTextColor="#6b7280" />
@@ -425,255 +430,5 @@ const Home = () => {
 		</SafeAreaView>
 	);
 };
-
-const styles = StyleSheet.create({
-	safeArea: {
-		flex: 1,
-		backgroundColor: "#f3f4f6",
-	},
-	container: {
-		flex: 1,
-		padding: 16,
-	},
-	searchBarContainer: {
-		flexDirection: "row",
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		alignItems: "center",
-		padding: 8,
-		marginBottom: 12,
-		borderWidth: 1,
-		borderColor: "#d1d5db",
-	},
-	searchInput: {
-		flex: 1,
-		height: 40,
-		padding: 8,
-		fontSize: 16,
-		color: "#111827",
-	},
-	searchButton: {
-		padding: 8,
-		backgroundColor: "#f97316",
-		borderRadius: 6,
-		marginLeft: 8,
-	},
-	searchResultsContainer: {
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: "#d1d5db",
-		marginBottom: 12,
-		paddingTop: 4,
-		maxHeight: 224,
-	},
-	searchResultItem: {
-		flexDirection: "row",
-		width: "100%",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingVertical: 8,
-		paddingHorizontal: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: "#e5e7eb",
-	},
-	searchResultInfo: {
-		flex: 1,
-		marginRight: 8,
-	},
-	searchResultName: {
-		fontWeight: "bold",
-		fontSize: 16,
-	},
-	searchResultAddress: {
-		fontSize: 12,
-		color: "#6b7280",
-		width: "90%", // To prevent text from pushing the "Add" button out
-	},
-	addButtonText: {
-		color: "#ea580c",
-		fontWeight: "bold",
-		fontSize: 14,
-	},
-	searchResultsFooter: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		backgroundColor: "#e5e7eb",
-		padding: 8,
-		borderBottomLeftRadius: 12,
-		borderBottomRightRadius: 12,
-	},
-	footerButton: {
-		backgroundColor: "#fff",
-		paddingVertical: 4,
-		paddingHorizontal: 12,
-		borderRadius: 4,
-		borderWidth: 1,
-		borderColor: "#d1d5db",
-	},
-	footerButtonText: {
-		color: "#374151",
-		fontWeight: "600",
-	},
-	statusIndicatorsContainer: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		marginBottom: 16,
-		marginTop: 8,
-	},
-	statusIndicator: {
-		alignItems: "center",
-		flex: 1,
-	},
-	statusText: {
-		fontWeight: "bold",
-		fontSize: 18,
-		color: "#1f2937",
-	},
-	statusLabel: {
-		fontSize: 12,
-		color: "#6b7280",
-		marginTop: 2,
-	},
-	batteryIndicator: {
-		flexDirection: "row",
-		gap: 8,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	trackingButton: {
-		width: "100%",
-		paddingVertical: 16,
-		borderRadius: 8,
-		alignItems: "center",
-		marginBottom: 16,
-		flexDirection: "row",
-		justifyContent: "center",
-	},
-	trackingButtonText: {
-		color: "#fff",
-		fontWeight: "bold",
-		fontSize: 18,
-		marginLeft: 8,
-	},
-	mapContainer: {
-		marginBottom: 16,
-		borderRadius: 12,
-		overflow: "hidden",
-		backgroundColor: "#fff",
-		borderWidth: 1,
-		borderColor: "#e5e7eb",
-		height: 260,
-	},
-	noMapDataContainer: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	noMapDataText: {
-		color: "#9ca3af",
-	},
-	activityContainer: {
-		backgroundColor: "#fff",
-		borderRadius: 12,
-		padding: 16,
-		marginBottom: 16,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.2,
-		shadowRadius: 1.41,
-		elevation: 2,
-	},
-	activityTitle: {
-		fontWeight: "bold",
-		color: "#1f2937",
-		marginBottom: 12,
-		fontSize: 16,
-	},
-	activityMetricsContainer: {
-		flexDirection: "row",
-		justifyContent: "space-around",
-		gap: 8,
-	},
-	activityMetric: {
-		flexDirection: "row",
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "flex-start",
-		backgroundColor: "#f9fafb",
-		padding: 8,
-		borderRadius: 8,
-		borderLeftWidth: 1,
-		borderBottomWidth: 1,
-		borderColor: "#d1d5db",
-	},
-	metricInfo: {
-		marginLeft: 8,
-	},
-	metricValue: {
-		fontWeight: "bold",
-		fontSize: 16,
-	},
-	metricLabel: {
-		fontSize: 12,
-		color: "#6b7280",
-	},
-	noActivityText: {
-		fontSize: 12,
-		color: "#6b7280",
-	},
-	alertsContainer: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		alignItems: "center",
-		bottom: Platform.OS === "ios" ? 48 : 24,
-		zIndex: 50,
-		pointerEvents: "box-none",
-	},
-	alert: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		minWidth: 300,
-		maxWidth: "90%",
-		paddingVertical: 4,
-		paddingHorizontal: 16,
-		borderRadius: 12,
-		borderLeftWidth: 4,
-		marginBottom: 8,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.23,
-		shadowRadius: 2.62,
-		elevation: 4,
-	},
-	alertError: {
-		backgroundColor: "rgba(254, 226, 226, 0.8)",
-		borderColor: "#ef4444",
-	},
-	alertSuccess: {
-		backgroundColor: "rgba(220, 252, 231, 0.8)",
-		borderColor: "#22c55e",
-	},
-	alertTextContainer: {
-		flex: 1,
-	},
-	alertErrorText: {
-		color: "#b91c1c",
-	},
-	alertSuccessText: {
-		color: "#15803d",
-	},
-	alertCloseButton: {
-		backgroundColor: "transparent",
-		marginLeft: 10,
-		paddingHorizontal: 6,
-	},
-	alertCloseButtonText: {
-		fontSize: 22,
-		lineHeight: 24,
-	},
-});
 
 export default Home;

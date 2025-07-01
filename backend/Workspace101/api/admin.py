@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer,AIReport
 from .models import PurchaseHistory
 from .models import SalesgentToken
+from .models import POLocal, POLocalLineItem
 
 # import export
 from import_export.admin import ImportExportModelAdmin
@@ -113,6 +114,26 @@ class AIReportAdmin(ImportExportModelAdmin):
     list_display = ("reportName", "createdAt", "updatedAt")
 
 
+# POLocal and POLocalLineItem admin
+class POLocalLineItemInline(admin.TabularInline):
+    model = POLocalLineItem
+    extra = 0
+    autocomplete_fields = ["product"]
+
+class POLocalAdmin(ImportExportModelAdmin):
+    list_display = ("id", "purchaseOrderId", "vendor", "status", "totalAmount", "totalQuantity", "insertedTimestamp")
+    search_fields = ("id", "purchaseOrderId", "vendor__name", "status")
+    list_filter = ("status", "vendor")
+    autocomplete_fields = ["vendor"]
+    inlines = [POLocalLineItemInline]
+    list_editable = ("status",)
+
+class POLocalLineItemAdmin(ImportExportModelAdmin):
+    list_display = ("id", "po_local", "product", "quantity", "unitPrice", "totalPrice")
+    search_fields = ("id", "po_local__purchaseOrderId", "product__productId", "product__productName")
+    autocomplete_fields = ["po_local", "product"]
+
+
 # Register your models here.
 admin.site.site_header = "API Admin"
 admin.site.site_title = "API Admin Portal"
@@ -130,3 +151,5 @@ admin.site.register(SalesgentToken, SalesgentTokenAdmin)
 admin.site.register(ProductHistory, ProductHistoryAdmin)
 admin.site.register(Customer, CustomerAdmin)
 admin.site.register(AIReport, AIReportAdmin)
+admin.site.register(POLocal, POLocalAdmin)
+admin.site.register(POLocalLineItem, POLocalLineItemAdmin)
