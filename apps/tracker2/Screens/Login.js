@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     Image,
     Alert,
-    SafeAreaView,
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { apiRequest } from '../utils/api';
 
@@ -67,6 +67,13 @@ const Login = () => {
         }
         setLoading(false);
     };
+
+    // clear async storage on unmount
+    // useEffect(() => {
+    //     return () => {
+    //         AsyncStorage.clear();
+    //     };
+    // }, []);
 
     return (
         <SafeAreaView style={styles.safeArea}>

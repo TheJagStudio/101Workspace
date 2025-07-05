@@ -5,10 +5,10 @@ import Sync from "./Settings/Sync";
 const TABS = [
 	{ label: "Accounts", key: "accounts" },
 	{ label: "Sync", key: "sync" },
-	{ label: "Profile", key: "profile" },
-	{ label: "Billing", key: "billing" },
-	{ label: "Notifications", key: "notifications" },
-	{ label: "Integrations", key: "integrations" },
+	// { label: "Profile", key: "profile" },
+	// { label: "Billing", key: "billing" },
+	// { label: "Notifications", key: "notifications" },
+	// { label: "Integrations", key: "integrations" },
 ];
 
 const SettingPage = () => {
@@ -21,13 +21,13 @@ const SettingPage = () => {
 			case "sync":
 				return <Sync />;
 			case "profile":
-				return <div>Profile Section (Coming Soon)</div>;
+				return <div className="mt-5 text-xl font-bold">Profile Section (Coming Soon)</div>;
 			case "billing":
-				return <div>Billing Section (Coming Soon)</div>;
+				return <div className="mt-5 text-xl font-bold">Billing Section (Coming Soon)</div>;
 			case "notifications":
-				return <div>Notifications Section (Coming Soon)</div>;
+				return <div className="mt-5 text-xl font-bold">Notifications Section (Coming Soon)</div>;
 			case "integrations":
-				return <div>Integrations Section (Coming Soon)</div>;
+				return <div className="mt-5 text-xl font-bold">Integrations Section (Coming Soon)</div>;
 			default:
 				return null;
 		}
@@ -78,7 +78,7 @@ const SettingPage = () => {
 				</div>
 
 				{/* Tab Content */}
-				<div className="col-span-8 overflow-hidden rounded-xl sm:bg-gradient-to-br sm:from-red-50/50 sm:via-white sm:to-green-50/50 sm:px-8 sm:border-t sm:border-white sm:shadow">{renderTabContent()}</div>
+				<div className="col-span-8 overflow-hidden rounded-xl sm:bg-gradient-to-br sm:from-purple-50/50 sm:via-white sm:to-indigo-50/50 sm:px-8 sm:border-t sm:border-white sm:shadow">{renderTabContent()}</div>
 			</div>
 		</div>
 	);

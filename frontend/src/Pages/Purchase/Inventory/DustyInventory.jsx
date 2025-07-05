@@ -1,10 +1,14 @@
-import { addDays, format } from "date-fns";
+import { addDays, format, set } from "date-fns";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import Calendar from "../../../Components/utils/Calendar";
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from "../../../utils/api";
-import { glossaryAtom, isSidebarOpenAtom } from "../../../Variables";
+import { glossaryAtom, isSidebarOpenAtom, searchAtom } from "../../../Variables";
+import supabase from '../../../utils/supabase'
+import { PhotoProvider, PhotoView } from 'react-photo-view';
+import 'react-photo-view/dist/react-photo-view.css';
+
 
 const dropdownOptions = {
 	reportType: [
@@ -12,11 +16,11 @@ const dropdownOptions = {
 		{ value: "category", label: "Category" },
 	],
 	sort: [
-		{ value: "closing_inventory", label: "Closing inventory" },
-		{ value: "sell_through_rate", label: "Sell through rate" },
-		{ value: "inventory_cost", label: "Inventory cost" },
-		{ value: "retail_value", label: "Retail value" },
-		{ value: "last_sale", label: "Last sale" },
+		{ value: "closingInventory", label: "Closing inventory" },
+		{ value: "sellThroughRate", label: "Sell through rate" },
+		{ value: "inventoryCost", label: "Inventory cost" },
+		{ value: "retailValue", label: "Retail value" },
+		{ value: "lastSale", label: "Last sale" },
 	],
 };
 
@@ -68,7 +72,7 @@ const tabData = {
 
 const DustyInventory = () => {
 	const [reportType, setReportType] = useState("product");
-	const [sortBy, setSortBy] = useState("closing_inventory");
+	const [sortBy, setSortBy] = useState("closingInventory");
 	const [reverseSort, setReverseSort] = useState(true);
 	const [subCategoryVisible, setSubCategoryVisible] = useState(false);
 	const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -82,25 +86,62 @@ const DustyInventory = () => {
 	const [totalRetailValue, setTotalRetailValue] = useState(0);
 	const [overallSellThroughRate, setOverallSellThroughRate] = useState(0);
 	const [loadingTotal, setLoadingTotal] = useState(false);
-	const [loading, setLoading] = useState(true);
-	const [totalPages, setTotalPages] = useState(0);
+	const [loading, setLoading] = useState(false);
+	const [totalPages, setTotalPages] = useState(20);
 	const [openGlossary, setOpenGlossary] = useAtom(glossaryAtom);
+	const [search, setSearch] = useAtom(searchAtom);
 
 	async function getData() {
 		setLoading(true);
-		try {
-			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
-			setTableData(data["data"]);
-			setTotalPages(data["totalPages"]);
-			if (page > data["totalPages"]) {
-				setPage(data["totalPages"]);
+		// try {
+		// 	const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
+		// 	setTableData(data["data"]);
+		// 	setTotalPages(data["totalPages"]);
+		// 	if (page > data["totalPages"]) {
+		// 		setPage(data["totalPages"]);
+		// 	}
+		// } catch (error) {
+		// 	setTableData([]);
+		// 	console.error("Error fetching inventory summary data:", error);
+		// } finally {
+		// 	setLoading(false);
+		// }
+		let { data, error } = await supabase
+			.rpc('get_dusty_inventory', {
+				_report_type: reportType,
+				_start_date: startDate,
+				_end_date: endDate,
+				_measure: 'dusty',
+				_sort_by: sortBy,
+				_reverse_sort: reverseSort,
+				_days_threshold: 90,
+				_page_num: page,
+				_page_size: pageSize,
+				_load_subcategory: reportType === "category" ? subCategoryVisible : false,
+			})
+		if (error) console.error(error)
+		else setTableData(data);
+
+		let { data: data2, error: error2 } = await supabase
+			.rpc('get_dusty_inventory_count', {
+				_days_threshold: 90,
+				_end_date: endDate,
+				_load_subcategory: subCategoryVisible,
+				_measure: 'dusty',
+				_report_type: reportType,
+				_start_date: startDate
+			})
+		if (error2) console.error(error2)
+		else {
+			let totalSize = parseInt(data2);
+			console.log("Total Size:", totalSize, data2);
+			setTotalPages(Math.ceil(totalSize / pageSize));
+			if (page > Math.ceil(totalSize / pageSize)) {
+				setPage(Math.ceil(totalSize / pageSize));
 			}
-		} catch (error) {
-			setTableData([]);
-			console.error("Error fetching inventory summary data:", error);
-		} finally {
-			setLoading(false);
 		}
+
+		setLoading(false);
 	}
 
 	function formatCurrency(value) {
@@ -116,27 +157,27 @@ const DustyInventory = () => {
 		getData();
 	}, [page, pageSize, reverseSort, sortBy, reportType, subCategoryVisible]);
 
-	useEffect(() => {
-		async function totalData() {
-			setLoadingTotal(true);
-			try {
-				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
-				setTotalClosingInventory(data["totalClosingInventory"])
-				setTotalInventoryCost(data["totalInventoryCost"])
-				setTotalRetailValue(data["totalRetailValue"])
-				setOverallSellThroughRate(data["overallSellThroughRate"])
-			} catch (error) {
-				setTableData([]);
-				console.error("Error fetching inventory summary data:", error);
-			}
-			setLoadingTotal(false);
-		}
-		totalData();
-		setOpenGlossary({
-			open: false,
-			tabData: tabData,
-		});
-	}, []);
+	// useEffect(() => {
+	// 	async function totalData() {
+	// 		setLoadingTotal(true);
+	// 		try {
+	// 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
+	// 			setTotalClosingInventory(data["totalClosingInventory"])
+	// 			setTotalInventoryCost(data["totalInventoryCost"])
+	// 			setTotalRetailValue(data["totalRetailValue"])
+	// 			setOverallSellThroughRate(data["overallSellThroughRate"])
+	// 		} catch (error) {
+	// 			setTableData([]);
+	// 			console.error("Error fetching inventory summary data:", error);
+	// 		}
+	// 		setLoadingTotal(false);
+	// 	}
+	// 	totalData();
+	// 	setOpenGlossary({
+	// 		open: false,
+	// 		tabData: tabData,
+	// 	});
+	// }, []);
 
 	return (
 		<div className="px-5">
@@ -232,70 +273,75 @@ const DustyInventory = () => {
 				)}
 				<div className="h-full overflow-y-auto">
 					<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")}>
-						<thead className="sticky top-0 bg-white z-10 border-b border-gray-300">
-							<tr className="border-b border-gray-300 bg-gray-100">
+						<thead className="sticky top-0 bg-white z-10 shadow-border-b">
+							<tr className="shadow-border-b bg-gray-100">
 								<th className="w-fit"></th>
 								<th className="w-[50%]"></th>
-								<th className="text-center p-4 border-l border-gray-300">Total</th>
-								<th colSpan={3} className="text-center p-4 border-l border-gray-300">
+								<th className="text-center p-4 shadow-border-l">Total</th>
+								<th colSpan={3} className="text-center p-4 shadow-border-l">
 									Historical
 								</th>
-								<th className="border-l border-gray-300"></th>
+								<th className="shadow-border-l"></th>
 								<th className=""></th>
 							</tr>
-							<tr className="border-b border-gray-300 leading-4">
+							<tr className="shadow-border-b leading-4">
 								<th className="text-center py-4 px-1">SR</th>
-								<th className="text-left p-4 border-l border-gray-300 w-[50%]">Product</th>
-								<th className="text-center p-4 border-l border-gray-300">Closing inventory</th>
-								<th className="text-center p-4 border-l border-gray-300"> Sell-through rate</th>
-								<th className="text-center p-4 border-l border-gray-300"> Inventory cost</th>
-								<th className="text-center p-4 border-l border-gray-300">Retail value</th>
-								<th className="text-center p-4 border-l border-gray-300">Last sale</th>
-								<th className="text-center p-4 border-l border-gray-300">Last received</th>
+								<th className="shadow-border-l text-left p-4 w-[50%]">Product</th>
+								<th className="shadow-border-l text-center p-4">Closing inventory</th>
+								<th className="shadow-border-l text-center p-4"> Sell-through rate</th>
+								<th className="shadow-border-l text-center p-4"> Inventory cost</th>
+								<th className="shadow-border-l text-center p-4">Retail value</th>
+								<th className="shadow-border-l text-center p-4">Last sale</th>
+								<th className="shadow-border-l text-center p-4">Last received</th>
 
 							</tr>
-							<tr className="font-semibold bg-gray-100">
+							{/* <tr className="shadow-border-b font-semibold bg-gray-100">
 								<td className="py-2 px-1 "></td>
-								<td className="py-2 px-4 w-[50%] border-l border-gray-300">Totals</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatNumber(totalClosingInventory)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(overallSellThroughRate)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalInventoryCost)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalRetailValue)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300"></td>
+								<td className="py-2 px-4 w-[50%] shadow-border-l">Totals</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatNumber(totalClosingInventory)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(overallSellThroughRate)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(totalInventoryCost)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(totalRetailValue)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l"></td>
 								<td className="text-center py-2 px-2"></td>
-							</tr>
+							</tr> */}
 						</thead>
-						<tbody className="h-64 overflow-y-auto">
-							{tableData.map((item, index) => (
-								<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 0 ? "" : "bg-gray-100")} key={index}>
-									<td className="py-2 px-1 w-fit text-center">
-										<p className="text-sm text-gray-600">{item?.index}</p>
-									</td>
-									<td className="py-2 px-2 w-[50%] border-l border-gray-300">
-										<div className="flex items-center">
-											{pageSize <= 50 && <img src={item?.imageUrl || "/static/images/default.png"} alt="" className="w-8 h-8 mr-2 mix-blend-multiply " />}
-											<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
-												({item?.id})
-											</a>
-											<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
-										</div>
-									</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.sellThroughRate)}%</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.inventoryCost)}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.retailValue)}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300 whitespace-nowrap">{item?.lastSale}</td>
-									<td className="text-center py-2 px-2 border-l border-gray-300 whitespace-nowrap">{item?.lastReceived}</td>
-								</tr>
-							))}
-							{tableData.length === 0 && !loading && (
-								<tr>
-									<td colSpan={6} className="text-center py-4 text-gray-500">
-										No data available
-									</td>
-								</tr>
-							)}
-						</tbody>
+						<PhotoProvider>
+							<tbody className="h-64 overflow-y-auto">
+								{tableData.map((item, index) => (
+									<tr className={"hover:bg-indigo-50 shadow-border-b group " + (index % 2 === 1 ? "" : "bg-gray-100")} key={index}>
+										<td className="py-2 px-1 w-fit text-center">
+											<p className="text-sm text-gray-600">{(index + 1) + (pageSize * (page - 1))}</p>
+										</td>
+										<td className="py-2 px-2 w-[50%] shadow-border-l">
+											<div className="flex items-center">
+												{pageSize <= 50 && <PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}><img src={item?.imageUrl || "/static/images/default.png"} alt="" className="w-8 h-8 mr-2 mix-blend-multiply " /></PhotoView>}
+												<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
+													({item?.id})
+												</a>
+												<p onClick={() => {
+													setSearch(item?.name);
+													document.querySelector("#search")?.focus();
+												}} className="truncate line-clamp-1 group-hover:line-clamp-none whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
+											</div>
+										</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.closingInventory)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.sellThroughRate)}% <br/><span className="text-xs">{item?.sellThroughRate ? `(${item?.quantitySold} sold)` : ''}</span></td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.inventoryCost)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.retailValue)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l whitespace-nowrap leading-4">{item?.lastSale}<br/><span className="whitespace-nowrap text-xs">{item?.lastSale ? `(${item?.days_since_last_sale} days ago)` : ''}</span></td>
+										<td className="text-center py-2 px-2 shadow-border-l whitespace-nowrap">{item?.lastReceived}</td>
+									</tr>
+								))}
+								{tableData.length === 0 && !loading && (
+									<tr>
+										<td colSpan={6} className="text-center py-4 text-gray-500">
+											No data available
+										</td>
+									</tr>
+								)}
+							</tbody>
+						</PhotoProvider>
 					</table>
 				</div>
 			</div>

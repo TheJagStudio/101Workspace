@@ -6,6 +6,7 @@ import Home from './Screens/Home.js';
 import Login from './Screens/Login.js'; 
 import "./global.css"
 import { registerBackgroundTaskAsync, unregisterBackgroundTaskAsync } from './backgroundTasks.js';
+import Demo from './Screens/Demo.js';
 
 
 // Create the navigator
@@ -19,8 +20,9 @@ function App() {
           headerShown: false, 
         }}
       >
-        <Stack.Screen name="home" component={Home} />
-        <Stack.Screen name="login" component={Login} />
+        {/* <Stack.Screen name="home" component={Home} /> */}
+        {/* <Stack.Screen name="login" component={Login} /> */}
+        <Stack.Screen name="demo" component={Demo} />
       </Stack.Navigator>
     </NavigationContainer>
   );

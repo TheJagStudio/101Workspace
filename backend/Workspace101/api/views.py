@@ -917,7 +917,6 @@ class DustyInventoryView(APIView):
         dataType = request.GET.get("dataType", "total")
         reverse_sort = request.GET.get("reverse_sort", "true").lower() == "true"
         loadSubcategories = request.GET.get("loadSubcategories", "False").lower() == "true"
-        #
 
         # Parse date filters
         date_filter = {}
@@ -946,7 +945,7 @@ class DustyInventoryView(APIView):
             date_filter["insertedTimestamp__lte"] = end_date_default
 
         # fetch all products where availableQuantity is less than minQuantity
-        products = Product.objects.all()
+        products = Product.objects.select_related().prefetch_related('categories', 'invoice_line_items', 'purchase_history').all()
 
         if loadSubcategories:
             categories = Category.objects.filter(parentId__isnull=False)
@@ -1000,13 +999,13 @@ class DustyInventoryView(APIView):
             )
 
             # Apply sorting
-            if sort_by == "sell_through_rate":
+            if sort_by == "sellThroughRate":
                 products = products.order_by("sell_through_rate")
-            elif sort_by == "inventory_cost":
+            elif sort_by == "inventoryCost":
                 products = products.order_by("inventory_cost")
-            elif sort_by == "retail_value":
+            elif sort_by == "retailValue":
                 products = products.order_by("retail_value")
-            elif sort_by == "last_sale":
+            elif sort_by == "lastSale":
                 products = products.order_by("last_sale_date")
             else:
                 products = products.order_by(order_by)

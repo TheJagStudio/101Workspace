@@ -1,0 +1,417 @@
+CREATE OR REPLACE FUNCTION get_dusty_inventory(
+    _report_type VARCHAR,
+    _start_date DATE,
+    _end_date DATE,
+    _measure VARCHAR,
+    _sort_by VARCHAR,
+    _reverse_sort BOOLEAN,
+    _days_threshold INTEGER,
+    _page_num INTEGER,
+    _page_size INTEGER,
+    _load_subcategory BOOLEAN
+)
+RETURNS TABLE (
+    id INTEGER,
+    name VARCHAR,
+    sku VARCHAR,
+    "closingInventory" BIGINT, -- This is the expected type
+    "sellThroughRate" NUMERIC,
+    "inventoryCost" NUMERIC,
+    "retailValue" NUMERIC,
+    "lastSale" DATE,
+    "imageUrl" VARCHAR(500),
+    "days_since_last_sale" INTEGER,
+    "lastReceived" DATE,
+    index BIGINT
+)
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  sort_direction TEXT;
+  sort_nulls TEXT;
+  offset_val INTEGER;
+BEGIN
+  IF _reverse_sort THEN
+    sort_direction := 'DESC';
+    sort_nulls := 'NULLS LAST';
+  ELSE
+    sort_direction := 'ASC';
+    sort_nulls := 'NULLS FIRST';
+  END IF;
+
+  offset_val := (_page_num - 1) * _page_size;
+
+  -- ===================================
+  -- PRODUCT REPORT LOGIC
+  -- ===================================
+  IF _report_type = 'product' THEN
+    RETURN QUERY EXECUTE format(
+      $query$
+      WITH product_sales_all_time AS (
+        SELECT "productId", MAX("insertedTimestamp")::DATE AS last_sale_date_actual
+        FROM public.api_invoicelineitem GROUP BY "productId"
+      ),
+      sales_in_period AS (
+        SELECT "productId", SUM(quantity) as total_quantity_sold
+        FROM public.api_invoicelineitem WHERE "insertedTimestamp" BETWEEN $1 AND $2
+        GROUP BY "productId"
+      ),
+      product_metrics AS (
+        SELECT
+          p."productId", p."productName", p.sku, p."availableQuantity", p."costPrice",
+          p."standardPrice", p."imageUrl", psa.last_sale_date_actual,
+          (CURRENT_DATE - psa.last_sale_date_actual)::INTEGER AS days_since_last_sale,
+          CASE WHEN psa.last_sale_date_actual < (CURRENT_DATE - ($3 || ' days')::INTERVAL) OR psa.last_sale_date_actual IS NULL THEN true ELSE false END AS is_dusty,
+          CASE WHEN (p."availableQuantity" + COALESCE(sip.total_quantity_sold, 0)) > 0
+               THEN (COALESCE(sip.total_quantity_sold, 0) * 100.0) / (p."availableQuantity" + COALESCE(sip.total_quantity_sold, 0))
+               ELSE 0 END AS sell_through_rate,
+          p."availableQuantity" * COALESCE(p."costPrice", 0) AS inventory_cost,
+          p."availableQuantity" * COALESCE(p."standardPrice", 0) AS retail_value
+        FROM public.api_product p
+        LEFT JOIN product_sales_all_time psa ON p."productId" = psa."productId"
+        LEFT JOIN sales_in_period sip ON p."productId" = sip."productId"
+      ),
+      filtered_products AS (
+        SELECT * FROM product_metrics
+        WHERE CASE $4 WHEN 'all' THEN TRUE WHEN 'hand' THEN "availableQuantity" > 0 WHEN 'low' THEN "availableQuantity" BETWEEN 1 AND 9
+                     WHEN 'out' THEN "availableQuantity" <= 0 WHEN 'dusty' THEN is_dusty AND "availableQuantity" > 0 ELSE TRUE END
+      ),
+      purchase_history AS (
+        SELECT ph."productId", MAX(ph."purchaseOrderInsertedTimestamp")::DATE AS last_received_date
+        FROM public.api_purchasehistory ph GROUP BY ph."productId"
+      ),
+      final_results AS (
+        SELECT
+          fp."productId" AS id, fp."productName" AS name, fp.sku,
+          fp."availableQuantity"::BIGINT AS "closingInventory", --<< FIX: Added ::BIGINT cast for consistency
+          ROUND(fp.sell_through_rate, 2) AS "sellThroughRate",
+          fp.inventory_cost AS "inventoryCost", fp.retail_value AS "retailValue",
+          fp.last_sale_date_actual AS "lastSale", fp."imageUrl" AS "imageUrl",
+          fp.days_since_last_sale AS "days_since_last_sale", ph.last_received_date AS "lastReceived"
+        FROM filtered_products fp
+        LEFT JOIN purchase_history ph ON fp."productId"::bigint = ph."productId"::bigint
+      )
+      SELECT *, ROW_NUMBER() OVER (ORDER BY %I %s %s) as index
+      FROM final_results
+      ORDER BY %I %s %s
+      LIMIT %L OFFSET %L;
+      $query$,
+      _sort_by, sort_direction, sort_nulls, _sort_by, sort_direction, sort_nulls, _page_size, offset_val
+    )
+    USING _start_date, _end_date, _days_threshold, _measure;
+
+  -- ===================================
+  -- CATEGORY REPORT LOGIC (Corrected)
+  -- ===================================
+  ELSIF _report_type = 'category' THEN
+    RETURN QUERY EXECUTE format(
+      $query$
+      WITH
+      inventory_at_start AS (
+        SELECT "productId", COALESCE(SUM(quantity), 0) AS starting_qty
+        FROM public.api_inventorydata WHERE "insertedTimestamp" < $1
+        GROUP BY "productId"
+      ),
+      inventory_at_end AS (
+        SELECT "productId", COALESCE(SUM(quantity), 0) AS closing_qty
+        FROM public.api_inventorydata WHERE "insertedTimestamp" <= $2
+        GROUP BY "productId"
+      ),
+      sales_in_period AS (
+        SELECT "productId", SUM(quantity) as total_quantity_sold
+        FROM public.api_invoicelineitem WHERE "insertedTimestamp" BETWEEN $1 AND $2
+        GROUP BY "productId"
+      ),
+      product_sales_all_time AS (
+        SELECT "productId", MAX("insertedTimestamp")::DATE AS last_sale_date_actual
+        FROM public.api_invoicelineitem GROUP BY "productId"
+      ),
+      purchase_history AS (
+        SELECT "productId", MAX("purchaseOrderInsertedTimestamp")::DATE AS last_received_date
+        FROM public.api_purchasehistory GROUP BY "productId"
+      ),
+      category_product_images AS (
+        SELECT DISTINCT ON (apc.category_id)
+          apc.category_id, p."imageUrl"
+        FROM public.api_product_categories apc
+        JOIN public.api_product p ON apc.product_id = p."productId"
+        WHERE p."imageUrl" IS NOT NULL
+        ORDER BY apc.category_id, p."productId" ASC
+      ),
+      product_and_category_metrics AS (
+        SELECT
+          c."categoryId", c.name AS category_name,
+          COALESCE(iae.closing_qty, 0) AS closing_qty,
+          COALESCE(ias.starting_qty, 0) AS starting_qty,
+          COALESCE(sip.total_quantity_sold, 0) AS total_quantity_sold,
+          COALESCE(iae.closing_qty, 0) * COALESCE(p."costPrice", 0) AS inventory_cost,
+          COALESCE(iae.closing_qty, 0) * COALESCE(p."standardPrice", 0) AS retail_value,
+          psa.last_sale_date_actual, ph.last_received_date
+        FROM public.api_product p
+        JOIN public.api_product_categories apc ON p."productId" = apc.product_id
+        JOIN public.api_category c ON apc.category_id = c."categoryId"
+        LEFT JOIN inventory_at_start ias ON p."productId" = ias."productId"
+        LEFT JOIN inventory_at_end iae ON p."productId" = iae."productId"
+        LEFT JOIN sales_in_period sip ON p."productId" = sip."productId"
+        LEFT JOIN product_sales_all_time psa ON p."productId" = psa."productId"
+        LEFT JOIN purchase_history ph ON p."productId" = ph."productId"
+        WHERE ($5 = true AND c."parentId" IS NOT NULL) OR ($5 = false AND c."parentId" IS NULL)
+      ),
+      category_metrics AS (
+        SELECT
+          "categoryId" AS id,
+          category_name AS name,
+          SUM(closing_qty)::BIGINT AS "closingInventory", --<< FIX: Cast SUM() result to BIGINT
+          SUM(inventory_cost) AS "inventoryCost",
+          SUM(retail_value) AS "retailValue",
+          MAX(last_sale_date_actual) AS "lastSale",
+          MAX(last_received_date) AS "lastReceived",
+          CASE
+            WHEN SUM(starting_qty) > 0 THEN (SUM(total_quantity_sold) * 100.0) / SUM(starting_qty)
+            ELSE 0
+          END AS sell_through_rate_calc
+        FROM product_and_category_metrics
+        GROUP BY "categoryId", category_name
+      ),
+      final_results AS (
+        SELECT
+          cm.id, cm.name,
+          NULL::VARCHAR AS sku,
+          cm."closingInventory", cm."inventoryCost", cm."retailValue",
+          cm."lastSale", cm."lastReceived", cpi."imageUrl",
+          ROUND(cm.sell_through_rate_calc, 2) AS "sellThroughRate",
+          (CURRENT_DATE - cm."lastSale")::INTEGER AS "days_since_last_sale",
+          CASE
+            WHEN cm."lastSale" < (CURRENT_DATE - ($3 || ' days')::INTERVAL) OR cm."lastSale" IS NULL THEN true
+            ELSE false
+          END AS is_dusty
+        FROM category_metrics cm
+        LEFT JOIN category_product_images cpi ON cm.id = cpi.category_id
+      ),
+      filtered_results AS (
+        SELECT * FROM final_results
+        WHERE CASE $4
+          WHEN 'all' THEN TRUE
+          WHEN 'hand' THEN "closingInventory" > 0
+          WHEN 'low' THEN "closingInventory" BETWEEN 1 AND 9
+          WHEN 'out' THEN "closingInventory" <= 0
+          WHEN 'dusty' THEN is_dusty AND "closingInventory" > 0
+          ELSE TRUE
+        END
+      )
+      SELECT
+        id, name, sku, "closingInventory", "sellThroughRate", "inventoryCost", "retailValue", "lastSale", "imageUrl", "days_since_last_sale", "lastReceived",
+        ROW_NUMBER() OVER (ORDER BY %I %s %s) as index
+      FROM filtered_results
+      ORDER BY %I %s %s
+      LIMIT %L OFFSET %L;
+      $query$,
+      _sort_by, sort_direction, sort_nulls, _sort_by, sort_direction, sort_nulls, _page_size, offset_val
+    )
+    USING _start_date, _end_date, _days_threshold, _measure, _load_subcategory;
+  END IF;
+END;
+$$;
+
+==========================================================================================
+
+SELECT * FROM   get_dusty_inventory (
+    _report_type := 'category',
+    _start_date := '2025-01-01',
+    _end_date := '2025-12-31',
+    _measure := 'dusty',
+    _sort_by := 'lastSale',
+    _reverse_sort := true,
+    _days_threshold := 90,
+    _page_num := 1,
+    _page_size := 20000
+    _load_subcategory := FALSE
+  );
+
+==========================================================================================
+
+CREATE OR REPLACE FUNCTION get_dusty_inventory_count(
+    _report_type VARCHAR,
+    _start_date DATE,
+    _end_date DATE,
+    _measure VARCHAR,
+    _days_threshold INTEGER,
+    _load_subcategory BOOLEAN
+)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+    total_rows BIGINT;
+BEGIN
+    -- ===================================
+    -- PRODUCT REPORT LOGIC
+    -- ===================================
+    IF _report_type = 'product' THEN
+        EXECUTE format(
+            $query$
+            WITH product_sales_all_time AS (
+                SELECT "productId", MAX("insertedTimestamp")::DATE AS last_sale_date_actual
+                FROM public.api_invoicelineitem GROUP BY "productId"
+            ),
+            sales_in_period AS (
+                SELECT "productId", SUM(quantity) as total_quantity_sold
+                FROM public.api_invoicelineitem WHERE "insertedTimestamp" BETWEEN $1 AND $2
+                GROUP BY "productId"
+            ),
+            product_metrics AS (
+                SELECT
+                    p."productId", p."productName", p.sku, p."availableQuantity", p."costPrice",
+                    p."standardPrice", p."imageUrl", psa.last_sale_date_actual,
+                    (CURRENT_DATE - psa.last_sale_date_actual)::INTEGER AS days_since_last_sale,
+                    CASE WHEN psa.last_sale_date_actual < (CURRENT_DATE - ($3 || ' days')::INTERVAL) OR psa.last_sale_date_actual IS NULL THEN true ELSE false END AS is_dusty,
+                    CASE WHEN (p."availableQuantity" + COALESCE(sip.total_quantity_sold, 0)) > 0
+                         THEN (COALESCE(sip.total_quantity_sold, 0) * 100.0) / (p."availableQuantity" + COALESCE(sip.total_quantity_sold, 0))
+                         ELSE 0 END AS sell_through_rate,
+                    p."availableQuantity" * COALESCE(p."costPrice", 0) AS inventory_cost,
+                    p."availableQuantity" * COALESCE(p."standardPrice", 0) AS retail_value
+                FROM public.api_product p
+                LEFT JOIN product_sales_all_time psa ON p."productId" = psa."productId"
+                LEFT JOIN sales_in_period sip ON p."productId" = sip."productId"
+            ),
+            filtered_products AS (
+                SELECT * FROM product_metrics
+                WHERE CASE $4 WHEN 'all' THEN TRUE WHEN 'hand' THEN "availableQuantity" > 0 WHEN 'low' THEN "availableQuantity" BETWEEN 1 AND 9
+                             WHEN 'out' THEN "availableQuantity" <= 0 WHEN 'dusty' THEN is_dusty AND "availableQuantity" > 0 ELSE TRUE END
+            )
+            SELECT COUNT(*) FROM filtered_products;
+            $query$
+        ) INTO total_rows
+        USING _start_date, _end_date, _days_threshold, _measure;
+
+    -- ===================================
+    -- CATEGORY REPORT LOGIC
+    -- ===================================
+    ELSIF _report_type = 'category' THEN
+        EXECUTE format(
+            $query$
+            WITH
+            inventory_at_start AS (
+                SELECT "productId", COALESCE(SUM(quantity), 0) AS starting_qty
+                FROM public.api_inventorydata WHERE "insertedTimestamp" < $1
+                GROUP BY "productId"
+            ),
+            inventory_at_end AS (
+                SELECT "productId", COALESCE(SUM(quantity), 0) AS closing_qty
+                FROM public.api_inventorydata WHERE "insertedTimestamp" <= $2
+                GROUP BY "productId"
+            ),
+            sales_in_period AS (
+                SELECT "productId", SUM(quantity) as total_quantity_sold
+                FROM public.api_invoicelineitem WHERE "insertedTimestamp" BETWEEN $1 AND $2
+                GROUP BY "productId"
+            ),
+            product_sales_all_time AS (
+                SELECT "productId", MAX("insertedTimestamp")::DATE AS last_sale_date_actual
+                FROM public.api_invoicelineitem GROUP BY "productId"
+            ),
+            purchase_history AS (
+                SELECT "productId", MAX("purchaseOrderInsertedTimestamp")::DATE AS last_received_date
+                FROM public.api_purchasehistory GROUP BY "productId"
+            ),
+            category_product_images AS (
+                SELECT DISTINCT ON (apc.category_id)
+                    apc.category_id, p."imageUrl"
+                FROM public.api_product_categories apc
+                JOIN public.api_product p ON apc.product_id = p."productId"
+                WHERE p."imageUrl" IS NOT NULL
+                ORDER BY apc.category_id, p."productId" ASC
+            ),
+            product_and_category_metrics AS (
+                SELECT
+                    c."categoryId", c.name AS category_name,
+                    COALESCE(iae.closing_qty, 0) AS closing_qty,
+                    COALESCE(ias.starting_qty, 0) AS starting_qty,
+                    COALESCE(sip.total_quantity_sold, 0) AS total_quantity_sold,
+                    COALESCE(iae.closing_qty, 0) * COALESCE(p."costPrice", 0) AS inventory_cost,
+                    COALESCE(iae.closing_qty, 0) * COALESCE(p."standardPrice", 0) AS retail_value,
+                    psa.last_sale_date_actual, ph.last_received_date
+                FROM public.api_product p
+                JOIN public.api_product_categories apc ON p."productId" = apc.product_id
+                JOIN public.api_category c ON apc.category_id = c."categoryId"
+                LEFT JOIN inventory_at_start ias ON p."productId" = ias."productId"
+                LEFT JOIN inventory_at_end iae ON p."productId" = iae."productId"
+                LEFT JOIN sales_in_period sip ON p."productId" = sip."productId"
+                LEFT JOIN product_sales_all_time psa ON p."productId" = psa."productId"
+                LEFT JOIN purchase_history ph ON p."productId" = ph."productId"
+                WHERE ($5 = true AND c."parentId" IS NOT NULL) OR ($5 = false AND c."parentId" IS NULL)
+            ),
+            category_metrics AS (
+                SELECT
+                    "categoryId" AS id,
+                    category_name AS name,
+                    SUM(closing_qty)::BIGINT AS "closingInventory",
+                    SUM(inventory_cost) AS "inventoryCost",
+                    SUM(retail_value) AS "retailValue",
+                    MAX(last_sale_date_actual) AS "lastSale",
+                    MAX(last_received_date) AS "lastReceived",
+                    CASE
+                        WHEN SUM(starting_qty) > 0 THEN (SUM(total_quantity_sold) * 100.0) / SUM(starting_qty)
+                        ELSE 0
+                    END AS sell_through_rate_calc
+                FROM product_and_category_metrics
+                GROUP BY "categoryId", category_name
+            ),
+            final_results AS (
+                SELECT
+                    cm.id, cm.name,
+                    cm."closingInventory", cm."inventoryCost", cm."retailValue",
+                    cm."lastSale", cm."lastReceived", cpi."imageUrl",
+                    ROUND(cm.sell_through_rate_calc, 2) AS "sellThroughRate",
+                    (CURRENT_DATE - cm."lastSale")::INTEGER AS "days_since_last_sale",
+                    CASE
+                        WHEN cm."lastSale" < (CURRENT_DATE - ($3 || ' days')::INTERVAL) OR cm."lastSale" IS NULL THEN true
+                        ELSE false
+                    END AS is_dusty
+                FROM category_metrics cm
+                LEFT JOIN category_product_images cpi ON cm.id = cpi.category_id
+            ),
+            filtered_results AS (
+                SELECT * FROM final_results
+                WHERE CASE $4
+                    WHEN 'all' THEN TRUE
+                    WHEN 'hand' THEN "closingInventory" > 0
+                    WHEN 'low' THEN "closingInventory" BETWEEN 1 AND 9
+                    WHEN 'out' THEN "closingInventory" <= 0
+                    WHEN 'dusty' THEN is_dusty AND "closingInventory" > 0
+                    ELSE TRUE
+                END
+            )
+            SELECT COUNT(*) FROM filtered_results;
+            $query$
+        ) INTO total_rows
+        USING _start_date, _end_date, _days_threshold, _measure, _load_subcategory;
+    END IF;
+
+    RETURN total_rows;
+END;
+$$;
+
+==============================================================================================
+
+-- Example for a 'product' report
+SELECT get_dusty_inventory_count(
+    'product'::VARCHAR,
+    '2024-01-01'::DATE,
+    '2024-12-31'::DATE,
+    'all'::VARCHAR,
+    30::INTEGER,
+    FALSE::BOOLEAN -- _load_subcategory can be FALSE for product report, but must be provided
+);
+
+-- Example for a 'category' report
+SELECT get_dusty_inventory_count(
+    'category'::VARCHAR,
+    '2024-01-01'::DATE,
+    '2024-12-31'::DATE,
+    'dusty'::VARCHAR,
+    60::INTEGER,
+    TRUE::BOOLEAN -- _load_subcategory is relevant here
+);

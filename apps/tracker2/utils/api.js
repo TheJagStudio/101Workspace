@@ -32,7 +32,6 @@ export const refreshToken = async () => {
         body: JSON.stringify({ refresh }),
       }
     );
-    console.log(response.content);
     const data = await response.json();
     if (response.ok && data.access) {
       await AsyncStorage.setItem('accessToken', data.access);

@@ -587,7 +587,7 @@ def syncInventoryData(token):
 
     # 1. Get all invoices to find unique product IDs
     today = datetime.now()
-    start_date = (today - timedelta(days=6)).strftime("%Y-%m-%d+%H:%M:%S")
+    start_date = (today - timedelta(days=30)).strftime("%Y-%m-%d+%H:%M:%S")
     end_date = today.strftime("%Y-%m-%d+%H:%M:%S")
     
     invoices_url = f"https://erp.101distributorsga.com/api/order/list?storeIds=1,2&startDate={start_date}&endDate={end_date}&page=0&size=500&showEmployeeSpecificData=false"

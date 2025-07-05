@@ -379,7 +379,6 @@ const POMaker = () => {
 	useEffect(() => {
 		const vendorsByCategory = async () => {
 			if (!currentCategory) return;
-			setLoading(true);
 			try {
 				const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/vendors-by-category/${currentCategory}/`, {
 					method: "GET",
@@ -390,9 +389,7 @@ const POMaker = () => {
 				setVendors(response.data || []);
 			} catch (error) {
 				console.error('Error fetching vendors:', error);
-			} finally {
-				setLoading(false);
-			}
+			} 
 		}
 		vendorsByCategory();
 		setPage(1);
@@ -452,13 +449,13 @@ const POMaker = () => {
 					/>
 				</div>
 
-				<div className="flex flex-col">
+				{/* <div className="flex flex-col">
 					<label className="text-sm text-gray-600 mb-1">Vendors</label>
 					<CustomDropdown options={vendors.map(vendor => ({
 						value: vendor.vendorId,
 						label: vendor.name
 					}))} value={vendors} onChange={setVendors} placeholder="measure" />
-				</div>
+				</div> */}
 
 				<button
 					onClick={() => {

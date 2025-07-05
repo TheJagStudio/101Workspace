@@ -13,6 +13,18 @@ from .serializers import SalesmanSerializer, DailyActivitySerializer, AdminSetti
 from .permissions import IsAdmin, IsSalesman
 from dotenv import load_dotenv
 load_dotenv()
+def notifyMe(message, channel):
+    try:
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        data = message
+        response = requests.post(f'https://thejagstudio-ntfy.hf.space/{channel}', headers=headers, data=data)
+        print(response.text)
+    except Exception as e:
+        print(f"Error notifying: {e}")
+    return
+
 # ===================================================================
 # ADMIN VIEWS
 # ===================================================================
@@ -130,6 +142,7 @@ class SalesmanUpdateStatusView(views.APIView):
     permission_classes = [IsAuthenticated, IsSalesman]
 
     def post(self, request, *args, **kwargs):
+        notifyMe(f"Salesman {request.user.username} is online", "101")
         serializer = SalesmanStatusUpdateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

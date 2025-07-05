@@ -84,7 +84,7 @@ const Sidebar = () => {
 								{!collapsed && "Generated POs"}
 							</Link>
 						</li>
-						<li className="mb-1">
+						{/* <li className="mb-1">
 							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Message" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Message")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Message" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M10 14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm11-5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM10 2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm11 0a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
@@ -96,7 +96,7 @@ const Sidebar = () => {
 									</>
 								)}
 							</Link>
-						</li>
+						</li> */}
 					</ul>
 				</div>
 
@@ -161,22 +161,22 @@ const Sidebar = () => {
 								{!collapsed && "Settings"}
 							</Link>
 						</li>
-						<li className="mb-1">
+						{/* <li className="mb-1">
 							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Security" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Security")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Security" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M10 14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm11-5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM10 2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm11 0a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
 								</svg>
 								{!collapsed && "Security"}
 							</Link>
-						</li>
-						<li className="mb-1">
+						</li> */}
+						{/* <li className="mb-1">
 							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Help" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Help")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Help" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M10 14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm11-5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM10 2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm11 0a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
 								</svg>
 								{!collapsed && "Help"}
 							</Link>
-						</li>
+						</li> */}
 					</ul>
 				</div>
 			</div>
@@ -191,7 +191,7 @@ const Sidebar = () => {
 					{!collapsed && (
 						<div className="ml-2">
 							<p className="text-sm font-medium">Team</p>
-							<p className="text-xs text-gray-600">Sales</p>
+							<p className="text-xs text-gray-600">Purchase</p>
 						</div>
 					)}
 					<button className={`ml-auto text-gray-400 hover:text-gray-600 transition-colors ${collapsed ? "hidden" : ""}`}>

@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, FlatList, Keyboard, Platform, StyleSheet, SafeAreaView, Dimensions } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, FlatList, Keyboard, Platform, StyleSheet,  Dimensions } from "react-native";
 import { MapPin, Search, Battery, Wifi, WifiOff, Play, Square, Route, CheckCircle, Clock } from "lucide-react-native";
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { apiRequest } from "../utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import * as Location from "expo-location";
-import { registerBackgroundTaskAsync, unregisterBackgroundTaskAsync } from '../backgroundTasks.js';
+import { registerBackgroundTaskAsync, unregisterBackgroundTaskAsync, getBackgroundTaskDebugInfo, checkTaskStatus } from '../backgroundTasks.js';
 
 const Home = () => {
 	const [isTracking, setIsTracking] = useState(false);
 	const [isRegistered, setIsRegistered] = useState(false);
+	const [permissionsGranted, setPermissionsGranted] = useState(false);
 	const [battery, setBattery] = useState(100);
 	const [signal, setSignal] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -20,7 +22,69 @@ const Home = () => {
 	const [routeHistory, setRouteHistory] = useState([]);
 	const [todaysActivity, setTodaysActivity] = useState(null);
 	const [todaysPlannedRoute, setTodaysPlannedRoute] = useState(null);
+	const [debugInfo, setDebugInfo] = useState(null);
 	const navigation = useNavigation();
+	
+	// Helper function to check current permissions
+	const checkCurrentPermissions = async () => {
+		try {
+			const foregroundPermission = await Location.getForegroundPermissionsAsync();
+			const backgroundPermission = await Location.getBackgroundPermissionsAsync();
+			return {
+				foreground: foregroundPermission.status,
+				background: backgroundPermission.status
+			};
+		} catch (error) {
+			console.error("Error checking permissions:", error);
+			return null;
+		}
+	};
+
+	// Debug: Get background task debug info
+	const handleGetDebugInfo = async () => {
+		try {
+			const info = await getBackgroundTaskDebugInfo();
+			const taskRegistered = await checkTaskStatus();
+			setDebugInfo({ ...info, taskRegistered });
+			setAlerts((prev) => [
+				...prev,
+				{
+					type: "info",
+					message: `Task Status: ${taskRegistered ? 'Registered' : 'Not Registered'}, Last Run: ${info.lastRun || 'Never'}`,
+				},
+			]);
+		} catch (error) {
+			setAlerts((prev) => [
+				...prev,
+				{
+					type: "error",
+					message: "Failed to get debug info: " + error.message,
+				},
+			]);
+		}
+	};
+
+	// Debug: Check if background task is registered
+	const handleCheckTaskStatus = async () => {
+		try {
+			const isRegistered = await checkTaskStatus();
+			setAlerts((prev) => [
+				...prev,
+				{
+					type: "info",
+					message: `Background task is ${isRegistered ? 'registered' : 'not registered'}`,
+				},
+			]);
+		} catch (error) {
+			setAlerts((prev) => [
+				...prev,
+				{
+					type: "error",
+					message: "Failed to check task status: " + error.message,
+				},
+			]);
+		}
+	};
 	
 	useEffect(() => {
 		const checkUser = async () => {
@@ -32,44 +96,73 @@ const Home = () => {
 		};
 		checkUser();
 	}, [navigation]);
+
 	async function handleRegisterTask() {
-		// 1. Request permissions
-		const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-		if (foregroundStatus !== "granted") {
+		try {
+			// Check current permissions first
+			const currentForegroundPermission = await Location.getForegroundPermissionsAsync();
+			const currentBackgroundPermission = await Location.getBackgroundPermissionsAsync();
+			
+			console.log("Current foreground permission:", currentForegroundPermission.status);
+			console.log("Current background permission:", currentBackgroundPermission.status);
+
+			// 1. Request foreground permissions
+			console.log("Requesting foreground location permission...");
+			const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+			console.log("Foreground location permission after request:", foregroundStatus);
+			
+			if (foregroundStatus !== "granted") {
+				setAlerts((prev) => [
+					...prev,
+					{
+						type: "error",
+						message: "Foreground location access is needed to track your location.",
+					},
+				]);
+				return;
+			}
+
+			// 2. Request background permissions (only if foreground is granted)
+			console.log("Requesting background location permission...");
+			const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+			console.log("Background location permission after request:", backgroundStatus);
+			
+			if (backgroundStatus !== "granted") {
+				setAlerts((prev) => [
+					...prev,
+					{
+						type: "error",
+						message: "Background location access is needed for the app to work when closed. Please go to Settings > Apps > 101-tracker > Permissions > Location and select 'Allow all the time'.",
+					},
+				]);
+				return;
+			}
+
+			console.log("Both permissions granted successfully");
+			setPermissionsGranted(true);
+
+			// 3. Register the background task
+			console.log("Registering background task...");
+			await registerBackgroundTaskAsync();
+			setIsRegistered(true);
+			
+			setAlerts((prev) => [
+				...prev,
+				{
+					type: "success",
+					message: "Your location will now be updated every 3 minutes.",
+				},
+			]);
+		} catch (error) {
+			console.error("Error in handleRegisterTask:", error);
 			setAlerts((prev) => [
 				...prev,
 				{
 					type: "error",
-					message: "Foreground location access is needed to track your location.",
+					message: "Failed to set up location tracking. Please try again.",
 				},
 			]);
-			return;
 		}
-
-		const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-		if (backgroundStatus !== "granted") {
-			setAlerts((prev) => [
-				...prev,
-				{
-					type: "error",
-					message: "Background location access is needed for the app to work when closed.",
-				},
-			]);
-			return;
-		}
-
-		setPermissionsGranted(true);
-
-		// 2. Register the task
-		await registerBackgroundTaskAsync();
-		setIsRegistered(true);
-		setAlerts((prev) => [
-			...prev,
-			{
-				type: "success",
-				message: "Your location will now be updated every 3 minutes.",
-			},
-		]);
 	}
 
 	async function handleUnregisterTask() {
@@ -83,7 +176,11 @@ const Home = () => {
 			},
 		]);
 	}
+
 	useEffect(() => {
+		// Check permissions status on component mount
+		checkCurrentPermissions();
+		
 		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/activity/today/`)
 			.then((response) => {
 				setTodaysActivity(response);
@@ -119,6 +216,19 @@ const Home = () => {
 					setAlerts((prev) => [...prev, { type: "info", message: "There isn't any planned route today" }]);
 				}
 			});
+		
+		// set interval to get location updates every 5 seconds
+		const intervalId = setInterval(() => {
+			Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+				.then((location) => {
+					console.log("Current location:", location);
+				})
+				.catch((err) => {
+					console.error("Error getting location:", err);
+					setSignal(false);
+				});
+		}, 5000);
+		return () => clearInterval(intervalId);
 	}, []);
 
 	useEffect(() => {
@@ -400,6 +510,53 @@ const Home = () => {
 						<Text className="text-xs text-gray-500">No activity recorded yet today.</Text>
 					)}
 				</View>
+
+				{/* Debug Permissions Button */}
+				<TouchableOpacity 
+					className="bg-blue-500 rounded-lg p-3 mb-4" 
+					onPress={async () => {
+						const permissions = await checkCurrentPermissions();
+						if (permissions) {
+							setAlerts((prev) => [
+								...prev,
+								{
+									type: "info",
+									message: `Foreground: ${permissions.foreground}, Background: ${permissions.background}`,
+								},
+							]);
+						}
+					}}
+				>
+					<Text className="text-white font-bold text-center">Check Permissions Status</Text>
+				</TouchableOpacity>
+
+				{/* Debug Background Task Buttons */}
+				<View className="flex-row gap-2 mb-4">
+					<TouchableOpacity 
+						className="bg-purple-500 rounded-lg p-3 flex-1" 
+						onPress={handleGetDebugInfo}
+					>
+						<Text className="text-white font-bold text-center">Get Debug Info</Text>
+					</TouchableOpacity>
+					<TouchableOpacity 
+						className="bg-indigo-500 rounded-lg p-3 flex-1" 
+						onPress={handleCheckTaskStatus}
+					>
+						<Text className="text-white font-bold text-center">Check Task Status</Text>
+					</TouchableOpacity>
+				</View>
+
+				{/* Debug Info Display */}
+				{debugInfo && (
+					<View className="bg-gray-800 rounded-lg p-3 mb-4">
+						<Text className="text-white font-bold mb-2">Debug Information:</Text>
+						<Text className="text-green-400 text-xs">Status: {debugInfo.status || 'Unknown'}</Text>
+						<Text className="text-green-400 text-xs">Task Registered: {debugInfo.taskRegistered ? 'Yes' : 'No'}</Text>
+						<Text className="text-green-400 text-xs">Last Run: {debugInfo.lastRun || 'Never'}</Text>
+						<Text className="text-green-400 text-xs">Last Success: {debugInfo.lastSuccess ? JSON.stringify(debugInfo.lastSuccess) : 'None'}</Text>
+						<Text className="text-red-400 text-xs">Error: {debugInfo.error || 'None'}</Text>
+					</View>
+				)}
 			</View>
 
 			{/* Alerts (popup style, floating at bottom) */}
@@ -414,7 +571,7 @@ const Home = () => {
 				{alerts.map((alert, idx) => (
 					<View
 						key={idx}
-						className={`  flex-row items-center justify-between min-w-[300px] max-w-[90vw]  ${alert.type === "error" ? "bg-red-100/50" : "bg-green-100/50"} border border-l-4 ${alert.type === "error" ? "border-red-500" : "border-green-500"} py-1 px-4 rounded-xl  shadow ${alert.type === "error" ? "shadow-red-500/25" : "shadow-green-500/25"} mb-2 animate-slideIn`}
+						className={`  flex-row items-center justify-between min-w-[300px] max-w-[90vw]  ${alert.type === "error" ? "bg-red-50" : "bg-green-50"} border border-l-4 ${alert.type === "error" ? "border-red-500" : "border-green-500"} py-1 px-4 rounded-xl  shadow ${alert.type === "error" ? "shadow-red-500/25" : "shadow-green-500/25"} mb-2 animate-slideIn`}
 						style={{ backdropFilter: "blur(12px)" }}
 					>
 						<View className="flex-1 flex-col">

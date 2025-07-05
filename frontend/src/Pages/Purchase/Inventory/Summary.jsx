@@ -278,7 +278,7 @@ const Summary = () => {
 				</svg>
 			</div>
 
-			<div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
+			<div className={"mt-5 relative bg-white shadow-border-t w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
 				{loading && (
 					<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/25 backdrop-blur-md z-20">
 						<Loader height={60} width={60} />
@@ -286,46 +286,46 @@ const Summary = () => {
 				)}
 				<div className="h-full overflow-y-auto">
 					<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")} borderWidth={2}>
-						<thead className="sticky top-0 bg-white z-10 border-b border-gray-300">
-							<tr className="border-b border-gray-300 bg-gray-100">
+						<thead className="sticky top-0 bg-white z-10 shadow-border-b">
+							<tr className="shadow-border-b bg-gray-100">
 								<th className="w-fit"></th>
 								<th className="w-[50%]"></th>
-								<th className="text-center p-4 border-l border-gray-300">Total</th>
-								<th colSpan={3} className="text-center p-4 border-l border-gray-300">
+								<th className="text-center p-4 shadow-border-l">Total</th>
+								<th colSpan={3} className="text-center p-4 shadow-border-l">
 									Historical
 								</th>
 							</tr>
-							<tr className="border-b border-gray-300 leading-4">
+							<tr className="shadow-border-b leading-4">
 								<th className="text-center py-4 px-1">SR</th>
-								<th className="text-left p-4 border-l border-gray-300 w-[50%]">Product</th>
-								<th className="text-center p-4 border-l border-gray-300">Closing inventory</th>
-								<th className="text-center p-4 border-l border-gray-300">
+								<th className="text-left p-4 shadow-border-l w-[50%]">Product</th>
+								<th className="text-center p-4 shadow-border-l">Closing inventory</th>
+								<th className="text-center p-4 shadow-border-l">
 									Revenue <br />
 									<span className="font-medium text-sm">(till day)</span>
 								</th>
-								<th className="text-center p-4 border-l border-gray-300">
+								<th className="text-center p-4 shadow-border-l">
 									Gross Profit <br />
 									<span className="font-medium text-sm">(till day)</span>
 								</th>
-								<th className="text-center p-4 border-l border-gray-300">Inventory cost</th>
+								<th className="text-center p-4 shadow-border-l">Inventory cost</th>
 							</tr>
-							<tr className="font-semibold bg-gray-100">
+							<tr className="shadow-border-b font-semibold bg-gray-100">
 								<td className="py-2 px-1 "></td>
-								<td className="py-2 px-4 w-[50%] border-l border-gray-300">Totals</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatNumber(totalClosingInventory)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalRevenue)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
-								<td className="text-center py-2 px-2 border-l border-gray-300">{loadingTotal ? <Loader /> : formatCurrency(totalInventoryCost)}</td>
+								<td className="py-2 px-4 w-[50%] shadow-border-l">Totals</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatNumber(totalClosingInventory)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(totalRevenue)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(totalGrossMargin)}</td>
+								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(totalInventoryCost)}</td>
 							</tr>
 						</thead>
 						<PhotoProvider>
 							<tbody className="h-64 overflow-y-auto">
 								{tableData.map((item, index) => (
-									<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 0 ? "" : "bg-gray-100")} key={index}>
+									<tr className={"hover:bg-indigo-50 shadow-border-b group " + (index % 2 === 0 ? "" : "bg-gray-100")} key={index}>
 										<td className="py-2 px-1 w-fit text-center">
 											<p className="text-sm text-gray-600">{item?.index}</p>
 										</td>
-										<td className="py-2 px-2 w-[50%] border-l border-gray-300">
+										<td className="py-2 px-2 w-[50%] shadow-border-l">
 											<div className="flex items-center">
 												{pageSize <= 50 &&
 													<PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}>
@@ -343,10 +343,10 @@ const Summary = () => {
 												<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
 											</div>
 										</td>
-										<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>
-										<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.revenue)}</td>
-										<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.grossProfit)}</td>
-										<td className="text-center py-2 px-2 border-l border-gray-300">{formatCurrency(item?.inventoryCost)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.closingInventory)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.revenue)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.grossProfit)}</td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.inventoryCost)}</td>
 									</tr>
 								))}
 								{tableData.length === 0 && !loading && (
