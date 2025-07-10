@@ -46,14 +46,9 @@ client = typesense.Client(
         "api_key": settings.TYPESENSE_API_KEY,
         "nodes": [
             {
-                "host": "thejagstudio-typesense.hf.space",
+                "host": "purityai-typesense.hf.space",
                 "port": "443",
                 "protocol": "https",
-            },
-            {
-                "host": "185.28.22.68",
-                "port": "7860",
-                "protocol": "http",
             },
         ],
         "connection_timeout_seconds": 2,

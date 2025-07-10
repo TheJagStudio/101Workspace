@@ -1,4 +1,5 @@
 import os
+from random import random
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -7,6 +8,7 @@ import time
 import traceback
 import re
 from dotenv import load_dotenv
+from summa import summarizer
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,11 +17,11 @@ load_dotenv()
 # IMPORTANT: It is recommended to use environment variables for API keys.
 # For this example, we'll use a placeholder. Replace with your actual key or set as an environment variable.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-searpApi = "87bfa430-7de7-4c35-80d9-62ca8da5a2d2"
+searpApi = "b358398c-0f67-4bee-8ed6-c90304f824e8"
 
 # Replaced f-string
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key={}".format(GEMINI_API_KEY)
-
+DEEP_INFRA_API_URL = 'https://api.deepinfra.com/v1/openai/chat/completions'
 # Expanded and refined product categories
 PRODUCT_CATEGORIES = ["Vape Devices and Vaporizers (Disposable and Refillable)", "E-Liquids (Nicotine and Nicotine-Free)", "Hemp-Derived Products (CBD, CBG, CBN)", "Delta-8, Delta-10, HHC, and THCa Products", "Kratom (Powders, Capsules, Extracts)", "Hookah, Shisha Tobacco, and Charcoals", "Premium Cigars and Rolling Papers", "Energy Drinks and Nootropic Beverages", "Imported and Specialty Snacks (e.g., Mexican Candy)", "Adult Novelty and Wellness Products", "Smoke Shop Supplies (Glassware, Grinders, Displays)"]
 JURISDICTION = "Georgia, USA"
@@ -96,9 +98,9 @@ class GeminiLLM:
     def _make_request(self, prompt: str):
         payload = {"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.4, "topP": 0.95, "topK": 40}}
         headers = {"Content-Type": "application/json"}
-        time.sleep(2)  # Rate limiting
+        time.sleep(20)  # Rate limiting
         try:
-            response = requests.post(self.api_url, headers=headers, json=payload, timeout=45)
+            response = requests.post(self.api_url, headers=headers, json=payload)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
@@ -129,6 +131,83 @@ class GeminiLLM:
             return {"error": "Failed to parse JSON response from LLM.", "raw_response": raw_response}
 
 
+
+class DeepInfraLLM:
+    """A wrapper for the DeepInfra LLM API with error handling, using the gemma-3-12b-it model."""
+
+    def __init__(self, api_url: str = 'https://api.deepinfra.com/v1/openai/chat/completions'):
+        self.api_url = api_url
+
+    def _make_request(self, prompt: str, response_format_type: str = "text"):
+        json_data = {
+            'model': 'google/gemma-3-12b-it',
+            'messages': [
+                {
+                    'role': 'user',
+                    'content': prompt,
+                },
+            ],
+            'stream': False,
+            'max_tokens': 128000,
+            'response_format': {
+                'type': response_format_type,
+            },
+        }
+        headers = {
+            'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            'Origin': 'https://deepinfra.com',
+            'Pragma': 'no-cache',
+            'Referer': 'https://deepinfra.com/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+            'X-Deepinfra-Source': 'model-embed',
+            'accept': 'text/event-stream',
+            'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'x-forwarded-for': '.'.join([str(random.randint(1, 255)) for i in range(4)])
+        }
+        time.sleep(2)  # Rate limiting
+        try:
+            response = requests.post(self.api_url, headers=headers, json=json_data)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print({"type": "error", "agent": "DeepInfraLLM", "phase": "API_CALL", "message": "Error calling DeepInfra API", "details": {"error": str(e)}})
+            if hasattr(e, "response") and e.response:
+                print({"type": "error_detail", "agent": "DeepInfraLLM", "phase": "API_CALL", "message": "Received error response body from API", "details": {"response_body": e.response.text}})
+            return None
+
+    def analyze(self, prompt: str):
+        result = self._make_request(prompt, response_format_type="text")
+        if result and "choices" in result and result["choices"] and "message" in result["choices"][0] and "content" in result["choices"][0]["message"]:
+            return result["choices"][0]["message"]["content"]
+        else:
+            print({"type": "error", "agent": "DeepInfraLLM", "phase": "ANALYZE", "message": "Could not parse LLM response.", "details": {"raw_response": result}})
+            return "Error: Analysis failed due to an invalid API response."
+
+    def analyze_json(self, prompt: str):
+        # Request JSON format directly from the API for better reliability
+        result = self._make_request(prompt, response_format_type="json_object")
+        if result and "choices" in result and result["choices"] and "message" in result["choices"][0] and "content" in result["choices"][0]["message"]:
+            raw_response_content = result["choices"][0]["message"]["content"]
+            try:
+                return json.loads(raw_response_content)
+            except json.JSONDecodeError as e:
+                print({"type": "error", "agent": "DeepInfraLLM", "phase": "ANALYZE_JSON", "message": "Failed to decode JSON from LLM response.", "details": {"error": str(e), "raw_response": raw_response_content}})
+                return {"error": "Failed to parse JSON response from LLM.", "raw_response": raw_response_content}
+        else:
+            print({"type": "error", "agent": "DeepInfraLLM", "phase": "ANALYZE_JSON", "message": "Could not parse LLM response for JSON.", "details": {"raw_response": result}})
+            return {"error": "Analysis failed due to an invalid API response for JSON.", "raw_response": result}
+
+
+
+
 class MarketResearchAgent:
     """Agent that finds trending products, market sentiment, and innovations."""
 
@@ -149,9 +228,11 @@ class MarketResearchAgent:
                 for result in search_results:
                     # Directly use the 'text' from the search result, no separate scrape call
                     content = self.scraper_tool.scrape(result) # Pass the full result item
+                    content = summarizer.summarize(content)
                     if content:
                         all_content += f"\n\n--- Web Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}"
                         sources.add(result.get('url', 'N/A'))
+                        # print(f"\tWeb Source Found: {result.get('title', 'N/A')}")
 
         for query in social_queries:
             social_results = self.social_tool.search(query, max_results=7)
@@ -159,9 +240,11 @@ class MarketResearchAgent:
                 for result in social_results:
                     # Directly use the 'text' from the social search result
                     content = self.scraper_tool.scrape(result) # Pass the full result item
+                    content = summarizer.summarize(content)
                     if content:
                         all_content += f"\n\n--- Social Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}" # Use 'url' instead of 'link' for consistency with Exa.ai
                         sources.add(result.get('url', 'N/A'))
+                        # print(f"\tSocial Source Found: {result.get('title', 'N/A')}")
 
         if not all_content:
             return {"analysis": {"category": category, "error": "No content could be gathered."}, "sources": []}
@@ -212,9 +295,11 @@ class RegulatoryComplianceAgent:
                 for result in search_results:
                     # if any(domain in result["url"] for domain in [".gov", ".org", "fda.gov", "ga.gov"]): # Using 'url'
                     content = self.scraper_tool.scrape(result) # Pass the full result item
+                    content = summarizer.summarize(content)
                     if content:
                         all_content += f"\n\n--- Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}"
                         sources.add(result.get('url', 'N/A'))
+                        # print(f"\tRegulatory Source Found: {result.get('title', 'N/A')}")
 
         if not all_content:
             return {"analysis": {"status": "Watch", "risk_level": "Medium", "summary": "Could not find definitive regulatory information from official sources. Manual review required."}, "sources": []}
@@ -251,9 +336,11 @@ class CompetitiveIntelligenceAgent:
             if search_results:
                 for result in search_results:
                     content = self.scraper_tool.scrape(result) # Pass the full result item
+                    content = summarizer.summarize(content)
                     if content:
                         all_content += f"\n\n--- Competitor Source: {result.get('title', 'N/A')} ({result.get('url', 'N/A')}) ---\n{content}"
                         sources.add(result.get('url', 'N/A'))
+                        # print(f"\tCompetitor Source Found: {result.get('title', 'N/A')}")
 
         if not all_content:
             return {"analysis": {"error": "Could not find competitor information."}, "sources": []}
@@ -301,10 +388,11 @@ class SupplierDiscoveryAgent:
             # However, since `SearpApiFunction` now returns full text, we can use that.
             relevant_results_info = []
             for res in search_results:
+                content = summarizer.summarize(res.get("text", ""))
                 relevant_results_info.append({
                     "title": res.get("title", "N/A"),
                     "url": res.get("url", "N/A"), # Use 'url'
-                    "text_snippet": res.get("text", "")[:500] # Use a snippet of the text
+                    "text_snippet": content[:500] # Use a snippet of the text
                 })
 
 
@@ -532,6 +620,7 @@ class Orchestrator:
         all_category_data = []
 
         for category in PRODUCT_CATEGORIES:
+            print(f"Processing category: {category}")
             try:
                 yield {"type": "progress", "phase": "CATEGORY_START", "message": f"Starting to process category: {category}", "details": {"category": category}}
 

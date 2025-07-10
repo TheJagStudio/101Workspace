@@ -851,10 +851,10 @@ def syncSearchData(token):
             "api_key": settings.TYPESENSE_API_KEY,
             "nodes": [
                 {
-                    "host": "thejagstudio-typesense.hf.space",
+                    "host": "purityai-typesense.hf.space",
                     "port": "443",
                     "protocol": "https",
-                }
+                },
             ],
             "connection_timeout_seconds": 2,
         }

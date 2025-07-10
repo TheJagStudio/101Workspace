@@ -51,24 +51,24 @@ const Home = () => {
 					)}
 				</div>
 			</div>
-			<div className="p-10 sm:p-20 flex flex-row flex-wrap items-center justify-center sm:justify-start gap-5 select-none">
+			<div className="p-10 sm:p-20 w-screen flex flex-row flex-wrap items-center justify-center sm:justify-start gap-5 select-none">
 				<Link to="/tracker">
-				<div className="bg-gradient-to-br from-orange-50 to-orange-200 shadow-md hover:shadow-xl shadow-orange-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-orange-500 rounded-xl h-fit w-fit px-3 py-2 flex items-center justify-center transition-all">
-					<img src="/static/images/101-logo-tracker.png" alt="Logo" className="w-auto h-16" />
-					<p className="text-5xl font-semibold text-orange-600 ">Tracker</p>
-				</div>
+					<div className="bg-gradient-to-br from-orange-50 to-orange-200 shadow-md hover:shadow-xl shadow-orange-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-orange-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
+						<img src="/static/images/101-logo-tracker.png" alt="Logo" className="w-auto h-16" />
+						<p className="text-5xl font-semibold text-orange-600 ">Tracker</p>
+					</div>
 				</Link>
 				<Link to="/purchase">
-					<div className="bg-gradient-to-br from-indigo-50 to-indigo-200 shadow-md hover:shadow-xl shadow-indigo-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-indigo-500 rounded-xl h-fit w-fit px-3 py-2 flex items-center justify-center transition-all">
+					<div className="bg-gradient-to-br from-indigo-50 to-indigo-200 shadow-md hover:shadow-xl shadow-indigo-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-indigo-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 						<img src="/static/images/101-logo-purchase.png" alt="Logo" className="w-auto h-16 " />
 						<p className="text-5xl font-semibold text-indigo-600">Purchase</p>
 					</div>
 				</Link>
-				<Link to="/delivery" className="bg-gradient-to-br from-green-50 to-green-200 shadow-md hover:shadow-xl shadow-green-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-green-500 rounded-xl h-fit w-fit px-3 py-2 flex items-center justify-center transition-all">
+				<Link to="/delivery" className="bg-gradient-to-br from-green-50 to-green-200 shadow-md hover:shadow-xl shadow-green-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-green-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 					<img src="/static/images/101-logo-delivery.png" alt="Logo" className="w-auto h-16" />
 					<p className="text-5xl font-semibold text-green-600">Delivery</p>
 				</Link>
-				<Link to="/catalog" className="bg-gradient-to-br from-yellow-50 to-yellow-200 shadow-md hover:shadow-xl shadow-yellow-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-yellow-500 rounded-xl h-fit w-fit px-3 py-2 flex items-center justify-center transition-all">
+				<Link to="/catalog" className="bg-gradient-to-br from-yellow-50 to-yellow-200 shadow-md hover:shadow-xl shadow-yellow-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-yellow-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 					<img src="/static/images/101-logo-catalog.png" alt="Logo" className="w-auto h-16" />
 					<p className="text-5xl font-semibold text-yellow-600">Catalog</p>
 				</Link>

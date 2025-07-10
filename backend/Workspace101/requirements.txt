@@ -9,3 +9,4 @@ google-genai
 typesense
 beautifulsoup4
 ollama
+summa
