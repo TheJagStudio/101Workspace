@@ -158,7 +158,7 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liv
         <GoogleMap
             mapContainerStyle={mapContainerStyle}
             zoom={zoom}
-            center={userLocation || center}
+            center={center ? center : userLocation}
             options={mapOptions}
 
         >
@@ -217,9 +217,12 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liv
                 <Polyline
                     path={liveRoute}
                     options={{
+                        suppressMarkers: true,
                         strokeColor: '#1976D2', // blue
                         strokeOpacity: 1,
                         strokeWeight: 5,
+                        editable: true,
+                        
                     }}
                 />
             )}

@@ -88,7 +88,7 @@ const CreateDelivery = () => {
       await new Promise(res => setTimeout(res, 500))
       setDeliverySheets([...deliverySheets, newSheet])
       setIsLoading(false)
-      navigate('/deliveries')
+      navigate('/delivery/deliveries')
     } catch (err) {
       setIsLoading(false)
       setError('Failed to create delivery sheet. Please try again.')

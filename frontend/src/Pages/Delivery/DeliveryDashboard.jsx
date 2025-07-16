@@ -149,23 +149,23 @@ const DeliveryDashboard = () => {
   const getTotalCases = () => currentDeliverySheet?.invoices.reduce((sum, inv) => sum + inv.caseCount, 0) || 0
 
   const handleEditInvoice = (id) => {
-    navigate(`/invoice/${id}`)
+    navigate(`/delivery/invoice/${id}`)
   }
 
   const handleUpdatePayment = (id) => {
-    navigate(`/record-payment/${id}`)
+    navigate(`/delivery/record-payment/${id}`)
   }
 
   const handleScanInvoice = () => {
-    navigate('/scan')
+    navigate('/delivery/scan')
   }
 
   const handleCreateDelivery = () => {
-    navigate('/create-delivery')
+    navigate('/delivery/create-delivery')
   }
 
   const handleViewAllDeliveries = () => {
-    navigate('/deliveries')
+    navigate('/delivery/deliveries')
   }
 
   if (isLoading && !currentDeliverySheet) {

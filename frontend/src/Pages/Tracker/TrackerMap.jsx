@@ -4,6 +4,14 @@ import { Map, MapPin, CheckCircle, AlertTriangle, RadioTower, Route, Clock } fro
 import { Card, CardContent, CardHeader, CardTitle, StatCard } from '../../Components/utils/Card';
 import GoogleMapWrapper from '../../Components/map/GoogleMapWrapper';
 import { apiRequest } from '../../utils/api';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase2 = createClient(
+    import.meta.env.VITE_SUPABASE_URL_SECOND,
+    import.meta.env.VITE_SUPABASE_ANON_KEY_SECOND
+);
+
+
 
 const TrackerMap = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -29,14 +37,75 @@ const TrackerMap = () => {
                     apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/notifications/')
                 ]);
                 setSalesmen(salesmenData?.["results"] || []);
-                setLiveFeed(notificationsData?.["results"] || []);
+                // setLiveFeed(notificationsData?.["results"] || []);
             } catch (error) {
                 console.error("Failed to fetch initial data:", error);
             } finally {
                 setLoading(false);
             }
         };
+
+        const fetchLiveFeed = async () => {
+            let { data: tracker_locationpoint, error } = await supabase2
+                .from('tracker_locationpoint')
+                .select("*")
+                .eq('salesman_id', selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId'));
+            let feedArray = [];
+            for (let i = 0; i < (tracker_locationpoint?.length || 0); i++) {
+                const lat = Number(tracker_locationpoint[i].latitude);
+                const lng = Number(tracker_locationpoint[i].longitude);
+                if (isFinite(lat) && isFinite(lng)) {
+                    feedArray.push({ lat, lng });
+                }
+            }
+            setLiveFeed(feedArray);
+            console.log("Live feed fetched:", feedArray);
+        }
+
         fetchData();
+        fetchLiveFeed();
+
+
+        const channels = supabase2.channel('custom-update-channel')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'salesman' },
+                (payload) => {
+                    // console.log('Change received!', payload?.new)
+                    let newData = payload?.new;
+                    setSalesmen(prevSalesmen => {
+                        const index = prevSalesmen.findIndex(s => s.user.id === newData.user_id);
+                        if (index !== -1) {
+                            const updatedSalesmen = [...prevSalesmen];
+                            updatedSalesmen[index] = {
+                                ...updatedSalesmen[index],
+                                current_location_lat: newData.current_location_lat,
+                                current_location_lng: newData.current_location_lng,
+                                // add more fields if needed
+                            };
+                            return updatedSalesmen;
+                        }
+                        // Ensure newData matches the expected structure
+                        return [
+                            ...prevSalesmen,
+                            {
+                                ...newData,
+                                user: { id: newData.user_id, username: newData.username || '' },
+                            }
+                        ];
+                    });
+                    setLiveFeed(prevFeed => {
+                        return [...prevFeed, {
+                            lat: newData.current_location_lat,
+                            lng: newData.current_location_lng
+                        }];
+                    });
+                }
+            )
+            .subscribe();
+        return () => {
+            supabase2.removeChannel(channels);
+        };
     }, []);
 
     useEffect(() => {
@@ -89,14 +158,6 @@ const TrackerMap = () => {
         }
     }, [salesmen, selectedSalesmanId]);
 
-    const polylines = useMemo(() => {
-        if (!routeHistory.length) return [];
-        return [{
-            id: `route-${selectedSalesmanId}`,
-            path: routeHistory,
-            color: '#1A73E8'
-        }];
-    }, [routeHistory, selectedSalesmanId]);
 
     const mapCenter = useMemo(() => {
         if (selectedSalesmanId) {
@@ -105,7 +166,7 @@ const TrackerMap = () => {
                 return { lat: salesman.current_location_lat, lng: salesman.current_location_lng };
             }
         }
-        return { lat: 34.0522, lng: -118.2437 }; // Default center
+        return null
     }, [salesmen, selectedSalesmanId]);
 
     const FeedIcon = ({ type }) => {
@@ -143,10 +204,11 @@ const TrackerMap = () => {
                 <Card className="flex-grow">
                     <CardContent className="h-full p-0">
                         <GoogleMapWrapper
-                            center={mapCenter}
-                            zoom={selectedSalesmanId ? 14 : 10}
+                            center={ mapCenter}
+                            zoom={selectedSalesmanId ? 16 : 10}
                             markers={markers}
-                            polylines={polylines}
+                            // polylines={polylines}
+                            liveRoute={liveFeed}
                         />
                     </CardContent>
                 </Card>

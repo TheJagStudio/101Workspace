@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "api",
     "authAPI",
     "sync",
+    "delivery",
     "tracker",
     "import_export",
     "corsheaders",
