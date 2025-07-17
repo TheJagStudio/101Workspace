@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from tracker.models import Salesman, LocationPoint, DailyActivity, AdminSettings, PlannedRoute, RouteStop, SystemNotification
+from api.models import ModulePermissions
 
 # Store tokens temporarily (in production, use database)
 password_reset_tokens = {}
@@ -231,21 +232,35 @@ class UserInfoView(APIView):
         user_info = get_user_info(user)
         return Response({"status": "success", "user_info": user_info})
 
+
 def get_user_info(user):
-    isSalesman = False
-    salesmanEntry = Salesman.objects.filter(user=user).first()
-    if salesmanEntry:
-        isSalesman = True
-    user_info = {
-        "username": user.username,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "is_active": user.is_active,
-        "is_salesman": isSalesman,
-        "is_superadmin": False
-    }
-    if isSalesman:
-        salesmanType = salesmanEntry.user_type
-        user_info["salesmanType"] = salesmanType if isSalesman else None
+    permissions = ModulePermissions.objects.filter(user=user).first()
+    if permissions:
+        userPermissions = {
+            "purchase": permissions.purchase,
+            "tracker": permissions.tracker,
+            "delivery": permissions.delivery,
+            "catalog": permissions.catalog,
+            "purchase_PO": permissions.purchase_PO,
+            "purchase_Inventory": permissions.purchase_Inventory,
+            "purchase_Settings": permissions.purchase_Settings,
+            "tracker_Map": permissions.tracker_Map,
+            "tracker_History": permissions.tracker_History,
+            "tracker_Salesmen_List": permissions.tracker_Salesmen_List,
+            "tracker_Global_View": permissions.tracker_Global_View,
+            "tracker_config": permissions.tracker_config,
+            "tracker_Admin_Profile": permissions.tracker_Admin_Profile,
+            "tracker_Profile": permissions.tracker_Profile
+        }
+    else:
+        userPermissions = {
+            "purchase": False,
+            "tracker": False,
+            "delivery": False,
+            "catalog": False,
+            "purchase_PO": False,
+            "purchase_Inventory": False,
+            "purchase_Settings": False,
+        }
+    user_info = {"username": user.username, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "is_active": user.is_active, "permissions": userPermissions}
     return user_info

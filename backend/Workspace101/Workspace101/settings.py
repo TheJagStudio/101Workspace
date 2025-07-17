@@ -188,6 +188,8 @@ SIMPLE_JWT = {
 }
 
 TYPESENSE_API_KEY = os.getenv("typesense_api_key", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000000
 TIME_ZONE = 'America/New_York'

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAtom } from "jotai";
-import { isSidebarOpenAtom } from "../../Variables";
+import { isSidebarOpenAtom, userAtom } from "../../Variables";
 import { SearchIcon } from "lucide-react";
 
 const Sidebar = () => {
 	const [activeItem, setActiveItem] = useState("report");
 	const [collapsed, setCollapsed] = useAtom(isSidebarOpenAtom);
+	const [user, setUser] = useAtom(userAtom);
 
 	const handleItemClick = (item) => {
 		setActiveItem(item);
@@ -68,22 +69,22 @@ const Sidebar = () => {
 								{!collapsed && "AI Report"}
 							</Link>
 						</li>
-						<li className="mb-1">
+						{user?.permissions?.purchase_PO && (<li className="mb-1">
 							<Link to="/purchase/po-maker" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "PoMaker" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("PoMaker")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" className={`w-5 h-5 mr-3 ${activeItem === "PoMaker" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M32 0C14.3 0 0 14.3 0 32S14.3 64 32 64l16 0c8.8 0 16 7.2 16 16l0 288c0 44.2 35.8 80 80 80l18.7 0c-1.8 5-2.7 10.4-2.7 16c0 26.5 21.5 48 48 48s48-21.5 48-48c0-5.6-1-11-2.7-16l197.5 0c-1.8 5-2.7 10.4-2.7 16c0 26.5 21.5 48 48 48s48-21.5 48-48c0-5.6-1-11-2.7-16l66.7 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-464 0c-8.8 0-16-7.2-16-16l0-288C128 35.8 92.2 0 48 0L32 0zM224 32c-17.7 0-32 14.3-32 32l0 224c0 17.7 14.3 32 32 32l128 0c17.7 0 32-14.3 32-32l0-224c0-17.7-14.3-32-32-32L224 32zM416 64l0 64c0 17.7 14.3 32 32 32l64 0c17.7 0 32-14.3 32-32l0-64c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32 14.3-32 32zm32 128c-17.7 0-32 14.3-32 32l0 64c0 17.7 14.3 32 32 32l128 0c17.7 0 32-14.3 32-32l0-64c0-17.7-14.3-32-32-32l-128 0z" />
 								</svg>
 								{!collapsed && "PO Maker"}
 							</Link>
-						</li>
-						<li className="mb-1">
+						</li>)}
+						{user?.permissions?.purchase_PO && (<li className="mb-1">
 							<Link to="/purchase/po-list" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "PoList" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("PoList")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className={`w-5 h-5 mr-3 ${activeItem === "PoList" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 13h3m-3 3h8m-8 4h8m-8 4h8m1-17V2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v22s0 1 1 1h1m23 2h4a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6m2 27a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1z" />
 								</svg>
 								{!collapsed && "Generated POs"}
 							</Link>
-						</li>
+						</li>)}
 						{/* <li className="mb-1">
 							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Message" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Message")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Message" ? "text-indigo-500" : "text-gray-500"}`}>
@@ -100,7 +101,7 @@ const Sidebar = () => {
 					</ul>
 				</div>
 
-				<div className="py-4 border-b border-gray-200">
+				{user?.permissions?.purchase_Inventory && (<div className="py-4 border-b border-gray-200">
 					<div className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"} mb-2`}>INVENTORY</div>
 					<ul>
 						<li className="mb-1">
@@ -119,22 +120,22 @@ const Sidebar = () => {
 								{!collapsed && "Replenishment"}
 							</Link>
 						</li>
-						<li className="mb-1">
+						{/* <li className="mb-1">
 							<Link to="/purchase/performance" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Performance" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Performance")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className={`w-5 h-5 mr-3 ${activeItem === "Performance" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M24 32c13.3 0 24 10.7 24 24l0 352c0 13.3 10.7 24 24 24l416 0c13.3 0 24 10.7 24 24s-10.7 24-24 24L72 480c-39.8 0-72-32.2-72-72L0 56C0 42.7 10.7 32 24 32zM168 224c13.3 0 24 10.7 24 24l0 80c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-80c0-13.3 10.7-24 24-24zm120-72l0 80c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-80c0-13.3 10.7-24 24-24s24 10.7 24 24zm72-88c13.3 0 24 10.7 24 24l0 80c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-80c0-13.3 10.7-24 24-24zM480 88l0 240c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-240c0-13.3 10.7-24 24-24s24 10.7 24 24z" />
 								</svg>
 								{!collapsed && "Performance"}
 							</Link>
-						</li>
-						<li className="mb-1">
+						</li> */}
+						{/* <li className="mb-1">
 							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Sell Through" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Sell Through")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" className={`w-5 h-5 mr-3 ${activeItem === "Sell Through" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M704 288h131.072a32 32 0 0 1 31.808 28.8L886.4 512h-64.384l-16-160H704v96a32 32 0 1 1-64 0v-96H384v96a32 32 0 0 1-64 0v-96H217.92l-51.2 512H512v64H131.328a32 32 0 0 1-31.808-35.2l57.6-576a32 32 0 0 1 31.808-28.8H320v-22.336C320 154.688 405.504 64 512 64s192 90.688 192 201.664v22.4zm-64 0v-22.336C640 189.248 582.272 128 512 128s-128 61.248-128 137.664v22.4h256zm201.408 483.84L768 698.496V928a32 32 0 1 1-64 0V698.496l-73.344 73.344a32 32 0 1 1-45.248-45.248l128-128a32 32 0 0 1 45.248 0l128 128a32 32 0 1 1-45.248 45.248" />
 								</svg>
 								{!collapsed && "Sell Through"}
 							</Link>
-						</li>
+						</li> */}
 						<li className="mb-1">
 							<Link to="/purchase/dusty-inventory" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Dusty Inventory" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Dusty Inventory")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className={`w-5 h-5 mr-3 ${activeItem === "Dusty Inventory" ? "text-indigo-500" : "text-gray-500"}`}>
@@ -148,9 +149,9 @@ const Sidebar = () => {
 							</Link>
 						</li>
 					</ul>
-				</div>
+				</div>)}
 
-				<div className="py-4">
+				{user?.permissions?.purchase_Settings && (<div className="py-4">
 					<div className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"} mb-2`}>SUPPORT</div>
 					<ul>
 						<li className="mb-1">
@@ -178,7 +179,7 @@ const Sidebar = () => {
 							</Link>
 						</li> */}
 					</ul>
-				</div>
+				</div>)}
 			</div>
 
 			<div className={`p-2 border-t border-gray-200 ${collapsed ? "hidden sm:block" : ""}`}>

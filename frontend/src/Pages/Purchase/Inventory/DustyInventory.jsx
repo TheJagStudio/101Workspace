@@ -1,4 +1,4 @@
-import { addDays, format, set } from "date-fns";
+import { addDays, format, set, subDays } from "date-fns";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import Calendar from "../../../Components/utils/Calendar";
@@ -75,8 +75,8 @@ const DustyInventory = () => {
 	const [sortBy, setSortBy] = useState("closingInventory");
 	const [reverseSort, setReverseSort] = useState(true);
 	const [subCategoryVisible, setSubCategoryVisible] = useState(false);
-	const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
-	const [endDate, setEndDate] = useState(format(addDays(new Date(), 7), "yyyy-MM-dd"));
+	const [startDate, setStartDate] = useState(format(subDays(new Date(), 90), "yyyy-MM-dd"));
+	const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
 	const [tableData, setTableData] = useState([]);
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
@@ -93,55 +93,20 @@ const DustyInventory = () => {
 
 	async function getData() {
 		setLoading(true);
-		// try {
-		// 	const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
-		// 	setTableData(data["data"]);
-		// 	setTotalPages(data["totalPages"]);
-		// 	if (page > data["totalPages"]) {
-		// 		setPage(data["totalPages"]);
-		// 	}
-		// } catch (error) {
-		// 	setTableData([]);
-		// 	console.error("Error fetching inventory summary data:", error);
-		// } finally {
-		// 	setLoading(false);
-		// }
-		let { data, error } = await supabase
-			.rpc('get_dusty_inventory', {
-				_report_type: reportType,
-				_start_date: startDate,
-				_end_date: endDate,
-				_measure: 'dusty',
-				_sort_by: sortBy,
-				_reverse_sort: reverseSort,
-				_days_threshold: 90,
-				_page_num: page,
-				_page_size: pageSize,
-				_load_subcategory: reportType === "category" ? subCategoryVisible : false,
-			})
-		if (error) console.error(error)
-		else setTableData(data);
-
-		let { data: data2, error: error2 } = await supabase
-			.rpc('get_dusty_inventory_count', {
-				_days_threshold: 90,
-				_end_date: endDate,
-				_load_subcategory: subCategoryVisible,
-				_measure: 'dusty',
-				_report_type: reportType,
-				_start_date: startDate
-			})
-		if (error2) console.error(error2)
-		else {
-			let totalSize = parseInt(data2);
-			console.log("Total Size:", totalSize, data2);
+		try {
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?_report_type=${reportType}&_start_date=${startDate}&_end_date=${endDate}&_sort_by=${sortBy}&_page_num=${page}&_page_size=${pageSize}&_dataType=child&_reverse_sort=${reverseSort}&_load_subcategory=${subCategoryVisible}`);
+			setTableData(data["data"]);
+			let totalSize = parseInt(data["totalPages"]);
 			setTotalPages(Math.ceil(totalSize / pageSize));
 			if (page > Math.ceil(totalSize / pageSize)) {
 				setPage(Math.ceil(totalSize / pageSize));
 			}
+		} catch (error) {
+			setTableData([]);
+			console.error("Error fetching inventory summary data:", error);
+		} finally {
+			setLoading(false);
 		}
-
-		setLoading(false);
 	}
 
 	function formatCurrency(value) {
@@ -326,10 +291,10 @@ const DustyInventory = () => {
 											</div>
 										</td>
 										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.closingInventory)}</td>
-										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.sellThroughRate)}% <br/><span className="text-xs">{item?.sellThroughRate ? `(${item?.quantitySold} sold)` : ''}</span></td>
+										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.sellThroughRate)}% <br /><span className="text-xs">{item?.sellThroughRate ? `(${item?.quantitySold} sold)` : ''}</span></td>
 										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.inventoryCost)}</td>
 										<td className="text-center py-2 px-2 shadow-border-l">{formatCurrency(item?.retailValue)}</td>
-										<td className="text-center py-2 px-2 shadow-border-l whitespace-nowrap leading-4">{item?.lastSale}<br/><span className="whitespace-nowrap text-xs">{item?.lastSale ? `(${item?.days_since_last_sale} days ago)` : ''}</span></td>
+										<td className="text-center py-2 px-2 shadow-border-l whitespace-nowrap leading-4">{item?.lastSale}<br /><span className="whitespace-nowrap text-xs">{item?.lastSale ? `(${item?.days_since_last_sale} days ago)` : ''}</span></td>
 										<td className="text-center py-2 px-2 shadow-border-l whitespace-nowrap">{item?.lastReceived}</td>
 									</tr>
 								))}

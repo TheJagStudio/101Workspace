@@ -1,16 +1,43 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { userAtom } from "../Variables";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-const Home = () => {
+const Home = ({logout}) => {
 	const [user] = useAtom(userAtom);
 	const [showProfileMenu, setShowProfileMenu] = useState(false);
-	const handleLogout = () => {
-		if (logout) {
-			logout();
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		// if only one permission is available, redirect to that page
+		if (user?.permissions) {
+			let availablePermissions = 0;
+			if (user?.permissions?.tracker) {
+				availablePermissions++;
+			}
+			if (user?.permissions?.purchase) {
+				availablePermissions++;
+			}
+			if (user?.permissions?.delivery) {
+				availablePermissions++;
+			}
+			if (user?.permissions?.catalog) {
+				availablePermissions++;
+			}
+			if (availablePermissions === 1) {
+				// Redirect to the only available page
+				let redirectTo = user?.permissions?.tracker ? "/tracker" :
+					user?.permissions?.purchase ? "/purchase" :
+						user?.permissions?.delivery ? "/delivery" :
+							user?.permissions?.catalog ? "/catalog" : "/";
+				navigate(redirectTo, { replace: true });
+			}
+		} else {
+			// navigate("/login", { replace: true });
+			console.log(user)
 		}
-	};
+	}, [user]);
 	return (
 		<div
 			className="h-screen relative"
@@ -35,14 +62,14 @@ const Home = () => {
 									<span className="text-sm font-medium text-gray-900 truncate w-32 text-left">
 										{user?.first_name} {user?.last_name}
 									</span>
-									<span className="text-xs text-gray-400 truncate w-32 text-left">{user?.email}kjbkbkbbkjlnll</span>
+									<span className="text-xs text-gray-400 truncate w-32 text-left">{user?.email}</span>
 								</div>
 							</button>
 
 							{/* Profile Dropdown Menu */}
 							{showProfileMenu && (
 								<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-100">
-									<button onClick={handleLogout} className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
+									<button onClick={logout} className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
 										Logout
 									</button>
 								</div>
@@ -52,26 +79,26 @@ const Home = () => {
 				</div>
 			</div>
 			<div className="p-10 sm:p-20 w-screen flex flex-row flex-wrap items-center justify-center sm:justify-start gap-5 select-none">
-				<Link to="/tracker">
+				{user?.permissions?.tracker && (<Link to="/tracker">
 					<div className="bg-gradient-to-br from-orange-50 to-orange-200 shadow-md hover:shadow-xl shadow-orange-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-orange-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 						<img src="/static/images/101-logo-tracker.png" alt="Logo" className="w-auto h-16" />
 						<p className="text-5xl font-semibold text-orange-600 ">Tracker</p>
 					</div>
-				</Link>
-				<Link to="/purchase">
+				</Link>)}
+				{user?.permissions?.purchase && (<Link to="/purchase">
 					<div className="bg-gradient-to-br from-indigo-50 to-indigo-200 shadow-md hover:shadow-xl shadow-indigo-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-indigo-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 						<img src="/static/images/101-logo-purchase.png" alt="Logo" className="w-auto h-16 " />
 						<p className="text-5xl font-semibold text-indigo-600">Purchase</p>
 					</div>
-				</Link>
-				<Link to="/delivery" className="bg-gradient-to-br from-green-50 to-green-200 shadow-md hover:shadow-xl shadow-green-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-green-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
+				</Link>)}
+				{user?.permissions?.delivery && (<Link to="/delivery" className="bg-gradient-to-br from-green-50 to-green-200 shadow-md hover:shadow-xl shadow-green-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-green-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 					<img src="/static/images/101-logo-delivery.png" alt="Logo" className="w-auto h-16" />
 					<p className="text-5xl font-semibold text-green-600">Delivery</p>
-				</Link>
-				<Link to="/catalog" className="bg-gradient-to-br from-yellow-50 to-yellow-200 shadow-md hover:shadow-xl shadow-yellow-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-yellow-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
+				</Link>)}
+				{user?.permissions?.catalog && (<Link to="/catalog" className="bg-gradient-to-br from-yellow-50 to-yellow-200 shadow-md hover:shadow-xl shadow-yellow-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-yellow-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 					<img src="/static/images/101-logo-catalog.png" alt="Logo" className="w-auto h-16" />
 					<p className="text-5xl font-semibold text-yellow-600">Catalog</p>
-				</Link>
+				</Link>)}
 			</div>
 		</div>
 	);

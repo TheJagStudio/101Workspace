@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
 import typesense
@@ -901,275 +902,61 @@ class DustyInventoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get query parameters
-        report_type = request.GET.get("report_type", "product")
-        measure = request.GET.get("measure", "all")
-        start_date = request.GET.get("start_date", None)
-        end_date = request.GET.get("end_date", None)
-        sort_by = request.GET.get("sort_by", "last_sale")
-        page = request.GET.get("page", 1)
-        page_size = request.GET.get("page_size", 20)
-        dataType = request.GET.get("dataType", "total")
-        reverse_sort = request.GET.get("reverse_sort", "true").lower() == "true"
-        loadSubcategories = request.GET.get("loadSubcategories", "False").lower() == "true"
+        """
+        Handle GET requests to fetch dusty inventory report.
+        """
+        days_threshold = request.GET.get('_days_threshold', '90')
+        end_date = request.GET.get('_end_date', None)
+        load_subcategory = request.GET.get('_load_subcategory', 'False').lower() == 'true'
+        measure = request.GET.get('_measure', 'dusty')
+        page_num = request.GET.get('_page_num', '1')
+        page_size = request.GET.get('_page_size', '20')
+        report_type = request.GET.get('_report_type', 'product')
+        sort_by = request.GET.get('_sort_by', 'last_sale')
+        reverse_sort = request.GET.get('_reverse_sort', 'true').lower() == 'true'
+        start_date = request.GET.get('_start_date', None)
+        
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'apikey': settings.SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + settings.SUPABASE_ANON_KEY,
+        }
 
-        # Parse date filters
-        date_filter = {}
-        if start_date:
+        json_data = {
+            '_days_threshold': days_threshold,
+            '_end_date': end_date,
+            '_load_subcategory': load_subcategory,
+            '_measure': measure,
+            '_page_num': page_num,
+            '_page_size': page_size,
+            '_report_type': report_type,
+            '_reverse_sort': reverse_sort,
+            '_sort_by': sort_by,
+            '_start_date': start_date,
+        }
+        json_data_count = {
+            '_days_threshold': days_threshold,
+            '_end_date': end_date,
+            '_load_subcategory': load_subcategory,
+            '_measure': measure,
+            '_report_type': report_type,
+            '_start_date': start_date,
+        }
+        try:
+            response = requests.post(settings.SUPABASE_URL + '/rest/v1/rpc/get_dusty_inventory', headers=headers, json=json_data)
+            data = response.json()
             try:
-                start_date_parsed = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-                date_filter["insertedTimestamp__gte"] = start_date_parsed
-            except ValueError:
-                return JsonResponse({"error": "Invalid start_date format. Use YYYY-MM-DD"}, status=400)
-
-        if end_date:
-            try:
-                end_date_parsed = datetime.datetime.strptime(end_date, "%Y-%m-%d")
-                date_filter["insertedTimestamp__lte"] = end_date_parsed
-            except ValueError:
-                return JsonResponse({"error": "Invalid end_date format. Use YYYY-MM-DD"}, status=400)
-
-        # set days_threshold to be end_date - start_date
-        days_threshold = end_date_parsed - start_date_parsed if start_date and end_date else 90  # Default to 90 days if not specified
-
-        # Set default date range if not provided (last 12 months for comprehensive analysis)
-        if not start_date and not end_date:
-            end_date_default = timezone.now()
-            start_date_default = end_date_default - timedelta(days=365)
-            date_filter["insertedTimestamp__gte"] = start_date_default
-            date_filter["insertedTimestamp__lte"] = end_date_default
-
-        # fetch all products where availableQuantity is less than minQuantity
-        products = Product.objects.select_related().prefetch_related('categories', 'invoice_line_items', 'purchase_history').all()
-
-        if loadSubcategories:
-            categories = Category.objects.filter(parentId__isnull=False)
-        else:
-            categories = Category.objects.filter(parentId__isnull=True)
-
-        # Define sort field mapping
-        if sort_by == "closing_inventory":
-            order_by = "availableQuantity"
-        elif sort_by == "sell_through_rate":
-            order_by = "sell_through_rate"
-        elif sort_by == "inventory_cost":
-            order_by = "inventory_cost"
-        elif sort_by == "retail_value":
-            order_by = "retail_value"
-        elif sort_by == "last_sale":
-            order_by = "last_sale_date"
-        else:
-            order_by = "last_sale_date"  # Default to last sale for dusty inventory
-
-        # Apply measure filters
-        if measure == "all":
-            pass
-        elif measure == "hand":
-            products = products.filter(availableQuantity__gt=0)
-        elif measure == "low":
-            products = products.filter(availableQuantity__lt=10, availableQuantity__gt=0)
-        elif measure == "out":
-            products = products.filter(availableQuantity=0)
-        elif measure == "dusty":
-            # Filter for items that haven't sold in the specified threshold days
-            cutoff_date = timezone.now() - timedelta(days=days_threshold)
-            dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
-            products = products.filter(productId__in=dusty_product_ids, availableQuantity__gt=0)
-        else:
-            return JsonResponse({"error": "Invalid measure type"}, status=400)
-
-        if report_type == "product":
-            # Annotate products with dusty inventory metrics
-            products = products.annotate(
-                # Last sale date
-                last_sale_date=Max("invoice_line_items__insertedTimestamp", filter=Q(invoice_line_items__insertedTimestamp__range=[date_filter.get("insertedTimestamp__gte", timezone.now() - timedelta(days=365)), date_filter.get("insertedTimestamp__lte", timezone.now())])),
-                # Total quantity sold in period
-                total_sold=Sum("invoice_line_items__quantity", filter=Q(invoice_line_items__insertedTimestamp__range=[date_filter.get("insertedTimestamp__gte", timezone.now() - timedelta(days=365)), date_filter.get("insertedTimestamp__lte", timezone.now())])),
-                # Inventory cost (available quantity * cost price)
-                inventory_cost=Case(When(availableQuantity__gt=0, then=Abs(F("availableQuantity") * F("costPrice"))), default=0, output_field=DecimalField(max_digits=12, decimal_places=2)),
-                # Retail value (available quantity * standard price, excluding tax)
-                retail_value=Case(When(availableQuantity__gt=0, then=Abs(F("availableQuantity") * F("standardPrice"))), default=0, output_field=DecimalField(max_digits=12, decimal_places=2)),
-                # Sell-through rate calculation
-                sell_through_rate=Case(When(availableQuantity__gt=0, then=(F("total_sold") * 100.0) / (F("availableQuantity") + F("total_sold"))), default=0, output_field=DecimalField(max_digits=5, decimal_places=2)),
-            )
-
-            # Apply sorting
-            if sort_by == "sellThroughRate":
-                products = products.order_by("sell_through_rate")
-            elif sort_by == "inventoryCost":
-                products = products.order_by("inventory_cost")
-            elif sort_by == "retailValue":
-                products = products.order_by("retail_value")
-            elif sort_by == "lastSale":
-                products = products.order_by("last_sale_date")
-            else:
-                products = products.order_by(order_by)
-
-            if reverse_sort:
-                products = products.reverse()
-
-        elif report_type == "category":
-            # Category-level filtering for dusty inventory
-            product_aggregation_filter = None
-            if measure == "all":
-                product_aggregation_filter = Q(products_m2m__availableQuantity__gte=0)
-            elif measure == "hand":
-                product_aggregation_filter = Q(products_m2m__availableQuantity__gt=0)
-            elif measure == "low":
-                product_aggregation_filter = Q(products_m2m__availableQuantity__lt=10, products_m2m__availableQuantity__gt=0)
-            elif measure == "out":
-                product_aggregation_filter = Q(products_m2m__availableQuantity=0)
-            elif measure == "dusty":
-                cutoff_date = timezone.now() - timedelta(days=days_threshold)
-                dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
-                product_aggregation_filter = Q(products_m2m__productId__in=dusty_product_ids, products_m2m__availableQuantity__gt=0)
-
-            # Annotate categories with dusty inventory metrics
-            categories = categories.annotate(
-                # Closing inventory
-                closing_inventory=Sum(Abs(F("products_m2m__availableQuantity")), filter=product_aggregation_filter, output_field=DecimalField(max_digits=12, decimal_places=2)),
-                # Inventory cost
-                inventory_cost=Sum(Abs(F("products_m2m__availableQuantity") * F("products_m2m__costPrice")), filter=product_aggregation_filter, output_field=DecimalField(max_digits=12, decimal_places=2)),
-                # Retail value
-                retail_value=Sum(Abs(F("products_m2m__availableQuantity") * F("products_m2m__standardPrice")), filter=product_aggregation_filter, output_field=DecimalField(max_digits=12, decimal_places=2)),
-                # Last sale date
-                last_sale_date=Max("products_m2m__invoice_line_items__insertedTimestamp", filter=Q(products_m2m__invoice_line_items__insertedTimestamp__range=[date_filter.get("insertedTimestamp__gte", timezone.now() - timedelta(days=365)), date_filter.get("insertedTimestamp__lte", timezone.now())])),
-            )
-
-            # Apply sorting for categories
-            if sort_by == "closing_inventory":
-                categories = categories.order_by("closing_inventory")
-            elif sort_by == "inventory_cost":
-                categories = categories.order_by("inventory_cost")
-            elif sort_by == "retail_value":
-                categories = categories.order_by("retail_value")
-            elif sort_by == "last_sale":
-                categories = categories.order_by("last_sale_date")
-            else:
-                categories = categories.order_by("last_sale_date")
-
-            if reverse_sort:
-                categories = categories.reverse()
-
-        # Handle total calculations
-        if dataType == "total":
-            # Calculate totals for dusty inventory
-            filtered_products = products
-            if measure == "dusty":
-                cutoff_date = timezone.now() - timedelta(days=days_threshold)
-                dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
-                filtered_products = Product.objects.filter(productId__in=dusty_product_ids, availableQuantity__gt=0)
-
-            total_closing_inventory = filtered_products.aggregate(total=Sum(Case(When(availableQuantity__lt=9999999, then=Abs(F("availableQuantity"))), default=0, output_field=DecimalField())))["total"] or 0
-
-            total_inventory_cost = filtered_products.aggregate(total=Sum(Abs(F("availableQuantity") * F("costPrice")), output_field=DecimalField()))["total"] or 0
-
-            total_retail_value = filtered_products.aggregate(total=Sum(Abs(F("availableQuantity") * F("standardPrice")), output_field=DecimalField()))["total"] or 0
-
-            # Calculate overall sell-through rate
-            total_sold_in_period = InvoiceLineItem.objects.filter(productId__in=filtered_products.values_list("productId", flat=True), **date_filter).aggregate(total=Sum("quantity"))["total"] or 0
-
-            overall_sell_through_rate = 0
-            if total_closing_inventory > 0:
-                overall_sell_through_rate = (float(total_sold_in_period) * 100.0) / (float(total_closing_inventory) + float(total_sold_in_period))
-
-            return JsonResponse({"totalClosingInventory": total_closing_inventory, "totalInventoryCost": total_inventory_cost, "totalRetailValue": total_retail_value, "overallSellThroughRate": round(overall_sell_through_rate, 2), "totalSoldInPeriod": total_sold_in_period, "analysisThresholdDays": days_threshold})
-
-        else:
-            # Handle pagination
-            start_index = (int(page) - 1) * int(page_size)
-            end_index = start_index + int(page_size)
-            finalData = []
-            i = (int(page) - 1) * int(page_size) + 1
-
-            if report_type == "product":
-                totalPossiblePages = (products.count() + int(page_size) - 1) // int(page_size)
-                paginated_products = products[start_index:end_index]
-
-                for product in paginated_products:
-                    # Calculate sell-through rate for individual product
-                    total_sold = InvoiceLineItem.objects.filter(productId=product.productId, **date_filter).aggregate(total=Sum("quantity"))["total"] or 0
-
-                    available_qty = product.availableQuantity if product.availableQuantity > 0 else 0
-                    print(f"Product ID: {product.productId}, Available Qty: {available_qty}, Total Sold: {total_sold}")
-                    sell_through_rate = 0
-                    if available_qty > 0 or total_sold > 0:
-                        sell_through_rate = (total_sold * 100.0) / (available_qty + total_sold)
-
-                    # Get last sale date
-                    last_sale = (
-                        (
-                            InvoiceLineItem.objects.filter(
-                                productId=product.productId,
-                            )
-                            .select_related("orderId")  # Add select_related to optimize query
-                            .order_by("-orderId__insertedTimestamp")
-                            .first()
-                        ).orderId.insertedTimestamp
-                        if InvoiceLineItem.objects.filter(
-                            productId=product.productId,
-                        ).exists()
-                        else None
-                    )
-                    if last_sale:
-                        # Convert to date for display, but keep datetime for calculation
-                        last_sale_display = last_sale.date()
-                        last_sale_date = last_sale
-
-                    # last recieved date
-                    last_received = (PurchaseHistory.objects.filter(productId=product.productId).order_by("-purchaseOrderInsertedTimestamp").first()).purchaseOrderInsertedTimestamp if PurchaseHistory.objects.filter(productId=product.productId).exists() else None
-                    if last_received:
-                        last_received_date = last_received.date()
-
-                    tempData = {"id": product.productId, "index": i, "name": product.productName, "sku": product.sku, "closingInventory": available_qty, "sellThroughRate": round(sell_through_rate, 2), "inventoryCost": float(available_qty * (product.costPrice or 0)), "retailValue": float(available_qty * (product.standardPrice or 0)), "lastSale": last_sale_display.isoformat() if last_sale else None, "imageUrl": product.imageUrl, "daysSinceLastSale": (timezone.now() - last_sale_date).days if last_sale else None, "lastReceived": last_received_date.isoformat() if last_received else None}
-                    finalData.append(tempData)
-                    i += 1
-
-                return JsonResponse({"data": finalData, "totalPages": totalPossiblePages, "currentPage": int(page), "pageSize": int(page_size), "totalRecords": products.count()})
-
-            elif report_type == "category":
-                totalPossiblePages = (categories.count() + int(page_size) - 1) // int(page_size)
-                paginated_categories = categories[start_index:end_index]
-
-                for category in paginated_categories:
-                    # Get products in this category for calculations
-                    category_products = Product.objects.filter(categories__in=[category.categoryId])
-                    if measure == "dusty":
-                        cutoff_date = timezone.now() - timedelta(days=days_threshold)
-                        dusty_product_ids = InvoiceLineItem.objects.filter(**date_filter).values("productId").annotate(last_sale=Max("insertedTimestamp")).filter(Q(last_sale__lt=cutoff_date) | Q(last_sale__isNone=True)).values_list("productId", flat=True)
-                        category_products = category_products.filter(productId__in=dusty_product_ids, availableQuantity__gt=0)
-
-                    # Calculate metrics for category
-                    closing_inventory = category_products.aggregate(total=Sum(Abs(F("availableQuantity"))))["total"] or 0
-
-                    inventory_cost = category_products.aggregate(total=Sum(Abs(F("availableQuantity") * F("costPrice"))))["total"] or 0
-
-                    retail_value = category_products.aggregate(total=Sum(Abs(F("availableQuantity") * F("standardPrice"))))["total"] or 0
-
-                    # Calculate category sell-through rate
-                    total_sold = InvoiceLineItem.objects.filter(productId__in=category_products.values_list("productId", flat=True), **date_filter).aggregate(total=Sum("quantity"))["total"] or 0
-
-                    sell_through_rate = 0
-                    if closing_inventory > 0 or total_sold > 0:
-                        sell_through_rate = (total_sold * 100.0) / (closing_inventory + total_sold)
-
-                    # Get last sale date for category
-                    last_sale = InvoiceLineItem.objects.filter(productId__in=category_products.values_list("productId", flat=True), **date_filter).aggregate(last_sale=Max("insertedTimestamp"))["last_sale"]
-
-                    # Get representative image
-                    first_product = category_products.first()
-                    image_url = first_product.imageUrl if first_product else None
-
-                    tempData = {"id": category.categoryId, "index": i, "name": category.name, "closingInventory": float(closing_inventory), "sellThroughRate": round(sell_through_rate, 2), "inventoryCost": float(inventory_cost), "retailValue": float(retail_value), "lastSale": last_sale.isoformat() if last_sale else None, "imageUrl": image_url, "productCount": category_products.count(), "daysSinceLastSale": (timezone.now() - last_sale).days if last_sale else None}
-                    finalData.append(tempData)
-                    i += 1
-
-                return JsonResponse({"data": finalData, "totalPages": totalPossiblePages, "currentPage": int(page), "pageSize": int(page_size), "totalRecords": categories.count()})
-
-            else:
-                return JsonResponse({"error": "Invalid report type"}, status=400)
-
-
+                response = requests.post(settings.SUPABASE_URL + '/rest/v1/rpc/get_dusty_inventory_count', headers=headers, json=json_data_count)
+                total_records = response.text
+            except requests.RequestException as e:
+                total_records = 0
+                print(f"Error fetching total records: {e}")
+            return JsonResponse({"data": data, "totalPages": total_records}, status=response.status_code, safe=False)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e) + " : " + response.text}, status=500)
+    
+    
 class ProductHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1366,62 +1153,7 @@ class POMakerView(APIView):
             i += 1
 
         return JsonResponse({"data": data, "totalPages": totalPages}, status=200)
-
-class POView(APIView):
-    permission_classes = [IsAuthenticated]
     
-    def get(self, request):
-        """
-        List Purchase Orders with optional search, status filter, and time period filter.
-        Query params:
-            - search: search by vendor name (case-insensitive, partial match)
-            - status: filter by PO status (exact match)
-            - start: filter insertedTimestamp >= start (YYYY-MM-DD)
-            - end: filter insertedTimestamp <= end (YYYY-MM-DD)
-        """
-        poObjs = POLocal.objects.all().order_by("-insertedTimestamp")
-
-        # Search by vendor name
-        search = request.GET.get("search")
-        if search:
-            poObjs = poObjs.filter(vendor__name__icontains=search)
-
-        # Filter by status
-        status = request.GET.get("status")
-        if status:
-            poObjs = poObjs.filter(status=status)
-
-        # Filter by insertedTimestamp (start/end)
-        start = request.GET.get("start")
-        end = request.GET.get("end")
-        if start:
-            try:
-                start_date = parse_date(start)
-                if start_date:
-                    poObjs = poObjs.filter(insertedTimestamp__date__gte=start_date)
-            except Exception:
-                pass
-        if end:
-            try:
-                end_date = parse_date(end)
-                if end_date:
-                    poObjs = poObjs.filter(insertedTimestamp__date__lte=end_date)
-            except Exception:
-                pass
-
-        poData = []
-        for po in poObjs:
-            poData.append({
-                "id": po.id,
-                "vendorId": po.vendor.id,
-                "vendor": po.vendor.name,
-                "status": po.status,
-                "totalAmount": po.totalAmount,
-                "totalQuantity": po.totalQuantity,
-                "insertedTimestamp": po.insertedTimestamp
-            })
-        return JsonResponse({"purchase_orders": poData}, status=200)
-
     def post(self, request):
         """
         Create Purchase Orders based on selected products and vendors.
@@ -1509,6 +1241,118 @@ class POView(APIView):
         except Exception as e:
             notifyMe(f"Error creating Purchase Orders: {str(e)}", "101-error")
             return JsonResponse({'error': str(e)}, status=500)
+    
+
+class POView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """
+        List Purchase Orders with optional search, status filter, and time period filter.
+        Query params:
+            - search: search by vendor name (case-insensitive, partial match)
+            - status: filter by PO status (exact match)
+            - start: filter insertedTimestamp >= start (YYYY-MM-DD)
+            - end: filter insertedTimestamp <= end (YYYY-MM-DD)
+        """
+        poObjs = POLocal.objects.all().order_by("-insertedTimestamp")
+
+        # Search by vendor name
+        search = request.GET.get("search")
+        if search:
+            poObjs = poObjs.filter(vendor__name__icontains=search)
+
+        # Filter by status
+        status = request.GET.get("status")
+        if status:
+            poObjs = poObjs.filter(status=status)
+
+        # Filter by insertedTimestamp (start/end)
+        start = request.GET.get("start")
+        end = request.GET.get("end")
+        if start:
+            try:
+                start_date = parse_date(start)
+                if start_date:
+                    poObjs = poObjs.filter(insertedTimestamp__date__gte=start_date)
+            except Exception:
+                pass
+        if end:
+            try:
+                end_date = parse_date(end)
+                if end_date:
+                    poObjs = poObjs.filter(insertedTimestamp__date__lte=end_date)
+            except Exception:
+                pass
+
+        poData = []
+        for po in poObjs:
+            poData.append({
+                "id": po.id,
+                "vendorId": po.vendor.id,
+                "vendor": po.vendor.name,
+                "status": po.status,
+                "totalAmount": po.totalAmount,
+                "totalQuantity": po.totalQuantity,
+                "insertedTimestamp": po.insertedTimestamp
+            })
+        return JsonResponse({"purchase_orders": poData}, status=200)
+
+    def post(self, request):
+        action = request.data.get("action","export")
+        if action == "export":
+            poIds = request.data.get("poIds", [])
+            data = []
+            for poId in poIds:
+                try:
+                    po = POLocal.objects.get(id=poId)
+                    poItemList = POLocalLineItem.objects.filter(po_local=po).select_related('product')
+                    poItems = []
+                    for item in poItemList:
+                        poItems.append({
+                            "id": item.id,
+                            "productId": item.product.productId,
+                            "productName": item.product.productName,
+                            "sku": item.product.sku,
+                            "quantity": item.quantity,
+                            "unitPrice": float(item.unitPrice),
+                            "totalPrice": float(item.totalPrice),
+                        })
+                    data.append({
+                        "id": po.id,
+                        "vendorId": po.vendor.id,
+                        "vendor": po.vendor.name,
+                        "status": po.status,
+                        "totalAmount": po.totalAmount,
+                        "totalQuantity": po.totalQuantity,
+                        "insertedTimestamp": po.insertedTimestamp,
+                        "items": poItems,
+                    })
+                except POLocal.DoesNotExist:
+                    continue
+            return JsonResponse({"purchase_orders": data}, status=200)
+        elif action == "push":
+            return JsonResponse({"message": "Pushing Purchase Orders..."})
+        else:
+            return JsonResponse({"error": "Invalid action"}, status=400)
+
+    def delete(self, request):
+        """
+        Delete a Purchase Order by ID.
+        """
+        po_id = request.GET.get("po_id")
+        if not po_id:
+            return JsonResponse({"error": "Purchase Order ID is required"}, status=400)
+
+        try:
+            po = POLocal.objects.get(id=po_id)
+            po.delete()
+            return JsonResponse({"message": "Purchase Order deleted successfully"}, status=200)
+        except POLocal.DoesNotExist:
+            return JsonResponse({"error": "Purchase Order not found"}, status=404)
+        except Exception as e:
+            notifyMe(f"Error deleting Purchase Order: {str(e)}", "101-error")
+            return JsonResponse({"error": str(e)}, status=500)
 
 class POLineItemView(APIView):
     permission_classes = [IsAuthenticated]

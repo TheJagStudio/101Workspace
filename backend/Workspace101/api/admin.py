@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer,AIReport
+from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer, AIReport, ModulePermissions
 from .models import PurchaseHistory
 from .models import SalesgentToken
 from .models import POLocal, POLocalLineItem
@@ -26,6 +26,7 @@ class InventoryStatusFilter(admin.SimpleListFilter):
             return queryset.filter(inventoryList__isnull=True)
         return queryset
 
+
 class categoryFilter(SimpleListFilter):
     title = "Category"
     parameter_name = "category"
@@ -42,9 +43,9 @@ class categoryFilter(SimpleListFilter):
 
 class ProductAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["inventoryList", "categories"]
-    list_display = ("productId", "sku","upc", "productName", "availableQuantity", "standardPrice", "active")
-    search_fields = ("productName", "sku","upc", "productId")
-    list_filter = ("active", "ecommerce", InventoryStatusFilter,categoryFilter)
+    list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active")
+    search_fields = ("productName", "sku", "upc", "productId")
+    list_filter = ("active", "ecommerce", InventoryStatusFilter, categoryFilter)
 
 
 class CategoryAdmin(ImportExportModelAdmin):
@@ -108,7 +109,8 @@ class ProductHistoryAdmin(ImportExportModelAdmin):
 
 class CustomerAdmin(ImportExportModelAdmin):
     list_display = ("id", "name", "company", "email", "phone")
-    search_fields = ("id","name", "company", "email", "phone")
+    search_fields = ("id", "name", "company", "email", "phone")
+
 
 class AIReportAdmin(ImportExportModelAdmin):
     list_display = ("reportName", "createdAt", "updatedAt")
@@ -120,6 +122,7 @@ class POLocalLineItemInline(admin.TabularInline):
     extra = 0
     autocomplete_fields = ["product"]
 
+
 class POLocalAdmin(ImportExportModelAdmin):
     list_display = ("id", "purchaseOrderId", "vendor", "status", "totalAmount", "totalQuantity", "insertedTimestamp")
     search_fields = ("id", "purchaseOrderId", "vendor__name", "status")
@@ -128,10 +131,35 @@ class POLocalAdmin(ImportExportModelAdmin):
     inlines = [POLocalLineItemInline]
     list_editable = ("status",)
 
+
 class POLocalLineItemAdmin(ImportExportModelAdmin):
     list_display = ("id", "po_local", "product", "quantity", "unitPrice", "totalPrice")
     search_fields = ("id", "po_local__purchaseOrderId", "product__productId", "product__productName")
     autocomplete_fields = ["po_local", "product"]
+
+
+class ModulePermissionsAdmin(ImportExportModelAdmin):
+    list_display = (
+        "user",
+        "purchase",
+        "tracker",
+        "delivery",
+        "catalog"
+    )
+    search_fields = ("user__username",)
+    list_filter = (
+        "purchase",
+        "tracker",
+        "delivery",
+        "catalog"
+    )
+    list_editable = (
+        "purchase",
+        "tracker",
+        "delivery",
+        "catalog"
+    )
+    autocomplete_fields = ["user"]
 
 
 # Register your models here.
@@ -153,3 +181,4 @@ admin.site.register(Customer, CustomerAdmin)
 admin.site.register(AIReport, AIReportAdmin)
 admin.site.register(POLocal, POLocalAdmin)
 admin.site.register(POLocalLineItem, POLocalLineItemAdmin)
+admin.site.register(ModulePermissions, ModulePermissionsAdmin)

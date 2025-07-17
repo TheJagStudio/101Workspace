@@ -55,6 +55,7 @@ function App() {
 			// Clear tokens and user state regardless of logout API success
 			localStorage.removeItem("accessToken");
 			localStorage.removeItem("refreshToken");
+			localStorage.removeItem("101-userInfo");
 			setUser({
 				username: "",
 				email: "",
@@ -70,6 +71,7 @@ function App() {
 			try {
 				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/auth/me/`);
 				if (data.status === "success") {
+					localStorage.setItem("101-userInfo", JSON.stringify(data.user_info));
 					setUser(data.user_info);
 				} else {
 					// If the request was successful but returned an error status
@@ -104,29 +106,29 @@ function App() {
 		<Router>
 			<Notification />
 			<Routes>
-				<Route path="/" element={user?.is_active ? <Home /> : <Navigate to="/login" replace />} />
+				<Route path="/" element={user?.is_active ? <Home logout={logout} /> : <Navigate to="/login" replace />} />
 				<Route path="/login" element={user?.is_active ? <Navigate to="/" replace /> : <Login />} />
 				<Route path="/signup" element={<Signup />} />
 				<Route path="/purchase" element={user?.is_active ? <PurchaseOutlet logout={logout} /> : <Navigate to="/login" replace />}>
 					<Route path="" element={<AIReport />} />
 					<Route path="search" element={<SearchProduct />} />
-					<Route path="po-maker" element={<POMaker />} />
-					<Route path="po-list" element={<POList />} />
+					{user?.permissions?.purchase_PO && (<Route path="po-maker" element={<POMaker />} />)}
+					{user?.permissions?.purchase_PO && (<Route path="po-list" element={<POList />} />)}
 					<Route path="report" element={<AIReport />} />
 					<Route path="summary" element={<Summary />} />
 					<Route path="performance" element={<PerformanceDash />} />
 					<Route path="replenishment" element={<Replenishment />} />
-					<Route path="setting" element={<Setting />} />
+					{user?.permissions?.purchase_Settings && (<Route path="setting" element={<Setting />} />)}
 					<Route path="dusty-inventory" element={<DustyInventory />} />
 				</Route>
 				<Route path="/tracker" element={user?.is_active ? <TrackerOutlet logout={logout} /> : <Navigate to="/login" replace />}>
-					<Route path="admin/" element={<TrackerDashboard />} />
-					<Route path="admin/tracker" element={<TrackerMap />} />
-					<Route path="admin/settings" element={<TrackerSettings />} />
-					<Route path="admin/profile" element={<TrackerAdminProfile />} />
-					<Route path="salesman/home" element={<SalesmanHome />} />
-					<Route path="salesman/history" element={<SalesmanHistory />} />
-					<Route path="salesman/profile" element={<SalesmanProfile />} />
+					{user?.permissions?.tracker_Salesmen_List && (<Route path="admin/" element={<TrackerDashboard />} />)}
+					{user?.permissions?.tracker_Global_View && (<Route path="admin/tracker" element={<TrackerMap />} />)}
+					{user?.permissions?.tracker_config && (<Route path="admin/settings" element={<TrackerSettings />} />)}
+					{user?.permissions?.tracker_Admin_Profile && (<Route path="admin/profile" element={<TrackerAdminProfile />} />)}
+					{user?.permissions?.tracker_Map && (<Route path="salesman/home" element={<SalesmanHome />} />)}
+					{user?.permissions?.tracker_History && (<Route path="salesman/history" element={<SalesmanHistory />} />)}
+					{user?.permissions?.tracker_Profile && (<Route path="salesman/profile" element={<SalesmanProfile />} />)}
 				</Route>
 				<Route path="/delivery" element={user?.is_active ? <DeliveryOutlet logout={logout} /> : <Navigate to="/login" replace />} >
 					<Route path="" element={<DeliveryDashboard />} />

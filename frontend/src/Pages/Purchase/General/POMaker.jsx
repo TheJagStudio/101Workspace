@@ -6,6 +6,7 @@ import { isSidebarOpenAtom, warningsAtom, infoAtom, searchAtom,successAtom } fro
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
+import { BrushCleaning, PackageSearch } from 'lucide-react';
 
 
 
@@ -286,7 +287,7 @@ const POMaker = () => {
 				status: 200 
 			}]);
 
-			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po/`, {
+			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po-maker/`, {
 				method: "POST",
 				headers: {
 					'Content-Type': 'application/json',
@@ -513,12 +514,13 @@ const POMaker = () => {
 							}}
 							className="px-4 py-2 rounded-md font-medium text-gray-600 border border-gray-300 hover:bg-gray-50 transition-colors"
 						>
+							<BrushCleaning className="inline mb-1 h-5 w-5" />
 							Clear Selection
 						</button>
 						<button
 							onClick={createPurchaseOrders}
 							disabled={creatingPO || selectedProducts.size === 0}
-							className={`px-6 py-2 rounded-md font-medium transition-colors ${
+							className={`px-4 py-2 rounded-md font-medium transition-colors ${
 								creatingPO 
 									? "bg-gray-400 text-white cursor-not-allowed" 
 									: "bg-green-600 text-white hover:bg-green-700"
@@ -533,7 +535,10 @@ const POMaker = () => {
 									Creating POs...
 								</div>
 							) : (
-								"Create Purchase Orders"
+								<div className="flex items-center gap-2">
+									<PackageSearch className="inline mb-1 h-5 w-5" />	
+									Create Purchase Orders
+								</div>
 							)}
 						</button>
 					</div>

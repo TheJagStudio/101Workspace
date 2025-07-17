@@ -3,7 +3,7 @@ import {
     format, addDays, startOfMonth, endOfMonth, subMonths, addMonths, getDaysInMonth, getDay, isSameDay, isBefore, isAfter, startOfDay
 } from 'date-fns';
 
-import { CalculatorIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalculatorIcon, ChevronLeft, ChevronRight, CloudSnow, Cross, DoorClosed, XIcon } from 'lucide-react';
 
 
 const DateInputGroup = ({ startDate, endDate, onFocus }) => {
@@ -49,7 +49,7 @@ const CalendarDropdown = ({
     // Dropdown positioning and styling
     return (
         <div
-            className="absolute top-full mt-1 w-full min-w-[600px] bg-white border border-gray-200 rounded-md shadow-lg flex z-50"
+            className="absolute top-full mt-1 pt-3 w-full min-w-[600px] bg-white border border-gray-200 rounded-md shadow-lg flex z-50"
             onClick={(e) => e.stopPropagation()}
         >
             <PredefinedRanges
@@ -65,6 +65,12 @@ const CalendarDropdown = ({
                 onDateSelect={onDateSelect}
             />
             {/* You might want a close button or click outside to close */}
+            <button
+                className="absolute top-1 right-1 p-0.5 text-white rounded-md bg-red-400 hover:bg-red-500 cursor-pointer"
+                onClick={onClose}
+            >
+                <XIcon className="h-4 w-4" />
+            </button>
         </div>
     );
 };
@@ -258,6 +264,7 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat}) => 
         { label: 'Last 30 Days', range: () => ({ startDate: addDays(new Date(), -29), endDate: new Date() }) },
         { label: 'This Month', range: () => ({ startDate: startOfMonth(new Date()), endDate: endOfMonth(new Date()) }) },
         { label: 'Last Month', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 1)), endDate: endOfMonth(subMonths(new Date(), 1)) }) },
+        {label: 'Last 3 Months', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 3)), endDate: endOfMonth(new Date()) }) },
         {label: 'Last 6 Months', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 6)), endDate: endOfMonth(new Date()) }) },
         {label: 'Current Quarter', range: () => {
             const currentDate = new Date();

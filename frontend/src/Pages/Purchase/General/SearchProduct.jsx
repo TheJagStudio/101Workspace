@@ -82,7 +82,6 @@ const SearchProduct = () => {
         { header: "Stock", key: 'availableQuantity', sortable: true, className: "text-center" },
         { header: "Price", key: 'standardPrice', sortable: true, className: "text-right" },
         { header: "Status", key: 'active', sortable: false, className: "text-center" },
-        { header: "Date", key: 'insertedTimestamp', sortable: true, className: "hidden lg:table-cell" },
         { header: "Actions", key: null, sortable: false, className: "text-center w-20" },
     ];
 
@@ -181,7 +180,7 @@ const SearchProduct = () => {
     return (
         <div className="w-full mx-auto px-4 sm:px-6">
             {/* Search and Filter Bar */}
-            <div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1 " + (loading ? "opacity-50 pointer-events-none" : "")}>
+            <div className={"select-none w-full h-fit mt-5 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1 " + (loading ? "opacity-50 pointer-events-none" : "")}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                     {/* Search Input */}
                     <div className="relative flex-1 max-w-md">
@@ -190,7 +189,7 @@ const SearchProduct = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search products, UPC codes..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 peer rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/75 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 peer rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/75 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
                         />
                         <Search className="w-8 h-8 text-gray-300 absolute top-1 peer-focus:text-indigo-500 inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-all" />
                         {searchTerm && (
@@ -204,21 +203,15 @@ const SearchProduct = () => {
                             </button>
                         )}
                     </div>
-
-                    {/* Filter Button */}
-                    <button className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-white/80 hover:bg-white hover:border-gray-300 transition-all duration-200">
-                        <FilterIcon />
-                        <span className="ml-2">Filters</span>
-                    </button>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
+            <div className={"mt-5 relative bg-white border-t border-gray-300 w-full h-fit rounded-lg shadow-md overflow-hidden text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
                 {/* Loading Overlay */}
                 {loading && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl">
-                        <Loader />
+                        <Loader width={60} height={60} />
                     </div>
                 )}
 
@@ -229,7 +222,7 @@ const SearchProduct = () => {
                             {/* Header */}
                             <thead>
                                 <tr className="border-b border-gray-200/50 bg-gray-50">
-                                    <th className="w-12 px-6 py-4">
+                                    <th className="w-12 px-6 py-2">
                                         <label className="inline-flex items-center cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -258,7 +251,7 @@ const SearchProduct = () => {
                                     {columns.map(col => (
                                         <th
                                             key={col.key || col.header}
-                                            className={`px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider ${col.className || ''
+                                            className={`px-6 py-2 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider ${col.className || ''
                                                 } ${col.sortable ? 'cursor-pointer group hover:bg-gray-100/50' : ''}`}
                                             onClick={() => col.sortable && handleSort(col.key)}
                                         >
@@ -282,7 +275,7 @@ const SearchProduct = () => {
                                             className={`group transition-all duration-200  ${selectedItems.has(product.id) ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-indigo-50 even:bg-gray-50'}`}
                                         >
                                             {/* Custom Checkbox */}
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-2">
                                                 <label className="inline-flex items-center cursor-pointer">
                                                     <input
                                                         type="checkbox"
@@ -305,7 +298,7 @@ const SearchProduct = () => {
                                             </td>
 
                                             {/* Product */}
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-2">
                                                 <div className="flex items-center space-x-4">
                                                     <div className="relative">
 
@@ -318,12 +311,12 @@ const SearchProduct = () => {
 
                                                             />
                                                         </PhotoView>
-                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                                        <div className="absolute -top-1 -right-1 w-fit px-1 h-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
                                                             <span className="text-white text-xs font-bold">{(currentPage - 1) * limit + index + 1}</span>
                                                         </div>
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="text-sm font-semibold max-w-96 text-gray-900 truncate">
+                                                        <p className="text-sm font-semibold max-w-96 md:max-w-none text-gray-900 truncate">
                                                             {product?.productName}
                                                         </p>
                                                         <p className="text-xs text-gray-500 md:hidden">
@@ -334,7 +327,7 @@ const SearchProduct = () => {
                                             </td>
 
                                             {/* UPC */}
-                                            <td className="px-6 py-4 hidden md:table-cell">
+                                            <td className="px-6 py-2 hidden md:table-cell">
                                                 <div className="flex items-center space-x-2">
 
                                                     {product?.upc && (
@@ -356,7 +349,7 @@ const SearchProduct = () => {
                                             </td>
 
                                             {/* Stock */}
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-6 py-2 text-center">
                                                 <div className="flex items-center justify-center">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product?.availableQuantity > 20
                                                         ? 'bg-green-100 text-green-800'
@@ -370,14 +363,14 @@ const SearchProduct = () => {
                                             </td>
 
                                             {/* Price */}
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-6 py-2 text-right">
                                                 <span className="text-lg font-bold text-gray-900">
                                                     {formatPrice(product.standardPrice)}
                                                 </span>
                                             </td>
 
                                             {/* Status */}
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-6 py-2 text-center">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product?.active
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-gray-100 text-gray-800'
@@ -387,16 +380,8 @@ const SearchProduct = () => {
                                                     {product?.active ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-
-                                            {/* Date */}
-                                            <td className="px-6 py-4 hidden lg:table-cell">
-                                                <span className="text-sm text-gray-600">
-                                                    {formatDate(product.insertedTimestamp)}
-                                                </span>
-                                            </td>
-
                                             {/* Actions */}
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-6 py-2 text-center">
                                                 <button
                                                     onClick={() => handleEdit(product)}
                                                     className="inline-flex items-center p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
@@ -449,8 +434,26 @@ const SearchProduct = () => {
                                     </button>
 
                                     <div className="flex items-center space-x-1">
-                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                            const page = i + 1;
+                                        {/* Show first page and leading ellipsis if needed */}
+                                        {currentPage > 3 && (
+                                            <>
+                                                <button
+                                                    onClick={() => setCurrentPage(1)}
+                                                    className={`relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${currentPage === 1
+                                                        ? 'bg-indigo-600 text-white'
+                                                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    1
+                                                </button>
+                                                <span className="px-2">...</span>
+                                            </>
+                                        )}
+
+                                        {/* Dynamic page numbers */}
+                                        {Array.from({ length: 5 }, (_, i) => {
+                                            const page = currentPage - 2 + i;
+                                            if (page < 1 || page > totalPages) return null;
                                             return (
                                                 <button
                                                     key={page}
@@ -464,6 +467,22 @@ const SearchProduct = () => {
                                                 </button>
                                             );
                                         })}
+
+                                        {/* Show trailing ellipsis and last page if needed */}
+                                        {currentPage < totalPages - 2 && (
+                                            <>
+                                                <span className="px-2">...</span>
+                                                <button
+                                                    onClick={() => setCurrentPage(totalPages)}
+                                                    className={`relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${currentPage === totalPages
+                                                        ? 'bg-indigo-600 text-white'
+                                                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    {totalPages}
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
 
                                     <button

@@ -414,7 +414,7 @@ class POLocal(models.Model):
         ("Completed", "Completed"),
         ("Cancelled", "Cancelled"),
     ]
-    
+
     id = models.AutoField(primary_key=True)
     purchaseOrderId = models.IntegerField(null=True, blank=True)
     vendor = models.ForeignKey(
@@ -438,30 +438,46 @@ class POLocal(models.Model):
         # Auto-generate purchaseOrderId if not provided
         if not self.purchaseOrderId:
             # Get the highest existing purchaseOrderId and add 1
-            max_id = POLocal.objects.aggregate(models.Max('purchaseOrderId'))['purchaseOrderId__max']
+            max_id = POLocal.objects.aggregate(models.Max("purchaseOrderId"))["purchaseOrderId__max"]
             self.purchaseOrderId = (max_id or 0) + 1
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"PO {self.purchaseOrderId} - {self.vendor.name}"
 
+
 class POLocalLineItem(models.Model):
-    po_local = models.ForeignKey(
-        POLocal,
-        on_delete=models.CASCADE,
-        related_name="line_items"
-    )
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="po_line_items"
-    )
+    po_local = models.ForeignKey(POLocal, on_delete=models.CASCADE, related_name="line_items")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="po_line_items")
     quantity = models.IntegerField(default=0, null=True, blank=True)
     unitPrice = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
     totalPrice = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=True, blank=True)
 
     class Meta:
-        unique_together = ('po_local', 'product')
+        unique_together = ("po_local", "product")
 
     def __str__(self):
         return f"Line Item {self.id} - {self.product.productName}"
+
+
+class ModulePermissions(models.Model):
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="module_permissions")
+    purchase = models.BooleanField(default=False)
+    tracker = models.BooleanField(default=False)
+    delivery = models.BooleanField(default=False)
+    catalog = models.BooleanField(default=False)
+
+    purchase_PO = models.BooleanField(default=False)
+    purchase_Inventory = models.BooleanField(default=False)
+    purchase_Settings = models.BooleanField(default=False)
+
+    tracker_Map = models.BooleanField(default=False)
+    tracker_History = models.BooleanField(default=False)
+    tracker_Salesmen_List = models.BooleanField(default=False)
+    tracker_Global_View = models.BooleanField(default=False)
+    tracker_config = models.BooleanField(default=False)
+    tracker_Admin_Profile = models.BooleanField(default=False)
+    tracker_Profile = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - Permissions"

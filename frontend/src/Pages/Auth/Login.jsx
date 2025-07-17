@@ -29,6 +29,7 @@ const Login = () => {
 				// Store tokens in localStorage
 				localStorage.setItem("accessToken", data.tokens.access);
 				localStorage.setItem("refreshToken", data.tokens.refresh);
+				localStorage.setItem("101-userInfo", JSON.stringify(data.user_info));
 
 				// Set user info
 				setUser(data.user_info);

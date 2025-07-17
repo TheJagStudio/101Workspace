@@ -3,33 +3,28 @@ import { History, MapPin, Settings, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { userAtom } from "../../Variables";
+import { set } from "date-fns";
 
 const Sidebar = () => {
     const [user] = useAtom(userAtom);
-    const [role, setRole] = useState(user?.salesmanType); // 'admin' or 'salesman'
+    const role = user?.permissions?.tracker_Salesmen_List ? "admin" : "salesman";
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(window.innerWidth < 640);
-    const [activeItem, setActiveItem] = useState(role === "admin" ? "admin_salesmen" : "salesman_home");
+    const [activeItem, setActiveItem] = useState( "salesman_home");
     // Admin sidebar items
-    const adminItems = [
-        { icon: <Users size={20} />, text: "Salesmen", to: "/tracker/admin", key: "admin_salesmen", section: "MANAGE" },
-        { icon: <MapPin size={20} />, text: "Global Tracker", to: "/tracker/admin/tracker", key: "admin_tracker", section: "MANAGE" },
-        { icon: <Settings size={20} />, text: "Tracking Config", to: "/tracker/admin/settings", key: "admin_settings", section: "SETTINGS" },
-        { icon: <User size={20} />, text: "Admin Profile", to: "/tracker/admin/profile", key: "admin_profile", section: "ACCOUNT" },
+    const Items = [
+        { icon: <MapPin size={20} />, text: "Tracking Map", to: "/tracker/salesman/home", key: "tracker_Map", section: "GENERAL" },
+        { icon: <History size={20} />, text: "History", to: "/tracker/salesman/history", key: "tracker_History", section: "GENERAL" },
+        { icon: <Users size={20} />, text: "Salesmen", to: "/tracker/admin", key: "tracker_Salesmen_List", section: "MANAGE" },
+        { icon: <MapPin size={20} />, text: "Global Tracker", to: "/tracker/admin/tracker", key: "tracker_Global_View", section: "MANAGE" },
+        { icon: <Settings size={20} />, text: "Tracking Config", to: "/tracker/admin/settings", key: "tracker_config", section: "SETTINGS" },
+        { icon: <User size={20} />, text: "Admin Profile", to: "/tracker/admin/profile", key: "tracker_Admin_Profile", section: "ACCOUNT" },
+        { icon: <User size={20} />, text: "Profile", to: "/tracker/salesman/profile", key: "tracker_Profile", section: "ACCOUNT" },
     ];
 
-    // Salesman sidebar items
-    const salesmanItems = [
-        { icon: <MapPin size={20} />, text: "Tracking Map", to: "/tracker/salesman/home", key: "salesman_home", section: "GENERAL" },
-        { icon: <History size={20} />, text: "History", to: "/tracker/salesman/history", key: "salesman_history", section: "GENERAL" },
-        { icon: <User size={20} />, text: "Profile", to: "/tracker/salesman/profile", key: "salesman_profile", section: "ACCOUNT" },
-    ];
-    const [items, setItems] = useState(role === "admin" ? adminItems : salesmanItems);
-    const [sections, setSections] = useState(Array.from(new Set(items.map((item) => item?.section))));
-
-    useEffect(() => {
-        setRole(user?.salesmanType);
-    }, [user]);
+    
+    const [items, setItems] = useState([]);
+    const [sections, setSections] = useState([]);
 
     useEffect(() => {
         // Find the matching item key for the current path
@@ -42,41 +37,39 @@ const Sidebar = () => {
         }
     }, [location.pathname, items]);
 
+    useEffect(() => {
+        const filteredItems = Items.filter(item => user?.permissions?.[item.key]);
+        setItems(filteredItems);
+        setSections(Array.from(new Set(filteredItems.map((item) => item?.section))));
+    },[user])
+
 
     useEffect(() => {
         let currentLocation = window.location.pathname;
         if (currentLocation === "/tracker/admin") {
-            setActiveItem("admin_salesmen");
+            setActiveItem("tracker_Salesmen_List");
         }
         else if (currentLocation.startsWith("/tracker/admin/tracker")) {
-            setActiveItem("admin_tracker");
+            setActiveItem("tracker_Global_View");
         }
         else if (currentLocation.startsWith("/tracker/admin/settings")) {
-            setActiveItem("admin_settings");
+            setActiveItem("tracker_Settings");
         }
         else if (currentLocation.startsWith("/tracker/admin/profile")) {
-            setActiveItem("admin_profile");
+            setActiveItem("tracker_Admin_Profile");
         }
         else if (currentLocation === "/tracker/salesman/home") {
-            setActiveItem("salesman_home");
+            setActiveItem("tracker_Map");
         }
         else if (currentLocation.startsWith("/tracker/salesman/history")) {
-            setActiveItem("salesman_history");
+            setActiveItem("tracker_History");
         }
         else if (currentLocation.startsWith("/tracker/salesman/profile")) {
-            setActiveItem("salesman_profile");
+            setActiveItem("tracker_Profile");
         }
         
 
     }, [location.pathname]);
-
-
-
-    useEffect(() => {
-        const newItems = role === "admin" ? adminItems : salesmanItems;
-        setItems(newItems);
-        setSections(Array.from(new Set(newItems.map((item) => item?.section))));
-    }, [role]);
 
     return (
         <div className={`absolute flex flex-col h-screen sm:relative bg-white shadow-lg shadow-gray-200 border-r border-gray-200 transition-all duration-300 z-50 ${collapsed ? "w-0 sm:w-20" : "w-screen sm:w-64"}`}>
