@@ -951,10 +951,10 @@ class DustyInventoryView(APIView):
                 total_records = response2.text
             except requests.RequestException as e:
                 total_records = 0
-                return JsonResponse({"error": str(e) + " : Count API error : " + response2.text}, status=500)
+                return JsonResponse({"error": str(e) + " : Count API error"}, status=500)
             return JsonResponse({"data": data, "totalPages": total_records}, status=200, safe=False)
         except requests.RequestException as e:
-            return JsonResponse({"error": str(e) + " : List API error : " + response.text}, status=500)
+            return JsonResponse({"error": str(e) + " : List API error"}, status=500)
     
     
 class ProductHistoryView(APIView):
