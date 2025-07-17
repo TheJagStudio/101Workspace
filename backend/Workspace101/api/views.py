@@ -947,14 +947,14 @@ class DustyInventoryView(APIView):
             response = requests.post(settings.SUPABASE_URL + '/rest/v1/rpc/get_dusty_inventory', headers=headers, json=json_data)
             data = response.json()
             try:
-                response = requests.post(settings.SUPABASE_URL + '/rest/v1/rpc/get_dusty_inventory_count', headers=headers, json=json_data_count)
-                total_records = response.text
+                response2 = requests.post(settings.SUPABASE_URL + '/rest/v1/rpc/get_dusty_inventory_count', headers=headers, json=json_data_count)
+                total_records = response2.text
             except requests.RequestException as e:
                 total_records = 0
-                print(f"Error fetching total records: {e}")
-            return JsonResponse({"data": data, "totalPages": total_records}, status=response.status_code, safe=False)
+                return JsonResponse({"error": str(e) + " : Count API error : " + response2.text}, status=500)
+            return JsonResponse({"data": data, "totalPages": total_records}, status=200, safe=False)
         except requests.RequestException as e:
-            return JsonResponse({"error": str(e) + " : " + response.text}, status=500)
+            return JsonResponse({"error": str(e) + " : List API error : " + response.text}, status=500)
     
     
 class ProductHistoryView(APIView):
