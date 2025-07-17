@@ -24,6 +24,7 @@
     "expo-location": "~18.1.5",
     "expo-router": "~5.1.0",
     "expo-status-bar": "~2.2.3",
+    "expo-system-ui": "^5.0.10",
     "expo-task-manager": "~13.1.5",
     "lucide-react": "^0.522.0",
     "lucide-react-native": "^0.523.0",

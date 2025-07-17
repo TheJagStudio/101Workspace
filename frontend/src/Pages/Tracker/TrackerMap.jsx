@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, use } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Map, MapPin, CheckCircle, AlertTriangle, RadioTower, Route, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, StatCard } from '../../Components/utils/Card';
@@ -45,25 +45,11 @@ const TrackerMap = () => {
             }
         };
 
-        const fetchLiveFeed = async () => {
-            let { data: tracker_locationpoint, error } = await supabase2
-                .from('tracker_locationpoint')
-                .select("*")
-                .eq('salesman_id', selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId'));
-            let feedArray = [];
-            for (let i = 0; i < (tracker_locationpoint?.length || 0); i++) {
-                const lat = Number(tracker_locationpoint[i].latitude);
-                const lng = Number(tracker_locationpoint[i].longitude);
-                if (isFinite(lat) && isFinite(lng)) {
-                    feedArray.push({ lat, lng });
-                }
-            }
-            setLiveFeed(feedArray);
-            console.log("Live feed fetched:", feedArray);
-        }
+
 
         fetchData();
-        fetchLiveFeed();
+
+
 
 
         const channels = supabase2.channel('custom-update-channel')
@@ -107,6 +93,26 @@ const TrackerMap = () => {
             supabase2.removeChannel(channels);
         };
     }, []);
+    useEffect(() => {
+        const fetchLiveFeed = async () => {
+            let { data: tracker_locationpoint, error } = await supabase2
+                .from('tracker_locationpoint')
+                .select("*")
+                .gte('timestamp', new Date().toISOString().split('T')[0] + 'T00:00:00')
+                .eq('salesman_id', selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId'));
+            let feedArray = [];
+            for (let i = 0; i < (tracker_locationpoint?.length || 0); i++) {
+                const lat = Number(tracker_locationpoint[i].latitude);
+                const lng = Number(tracker_locationpoint[i].longitude);
+                if (isFinite(lat) && isFinite(lng)) {
+                    feedArray.push({ lat, lng });
+                }
+            }
+            setLiveFeed(feedArray);
+            console.log("Live feed fetched:", feedArray);
+        }
+        fetchLiveFeed()
+    }, [selectedSalesmanId, searchParams]);
 
     useEffect(() => {
         if (!selectedSalesmanId) {
@@ -204,7 +210,7 @@ const TrackerMap = () => {
                 <Card className="flex-grow">
                     <CardContent className="h-full p-0">
                         <GoogleMapWrapper
-                            center={ mapCenter}
+                            center={mapCenter}
                             zoom={selectedSalesmanId ? 16 : 10}
                             markers={markers}
                             // polylines={polylines}

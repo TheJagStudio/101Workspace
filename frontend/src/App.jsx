@@ -4,7 +4,7 @@ import Login from "./Pages/Auth/Login";
 import Signup from "./Pages/Auth/Signup";
 import { useAtom } from "jotai";
 import { userAtom } from "./Variables";
-import { useEffect, useCallback,useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { apiRequest } from "./utils/api";
 import PurchaseOutlet from "./Outlets/PurchaseOutlet";
 import Setting from "./Pages/Purchase/Support/Setting";
@@ -37,7 +37,13 @@ import SearchProduct from "./Pages/Purchase/General/SearchProduct";
 import POList from "./Pages/Purchase/General/POList";
 // import CatalogHome from "./Pages/Catalog/CatalogHome";
 // import CatalogOutlet from "./Outlets/CatalogOutlet";
-
+const Loader = ({ height, width, stroke = "#615fff" }) => (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
+		<g>
+			<circle strokeDasharray="197.92033717615698 67.97344572538566" r={42} strokeWidth={13} stroke={stroke} fill="none" cy={50} cx={50} />
+		</g>
+	</svg>
+);
 
 function App() {
 	const [user, setUser] = useAtom(userAtom);
@@ -101,7 +107,13 @@ function App() {
 
 	// Make logout function available globally
 	window.logout = logout;
-
+	if (user?.username === "") {
+		return <div className="w-screen h-screen">
+			<div className="flex items-center justify-center h-full">
+				<Loader height={64} width={64} stroke="#ed1f24" />
+			</div>
+		</div>;
+	}
 	return (
 		<Router>
 			<Notification />

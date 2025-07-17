@@ -7,16 +7,15 @@ import React, { useEffect, useState } from "react";
 import { FlatList, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 import "react-native-url-polyfill/auto";
-import { checkTaskStatus, getBackgroundTaskDebugInfo } from '../backgroundTasks.js';
+import { checkTaskStatus, getBackgroundTaskDebugInfo } from "../backgroundTasks.js";
 import { apiRequest } from "../utils/api";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL_SECOND;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY_SECOND;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
 
 const LOCATION_TASK_NAME = "background-location-task";
 
@@ -36,47 +35,47 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 			// Use the same session key as Demo.js
 			const sessionStr = await AsyncStorage.getItem("supabase.auth.token");
 			const session = sessionStr ? JSON.parse(sessionStr) : null;
-			try {
-				await fetch('https://igsosentooipcjyflmnw.supabase.co/rest/v1/salesman?authId=eq.' + session?.user.id, {
-					method: 'PATCH',
-					headers: {
-						'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY_SECOND,
-						'Authorization': `Bearer ${session?.access_token}`,
-						'Content-Type': 'application/json',
-						'Prefer': 'return=minimal'
-					},
-					body: JSON.stringify({
-						'current_location_lat': location.coords.latitude,
-						'current_location_lng': location.coords.longitude
-					})
-				});
-				console.log("Location sent to Supabase successfully.");
-				await AsyncStorage.setItem("lastLocation", JSON.stringify(location.coords));
-			} catch (e) {
-				console.error("Background Task Error in live location update:", e);
-			}
-			try {
-				let salesmanInfo = await AsyncStorage.getItem("salesmanInfo");
-				salesmanInfo = JSON.parse(salesmanInfo);
-				await fetch('https://igsosentooipcjyflmnw.supabase.co/rest/v1/tracker_locationpoint', {
-					method: 'POST',
-					headers: {
-						'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY_SECOND,
-						'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY_SECOND}`,
-						'Content-Type': 'application/json',
-						'Prefer': 'return=minimal'
-					},
-					body: JSON.stringify({
-						'latitude': location.coords.latitude,
-						'longitude': location.coords.longitude,
-						'timestamp': new Date().toISOString(),
-						'salesman_id': salesmanInfo?.id
-					})
-				});
-				console.log("route sent to Supabase successfully.");
-			} catch (e) {
-				console.error("Background Task Error in route update:", e);
-			}
+			// try {
+			// 	await fetch(supabaseUrl+"/rest/v1/salesman?authId=eq." + session?.user.id, {
+			// 		method: "PATCH",
+			// 		headers: {
+			// 			apikey: supabaseAnonKey,
+			// 			Authorization: `Bearer ${session?.access_token}`,
+			// 			"Content-Type": "application/json",
+			// 			Prefer: "return=minimal",
+			// 		},
+			// 		body: JSON.stringify({
+			// 			current_location_lat: location.coords.latitude,
+			// 			current_location_lng: location.coords.longitude,
+			// 		}),
+			// 	});
+			// 	console.log("Location sent to Supabase successfully.");
+			// 	await AsyncStorage.setItem("lastLocation", JSON.stringify(location.coords));
+			// } catch (e) {
+			// 	console.error("Background Task Error in live location update:", e);
+			// }
+			// try {
+			// 	let salesmanInfo = await AsyncStorage.getItem("salesmanInfo");
+			// 	salesmanInfo = JSON.parse(salesmanInfo);
+			// 	await fetch(supabaseUrl+"/rest/v1/tracker_locationpoint", {
+			// 		method: "POST",
+			// 		headers: {
+			// 			apikey: supabaseAnonKey,
+			// 			Authorization: `Bearer ${supabaseAnonKey}`,
+			// 			"Content-Type": "application/json",
+			// 			Prefer: "return=minimal",
+			// 		},
+			// 		body: JSON.stringify({
+			// 			latitude: location.coords.latitude,
+			// 			longitude: location.coords.longitude,
+			// 			timestamp: new Date().toISOString(),
+			// 			salesman_id: salesmanInfo?.id,
+			// 		}),
+			// 	});
+			// 	console.log("route sent to Supabase successfully.");
+			// } catch (e) {
+			// 	console.error("Background Task Error in route update:", e);
+			// }
 		}
 	}
 });
@@ -93,10 +92,9 @@ const Home = () => {
 	const [routeHistory, setRouteHistory] = useState([]);
 	const [todaysActivity, setTodaysActivity] = useState(null);
 	const [todaysPlannedRoute, setTodaysPlannedRoute] = useState(null);
-	const [debugInfo, setDebugInfo] = useState(null);
 	const [currentLocation, setCurrentLocation] = useState(null);
 	const navigation = useNavigation();
-	
+
 	// Helper function to check current permissions
 	const checkCurrentPermissions = async () => {
 		try {
@@ -104,7 +102,7 @@ const Home = () => {
 			const backgroundPermission = await Location.getBackgroundPermissionsAsync();
 			return {
 				foreground: foregroundPermission.status,
-				background: backgroundPermission.status
+				background: backgroundPermission.status,
 			};
 		} catch (error) {
 			console.error("Error checking permissions:", error);
@@ -112,52 +110,6 @@ const Home = () => {
 		}
 	};
 
-	// Debug: Get background task debug info
-	const handleGetDebugInfo = async () => {
-		try {
-			const info = await getBackgroundTaskDebugInfo();
-			const taskRegistered = await checkTaskStatus();
-			setDebugInfo({ ...info, taskRegistered });
-			setAlerts((prev) => [
-				...prev,
-				{
-					type: "info",
-					message: `Task Status: ${taskRegistered ? 'Registered' : 'Not Registered'}, Last Run: ${info.lastRun || 'Never'}`,
-				},
-			]);
-		} catch (error) {
-			setAlerts((prev) => [
-				...prev,
-				{
-					type: "error",
-					message: "Failed to get debug info: " + error.message,
-				},
-			]);
-		}
-	};
-
-	// Debug: Check if background task is registered
-	const handleCheckTaskStatus = async () => {
-		try {
-			const isRegistered = await checkTaskStatus();
-			setAlerts((prev) => [
-				...prev,
-				{
-					type: "info",
-					message: `Background task is ${isRegistered ? 'registered' : 'not registered'}`,
-				},
-			]);
-		} catch (error) {
-			setAlerts((prev) => [
-				...prev,
-				{
-					type: "error",
-					message: "Failed to check task status: " + error.message,
-				},
-			]);
-		}
-	};
-	
 	useEffect(() => {
 		const checkUser = async () => {
 			const accessToken = await AsyncStorage.getItem("accessToken");
@@ -174,7 +126,7 @@ const Home = () => {
 			// Check current permissions first
 			const currentForegroundPermission = await Location.getForegroundPermissionsAsync();
 			const currentBackgroundPermission = await Location.getBackgroundPermissionsAsync();
-			
+
 			// console.log("Current foreground permission:", currentForegroundPermission.status);
 			// console.log("Current background permission:", currentBackgroundPermission.status);
 
@@ -182,7 +134,7 @@ const Home = () => {
 			// console.log("Requesting foreground location permission...");
 			const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
 			// console.log("Foreground location permission after request:", foregroundStatus);
-			
+
 			if (foregroundStatus !== "granted") {
 				setAlerts((prev) => [
 					...prev,
@@ -198,7 +150,7 @@ const Home = () => {
 			// console.log("Requesting background location permission...");
 			const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
 			// console.log("Background location permission after request:", backgroundStatus);
-			
+
 			if (backgroundStatus !== "granted") {
 				setAlerts((prev) => [
 					...prev,
@@ -228,7 +180,7 @@ const Home = () => {
 			});
 
 			setIsRegistered(true);
-			
+
 			setAlerts((prev) => [
 				...prev,
 				{
@@ -274,16 +226,16 @@ const Home = () => {
 	useEffect(() => {
 		// Check permissions status on component mount
 		checkCurrentPermissions();
-		
+		handleRegisterTask();
+
 		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/activity/today/`)
 			.then((response) => {
 				setTodaysActivity(response);
 				setIsTracking(response?.is_tracking || false);
-				if (response?.is_tracking) {
-					handleRegisterTask();
-				} else {
-					handleUnregisterTask();
-				}
+				// if (response?.is_tracking) {
+				// } else {
+				// 	handleUnregisterTask();
+				// }
 			})
 			.catch((err) => {
 				if (err.name === "AuthError") {
@@ -310,7 +262,7 @@ const Home = () => {
 					setAlerts((prev) => [...prev, { type: "info", message: "There isn't any planned route today" }]);
 				}
 			});
-		
+
 		// set interval to get location updates every 5 seconds
 		const intervalId = setInterval(async () => {
 			let lastLocation = await AsyncStorage.getItem("lastLocation");
@@ -421,11 +373,11 @@ const Home = () => {
 			});
 
 			// Start or stop location tracking
-			if (newTrackingStatus) {
-				await handleRegisterTask();
-			} else {
-				await handleUnregisterTask();
-			}
+			// if (newTrackingStatus) {
+			// 	await handleRegisterTask();
+			// } else {
+			// 	await handleUnregisterTask();
+			// }
 
 			setIsTracking(newTrackingStatus);
 			setAlerts((prev) => [
@@ -486,24 +438,27 @@ const Home = () => {
 					longitude: plannedRouteMarkers[0].coordinate.longitude,
 					latitudeDelta: 0.05,
 					longitudeDelta: 0.05,
-			  }
+				}
 			: {
 					latitude: 37.78825,
 					longitude: -122.4324,
 					latitudeDelta: 0.05,
 					longitudeDelta: 0.05,
-			  };
+				};
 
 	return (
 		<SafeAreaView className="flex-1 bg-gray-100">
 			<View className="flex-1 p-4">
-				<TouchableOpacity className="p-2 w-32 ml-auto rounded-md bg-orange-500 my-2" onPress={() => {
-					const clearStorage = async () => {
-						await AsyncStorage.clear();
-					};
-					clearStorage();
-					navigation.replace("login");
-				}}>
+				<TouchableOpacity
+					className="p-2 w-32 ml-auto rounded-md bg-orange-500 my-2"
+					onPress={() => {
+						const clearStorage = async () => {
+							await AsyncStorage.clear();
+						};
+						clearStorage();
+						navigation.replace("login");
+					}}
+				>
 					<Text className="text-white font-bold text-center">Logout</Text>
 				</TouchableOpacity>
 				{/* Search Bar */}
@@ -573,18 +528,20 @@ const Home = () => {
 				</TouchableOpacity>
 
 				{/* Map Section */}
-				<View className="mb-4 rounded-xl overflow-hidden bg-white border border-gray-200" style={{ height: 260 }}>
+				<View className="mb-4 rounded-xl overflow-hidden bg-white border border-gray-200" style={{ height: "50%" }}>
 					{plannedRouteMarkers.length > 0 ? (
 						<MapView style={StyleSheet.absoluteFill} region={initialRegion}>
 							{plannedRouteMarkers.map((marker) => (
-								<Marker key={marker.id} coordinate={marker.coordinate} title={marker.title} description={marker.description} >
-									<View style={{
-										backgroundColor: '#3498db',
-										padding: 5,
-										borderRadius: 50,
-										borderWidth: 3,
-										borderColor: 'white',
-									}}>
+								<Marker key={marker.id} coordinate={marker.coordinate} title={marker.title} description={marker.description}>
+									<View
+										style={{
+											backgroundColor: "#3498db",
+											padding: 5,
+											borderRadius: 50,
+											borderWidth: 3,
+											borderColor: "white",
+										}}
+									>
 										<MapPin size={20} color="#fff" />
 									</View>
 								</Marker>
@@ -597,13 +554,15 @@ const Home = () => {
 									}}
 									title="My Location"
 								>
-									<View style={{
-										backgroundColor: '#4CAF50',
-										padding: 5,
-										borderRadius: 50,
-										borderWidth: 3,
-										borderColor: 'white',
-									}}>
+									<View
+										style={{
+											backgroundColor: "#4CAF50",
+											padding: 5,
+											borderRadius: 50,
+											borderWidth: 3,
+											borderColor: "white",
+										}}
+									>
 										<MapPin size={20} color="#fff" />
 									</View>
 								</Marker>
@@ -648,53 +607,6 @@ const Home = () => {
 						<Text className="text-xs text-gray-500">No activity recorded yet today.</Text>
 					)}
 				</View>
-
-				{/* Debug Permissions Button */}
-				<TouchableOpacity 
-					className="bg-blue-500 rounded-lg p-3 mb-4" 
-					onPress={async () => {
-						const permissions = await checkCurrentPermissions();
-						if (permissions) {
-							setAlerts((prev) => [
-								...prev,
-								{
-									type: "info",
-									message: `Foreground: ${permissions.foreground}, Background: ${permissions.background}`,
-								},
-							]);
-						}
-					}}
-				>
-					<Text className="text-white font-bold text-center">Check Permissions Status</Text>
-				</TouchableOpacity>
-
-				{/* Debug Background Task Buttons */}
-				<View className="flex-row gap-2 mb-4">
-					<TouchableOpacity 
-						className="bg-purple-500 rounded-lg p-3 flex-1" 
-						onPress={handleGetDebugInfo}
-					>
-						<Text className="text-white font-bold text-center">Get Debug Info</Text>
-					</TouchableOpacity>
-					<TouchableOpacity 
-						className="bg-indigo-500 rounded-lg p-3 flex-1" 
-						onPress={handleCheckTaskStatus}
-					>
-						<Text className="text-white font-bold text-center">Check Task Status</Text>
-					</TouchableOpacity>
-				</View>
-
-				{/* Debug Info Display */}
-				{debugInfo && (
-					<View className="bg-gray-800 rounded-lg p-3 mb-4">
-						<Text className="text-white font-bold mb-2">Debug Information:</Text>
-						<Text className="text-green-400 text-xs">Status: {debugInfo.status || 'Unknown'}</Text>
-						<Text className="text-green-400 text-xs">Task Registered: {debugInfo.taskRegistered ? 'Yes' : 'No'}</Text>
-						<Text className="text-green-400 text-xs">Last Run: {debugInfo.lastRun || 'Never'}</Text>
-						<Text className="text-green-400 text-xs">Last Success: {debugInfo.lastSuccess ? JSON.stringify(debugInfo.lastSuccess) : 'None'}</Text>
-						<Text className="text-red-400 text-xs">Error: {debugInfo.error || 'None'}</Text>
-					</View>
-				)}
 			</View>
 
 			{/* Alerts (popup style, floating at bottom) */}
@@ -707,11 +619,7 @@ const Home = () => {
 				}}
 			>
 				{alerts.map((alert, idx) => (
-					<View
-						key={idx}
-						className={`  flex-row items-center justify-between min-w-[300px] max-w-[90vw]  ${alert.type === "error" ? "bg-red-50" : "bg-green-50"} border border-l-4 ${alert.type === "error" ? "border-red-500" : "border-green-500"} py-1 px-4 rounded-xl  shadow ${alert.type === "error" ? "shadow-red-500/25" : "shadow-green-500/25"} mb-2 animate-slideIn`}
-						style={{ backdropFilter: "blur(12px)" }}
-					>
+					<View key={idx} className={`  flex-row items-center justify-between min-w-[300px] max-w-[90vw]  ${alert.type === "error" ? "bg-red-50" : "bg-green-50"} border border-l-4 ${alert.type === "error" ? "border-red-500" : "border-green-500"} py-1 px-4 rounded-xl  shadow ${alert.type === "error" ? "shadow-red-500/25" : "shadow-green-500/25"} mb-2 animate-slideIn`} style={{ backdropFilter: "blur(12px)" }}>
 						<View className="flex-1 flex-col">
 							<Text className={`${alert.type === "error" ? "text-red-700" : "text-green-700"}`}>{alert?.message}</Text>
 							{/* {alert?.status && <Text className="text-xs opacity-80">Status: {alert?.status}</Text>} */}
