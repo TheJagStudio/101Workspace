@@ -23,6 +23,7 @@ const TrackerMap = () => {
     const [totalDistance, setTotalDistance] = useState(0);
     const [duration, setDuration] = useState(0);
     const [checkpoints, setCheckpoints] = useState([]);
+    const [reportDate, setReportDate] = useState(new Date());
 
     useEffect(() => {
         const salesmanId = searchParams.get('salesmanId');
@@ -41,25 +42,25 @@ const TrackerMap = () => {
                 ]);
                 // console.log("Fetched salesmen data:", salesmenData?.["results"]);
                 setSalesmen(salesmenData?.["results"] || []);
-                for (let i = 0; i < salesmenData?.["results"]?.length; i++) {
-                    try {
-                        let salesman = salesmenData["results"][i];
-                        let salesmanId = salesman.user.id;
-                        let { data: locationData, error } = await supabase2
-                            .from('salesman')
-                            .select("*")
-                            .eq('user_id', salesmanId)
-                            .limit(1);
-                        if (error) {
-                            console.error("Failed to fetch location data:", error);
-                        } else {
-                            salesman.current_location_lat = locationData[0].latitude;
-                            salesman.current_location_lng = locationData[0].longitude;
-                        }
-                    } catch (error) {
-                        console.error("Failed to fetch location data:", error);
-                    }
-                }
+                // for (let i = 0; i < salesmenData?.["results"]?.length; i++) {
+                //     try {
+                //         let salesman = salesmenData["results"][i];
+                //         let salesmanId = salesman.user.id;
+                //         let { data: locationData, error } = await supabase2
+                //             .from('salesman')
+                //             .select("*")
+                //             .eq('user_id', salesmanId)
+                //             .limit(1);
+                //         if (error) {
+                //             console.error("Failed to fetch location data:", error);
+                //         } else {
+                //             salesman.current_location_lat = locationData[0].latitude;
+                //             salesman.current_location_lng = locationData[0].longitude;
+                //         }
+                //     } catch (error) {
+                //         console.error("Failed to fetch location data:", error);
+                //     }
+                // }
 
                 // setLiveFeed(notificationsData?.["results"] || []);
             } catch (error) {
@@ -208,41 +209,43 @@ const TrackerMap = () => {
             return clusteredPoints;
         };
 
+
         const fetchLiveFeed = async () => {
             let { data: tracker_locationpoint, error } = await supabase2
                 .from('tracker_locationpoint')
                 .select("*")
-                .gte('timestamp', new Date().toISOString().split('T')[0] + 'T00:00:00')
+                .gte('timestamp', reportDate.toISOString().split('T')[0] + 'T00:00:00')
+                .lte('timestamp', reportDate.toISOString().split('T')[0] + 'T23:59:59')
+                .order('timestamp', { ascending: false })
                 .eq('salesman_id', selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId'));
-            let feedArray = [];
-            for (let i = 0; i < (tracker_locationpoint?.length || 0); i++) {
-                const lat = Number(tracker_locationpoint[i].latitude);
-                const lng = Number(tracker_locationpoint[i].longitude);
-                if (isFinite(lat) && isFinite(lng)) {
-                    feedArray.push({ lat, lng });
-                }
-            }
-            setLiveFeed(feedArray);
 
-            const firstLocation = tracker_locationpoint[0];
-            const lastLocation = tracker_locationpoint[tracker_locationpoint.length - 1];
+            let filteredFeed = [];
+            for (const point of (tracker_locationpoint || [])) {
+                const lat = Number(point.latitude || point.lat);
+                const lng = Number(point.longitude || point.lng);
+                filteredFeed.push({ lat, lng });
+            }
+            setLiveFeed(filteredFeed);
+
+            const firstLocation = filteredFeed[0];
+            const lastLocation = filteredFeed[filteredFeed.length - 1];
             const startTime = new Date(firstLocation?.timestamp || 0);
             const endTime = new Date(lastLocation?.timestamp || 0);
             setDuration(((endTime - startTime) / 1000 / 3600).toFixed(1)); // Duration in hours
 
-            const totalDistance = feedArray.reduce((acc, point, index, arr) => {
+            const totalDistance = filteredFeed.reduce((acc, point, index, arr) => {
                 if (index === 0) return acc; // Skip the first point
                 const prevPoint = arr[index - 1];
                 return acc + calculateDistance(prevPoint.lat, prevPoint.lng, point.lat, point.lng);
             }, 0);
             setTotalDistance((totalDistance / 1609.34).toFixed(2));
 
-            const clusteredPoints = findCheckPoints(feedArray, 10, 20); // Adjust k as needed
+            const clusteredPoints = findCheckPoints(filteredFeed, 10, 20); // Adjust k as needed
             setCheckpoints(clusteredPoints);
         }
 
         fetchLiveFeed()
-    }, [selectedSalesmanId, searchParams]);
+    }, [selectedSalesmanId, searchParams, reportDate]);
 
     useEffect(() => {
         if (!selectedSalesmanId) {
@@ -321,14 +324,22 @@ const TrackerMap = () => {
             <div className="flex-1 flex flex-col gap-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold text-gray-800">Global Tracker</h1>
-                    <select
-                        value={selectedSalesmanId || ''}
-                        onChange={handleSelectSalesman}
-                        className="p-2 border border-gray-300 rounded-md bg-white w-48"
-                    >
-                        <option value="">All Salesmen</option>
-                        {salesmen.map(s => <option key={s.id} value={s.id}>{s.user.first_name} {s.user.last_name}</option>)}
-                    </select>
+                    <div>
+                        <select
+                            value={selectedSalesmanId || ''}
+                            onChange={handleSelectSalesman}
+                            className="p-2 border border-gray-300 rounded-md bg-white w-48"
+                        >
+                            <option value="">All Salesmen</option>
+                            {salesmen.map(s => <option key={s.id} value={s.id}>{s.user.first_name} {s.user.last_name}</option>)}
+                        </select>
+                        <input
+                            type="date"
+                            value={reportDate.toISOString().split('T')[0]}
+                            onChange={(e) => setReportDate(new Date(e.target.value))}
+                            className="ml-4 p-2 border border-gray-300 rounded-md bg-white"
+                        />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -338,10 +349,10 @@ const TrackerMap = () => {
                 </div>
 
                 <Card className="flex-grow">
-                    <CardContent className="h-full p-0">
+                    <CardContent className="h-full min-h-96 p-0">
                         <GoogleMapWrapper
                             center={mapCenter}
-                            zoom={selectedSalesmanId ? 16 : 10}
+                            zoom={selectedSalesmanId ? 12 : 10}
                             markers={markers}
                             // polylines={polylines}
                             liveRoute={liveFeed}
@@ -351,7 +362,7 @@ const TrackerMap = () => {
                 </Card>
             </div>
 
-            <div className="lg:w-80 xl:w-96 flex-shrink-0">
+            {/* <div className="lg:w-80 xl:w-96 flex-shrink-0">
                 <Card className="h-full flex flex-col">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Map size={20} /> Live Activity</CardTitle>
@@ -372,7 +383,7 @@ const TrackerMap = () => {
                         </ul>
                     </CardContent>
                 </Card>
-            </div>
+            </div> */}
         </div>
     );
 }

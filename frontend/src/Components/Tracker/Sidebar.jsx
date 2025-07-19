@@ -10,7 +10,7 @@ const Sidebar = () => {
     const role = user?.permissions?.tracker_Salesmen_List ? "admin" : "salesman";
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(window.innerWidth < 640);
-    const [activeItem, setActiveItem] = useState( "salesman_home");
+    const [activeItem, setActiveItem] = useState("salesman_home");
     // Admin sidebar items
     const Items = [
         { icon: <MapPin size={20} />, text: "Tracking Map", to: "/tracker/salesman/home", key: "tracker_Map", section: "GENERAL" },
@@ -22,26 +22,42 @@ const Sidebar = () => {
         { icon: <User size={20} />, text: "Profile", to: "/tracker/salesman/profile", key: "tracker_Profile", section: "ACCOUNT" },
     ];
 
-    
+
     const [items, setItems] = useState([]);
     const [sections, setSections] = useState([]);
 
     useEffect(() => {
         // Find the matching item key for the current path
         const currentPath = location.pathname;
-        const found = items.find(item => currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to)));
-        if (found) {
-            setActiveItem(found.key);
-        } else {
-            setActiveItem(""); // fallback if no match
+        if (currentPath.startsWith("/tracker/salesman/home")) {
+            setActiveItem("tracker_Map");
         }
+        else if (currentPath.startsWith("/tracker/salesman/history")) {
+            setActiveItem("tracker_History");
+        }
+        else if (currentPath.startsWith("/tracker/admin/tracker")) {
+            setActiveItem("tracker_Global_View");
+        }
+        else if (currentPath.startsWith("/tracker/admin")) {
+            setActiveItem("tracker_Salesmen_List");
+        }
+        else if (currentPath.startsWith("/tracker/admin/settings")) {
+            setActiveItem("tracker_config");
+        }
+        else if (currentPath.startsWith("/tracker/admin/profile")) {
+            setActiveItem("tracker_Admin_Profile");
+        }
+        else if (currentPath.startsWith("/tracker/salesman/profile")) {
+            setActiveItem("tracker_Profile");
+        }
+
     }, [location.pathname, items]);
 
     useEffect(() => {
         const filteredItems = Items.filter(item => user?.permissions?.[item.key]);
         setItems(filteredItems);
         setSections(Array.from(new Set(filteredItems.map((item) => item?.section))));
-    },[user])
+    }, [user])
 
 
     useEffect(() => {
@@ -67,7 +83,7 @@ const Sidebar = () => {
         else if (currentLocation.startsWith("/tracker/salesman/profile")) {
             setActiveItem("tracker_Profile");
         }
-        
+
 
     }, [location.pathname]);
 

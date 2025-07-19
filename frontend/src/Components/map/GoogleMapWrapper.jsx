@@ -226,7 +226,7 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], che
                 <Polyline
                     path={liveRoute}
                     options={{
-                        strokeColor: '#1976D2', // blue
+                        strokeColor: 'red',
                         strokeOpacity: 1,
                         strokeWeight: 5,
                         editable: false,
@@ -246,7 +246,7 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], che
                     }}
                     label={{
                         text: "Your Location",
-                        className: "translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
+                        className: "hidden translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
                     }}
                 />
             )}
@@ -263,7 +263,7 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], che
                     }}
                     label={{
                         text: marker.title,
-                        className: "translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
+                        className: "hidden translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
                     }}
                 />
             ))}
