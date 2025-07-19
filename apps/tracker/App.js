@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './Screens/Home.js';
 import Login from './Screens/Login.js';
 import "./global.css";
+import Settings from './Screens/Settings.js';
 
 
 // Create the navigator
@@ -14,10 +15,13 @@ function App() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false, 
+          contentStyle: { backgroundColor: '#f8f9fa' }, // Light background for the app
         }}
       >
         <Stack.Screen name="home" component={Home} />
         <Stack.Screen name="login" component={Login} />
+        <Stack.Screen name="settings" component={Settings} />
+        {/* Add other screens here as needed */}
       </Stack.Navigator>
     </NavigationContainer>
   );

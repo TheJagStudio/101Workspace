@@ -39,7 +39,7 @@ const TrackerMap = () => {
                     apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/salesmen/'),
                     apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/notifications/')
                 ]);
-                console.log("Fetched salesmen data:", salesmenData?.["results"]);
+                // console.log("Fetched salesmen data:", salesmenData?.["results"]);
                 setSalesmen(salesmenData?.["results"] || []);
                 for (let i = 0; i < salesmenData?.["results"]?.length; i++) {
                     try {
@@ -78,33 +78,33 @@ const TrackerMap = () => {
                 (payload) => {
                     // console.log('Change received!', payload?.new)
                     let newData = payload?.new;
-                    setSalesmen(prevSalesmen => {
-                        const index = prevSalesmen.findIndex(s => s.user.id === newData.user_id);
-                        if (index !== -1) {
-                            const updatedSalesmen = [...prevSalesmen];
-                            updatedSalesmen[index] = {
-                                ...updatedSalesmen[index],
-                                current_location_lat: newData.current_location_lat,
-                                current_location_lng: newData.current_location_lng,
-                                // add more fields if needed
-                            };
-                            return updatedSalesmen;
-                        }
-                        // Ensure newData matches the expected structure
-                        return [
-                            ...prevSalesmen,
-                            {
-                                ...newData,
-                                user: { id: newData.user_id, username: newData.username || '' },
-                            }
-                        ];
-                    });
-                    setLiveFeed(prevFeed => {
-                        return [...prevFeed, {
-                            lat: newData.current_location_lat,
-                            lng: newData.current_location_lng
-                        }];
-                    });
+                    // setSalesmen(prevSalesmen => {
+                    //     const index = prevSalesmen.findIndex(s => s.user.id === newData.user_id);
+                    //     if (index !== -1) {
+                    //         const updatedSalesmen = [...prevSalesmen];
+                    //         updatedSalesmen[index] = {
+                    //             ...updatedSalesmen[index],
+                    //             current_location_lat: newData.current_location_lat,
+                    //             current_location_lng: newData.current_location_lng,
+                    //             // add more fields if needed
+                    //         };
+                    //         return updatedSalesmen;
+                    //     }
+                    //     // Ensure newData matches the expected structure
+                    //     return [
+                    //         ...prevSalesmen,
+                    //         {
+                    //             ...newData,
+                    //             user: { id: newData.user_id, username: newData.username || '' },
+                    //         }
+                    //     ];
+                    // });
+                    // setLiveFeed(prevFeed => {
+                    //     return [...prevFeed, {
+                    //         lat: newData.current_location_lat,
+                    //         lng: newData.current_location_lng
+                    //     }];
+                    // });
                 }
             )
             .subscribe();

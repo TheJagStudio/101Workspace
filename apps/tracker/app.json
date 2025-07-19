@@ -17,13 +17,19 @@
       "infoPlist": {
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location when open and in the background to track your routes.",
         "NSLocationWhenInUseUsageDescription": "This app needs access to location to track your routes.",
-        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true },
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
         "UIBackgroundModes": [
+          "location",
+          "processing",
+          "fetch",
           "location",
           "processing",
           "fetch"
         ]
-      }
+      },
+      "bundleIdentifier": "com.thejagstudio.x101tracker"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,7 +37,6 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "usesCleartextTraffic": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -48,7 +53,7 @@
         "android.permission.ACCESS_WIFI_STATE"
       ],
       "package": "com.thejagstudio.x101tracker",
-      "config":{
+      "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBxBKKw8qRbooHIASvS0gkhiGa4EIr8pA4"
         }
@@ -67,7 +72,14 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
-      ]
-    ]
+      ],
+      "expo-background-task",
+      "expo-router"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5f840d0f-a8da-4006-b1fd-1cbc8bf2488a"
+      }
+    }
   }
 }

@@ -68,7 +68,7 @@ const Login = () => {
 			}
 		} catch (err) {
 			console.log(err);
-			setError("A network error occurred. Please try again.");
+			setError("A network error occurorange. Please try again.");
 		}
 		setLoading(false);
 	};
@@ -91,9 +91,9 @@ const Login = () => {
 		<SafeAreaView className="flex-1 bg-gray-50">
 			<KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
 				<View className="flex-1 items-center justify-center p-4">
-					<View className="absolute top-[60px] left-[25px] p-2 bg-red-100/75 border border-dashed border-red-500 rounded-lg flex-row items-center justify-center">
+					<View className="absolute top-[60px] left-[25px] p-2 bg-orange-100/75 border border-dashed border-orange-500 rounded-lg flex-row items-center justify-center">
 						<Image source={require("../assets/adaptive-icon-1.png")} className="w-12 h-12" resizeMode="contain" />
-						<Text className="text-4xl ml-2 font-semibold text-red-600">Workspace</Text>
+						<Text className="text-4xl ml-2 font-semibold text-orange-600">Workspace</Text>
 					</View>
 
 					<View className="bg-white rounded-xl p-10 pt-20 w-full max-w-[380px] shadow-lg">
@@ -106,11 +106,11 @@ const Login = () => {
 						</View>
 
 						<View>
-							<TextInput placeholder="Enter Email..." className={`border border-dashed ${isEmailFocused ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-3 w-full text-sm`} value={email} onChangeText={setEmail} onFocus={() => setIsEmailFocused(true)} onBlur={() => setIsEmailFocused(false)} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#9CA3AF" />
-							<TextInput placeholder="Enter Password..." className={`mt-3 border border-dashed ${isPasswordFocused ? "border-red-500" : "border-gray-300"} rounded-lg px-3 py-3 w-full text-sm`} value={password} onChangeText={setPassword} onFocus={() => setIsPasswordFocused(true)} onBlur={() => setIsPasswordFocused(false)} secureTextEntry placeholderTextColor="#9CA3AF" />
-							{error && <Text className="text-red-500 text-sm mt-2">{error}</Text>}
+							<TextInput placeholder="Enter Email..." className={`border border-dashed ${isEmailFocused ? "border-orange-500" : "border-gray-300"} rounded-lg px-3 py-3 w-full text-sm`} value={email} onChangeText={setEmail} onFocus={() => setIsEmailFocused(true)} onBlur={() => setIsEmailFocused(false)} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#9CA3AF" />
+							<TextInput placeholder="Enter Password..." className={`mt-3 border border-dashed ${isPasswordFocused ? "border-orange-500" : "border-gray-300"} rounded-lg px-3 py-3 w-full text-sm`} value={password} onChangeText={setPassword} onFocus={() => setIsPasswordFocused(true)} onBlur={() => setIsPasswordFocused(false)} secureTextEntry placeholderTextColor="#9CA3AF" />
+							{error && <Text className="text-orange-500 text-sm mt-2">{error}</Text>}
 
-							<TouchableOpacity onPress={handleSubmit} className="w-full py-3 rounded-lg bg-red-600 items-center justify-center mt-4" disabled={loading}>
+							<TouchableOpacity onPress={handleSubmit} className="w-full py-3 rounded-lg bg-orange-600 items-center justify-center mt-4" disabled={loading}>
 								{loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-medium text-base">Login</Text>}
 							</TouchableOpacity>
 						</View>
