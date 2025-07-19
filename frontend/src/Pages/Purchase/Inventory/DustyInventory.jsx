@@ -273,7 +273,7 @@ const DustyInventory = () => {
 						</thead>
 						<PhotoProvider>
 							<tbody className="h-64 overflow-y-auto">
-								{tableData.map((item, index) => (
+								{tableData?.map((item, index) => (
 									<tr className={"hover:bg-indigo-50 shadow-border-b group " + (index % 2 === 1 ? "" : "bg-gray-100")} key={index}>
 										<td className="py-2 px-1 w-fit text-center">
 											<p className="text-sm text-gray-600">{(index + 1) + (pageSize * (page - 1))}</p>
@@ -298,7 +298,7 @@ const DustyInventory = () => {
 										<td className="text-center py-2 px-2 shadow-border-l whitespace-nowrap">{item?.lastReceived}</td>
 									</tr>
 								))}
-								{tableData.length === 0 && !loading && (
+								{tableData?.length === 0 && !loading && (
 									<tr>
 										<td colSpan={6} className="text-center py-4 text-gray-500">
 											No data available
@@ -310,7 +310,7 @@ const DustyInventory = () => {
 					</table>
 				</div>
 			</div>
-			{tableData.length > 0 && !loading && (
+			{tableData?.length > 0 && !loading && (
 				<div className={"flex items-center justify-between mt-5 gap-5" + (loading ? " opacity-50 pointer-events-none" : "")}>
 					<div className="bg-white w-fit h-fit rounded-lg shadow-lg ml-auto">
 						{/* add the pagination UI */}

@@ -91,6 +91,7 @@ function App() {
 		};
 
 		const token = localStorage.getItem("accessToken");
+		console.log("Access Token:", token);
 		if (token) {
 			fetchUserInfo();
 		} else {
@@ -102,12 +103,16 @@ function App() {
 				last_name: "",
 				is_active: false,
 			});
+			if (window.location.pathname !== "/login" && window.location.pathname !== "/signup") {
+				// Redirect to login if no token and not already on login/signup page
+				window.location.href = "/login";
+			}
 		}
 	}, [setUser, logout]);
 
 	// Make logout function available globally
 	window.logout = logout;
-	if (user?.username === "") {
+	if (user?.username === "" && window.location.pathname !== "/login" && window.location.pathname !== "/signup") {
 		return <div className="w-screen h-screen">
 			<div className="flex items-center justify-center h-full">
 				<Loader height={64} width={64} stroke="#ed1f24" />

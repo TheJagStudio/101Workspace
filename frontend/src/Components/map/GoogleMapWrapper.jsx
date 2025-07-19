@@ -61,7 +61,7 @@ const mapOptions = {
 };
 
 
-const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liveRoute = [], todayRoute = [] }) => {
+const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], checkpoints = [], liveRoute = [], todayRoute = [] }) => {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: atob('QUl6YVN5QnhCS0t3OHFSYm9vSElBU3ZTMGdraGlHYTRFSXI4cEE0'),
         libraries,
@@ -185,19 +185,28 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liv
                 />
             ))}
 
-
-            {markers.map((marker) => (
+            {checkpoints.map((checkpoint, index) => (
                 <Marker
-                    key={marker.id}
-                    position={{ lat: marker.lat, lng: marker.lng }}
-                    title={marker.title}
+                    key={`checkpoint-${index}`}
+                    position={{ lat: checkpoint.lat, lng: checkpoint.lng }}
+                    title={`Checkpoint ${index + 1}`}
                     icon={{
-                        url: `https://api.dicebear.com/9.x/micah/svg?seed=${marker?.first_name}${marker?.last_name}&shirt=collared&shirtColor=6bd9e9&hair=fonze,dougFunny,mrClean,mrT,turban&backgroundColor=ffdfbf&radius=50`,
-                        scaledSize: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Size(48, 48) : undefined,
-                        anchor: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Point(24, 24) : undefined,
+                        path: "M24 12a12 12 0 1 1-24 0 12 12 0 0 1 24 0z",
+                        fillColor: "red",
+                        fillOpacity: 1,
+                        strokeColor: "black",
+                        strokeWeight: 3,
+                        scale: 1,
+                        anchor: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Point(12, 12) : undefined,
+                        className: "peer"
+                    }}
+                    label={{
+                        text: `Checkpoint ${index + 1}`,
+                        className: "absolute left-8 bottom-6 w-fit h-fit rounded border border-blue-500 text-nowrap whitespace-wrap bg-white p-1 "
                     }}
                 />
             ))}
+
             {/* Render directions if available */}
             {directions && (
                 <DirectionsRenderer
@@ -217,12 +226,10 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liv
                 <Polyline
                     path={liveRoute}
                     options={{
-                        suppressMarkers: true,
                         strokeColor: '#1976D2', // blue
                         strokeOpacity: 1,
                         strokeWeight: 5,
-                        editable: true,
-                        
+                        editable: false,
                     }}
                 />
             )}
@@ -233,12 +240,33 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], liv
                     position={userLocation}
                     title="Your Location"
                     icon={{
-                        url: `https://api.dicebear.com/9.x/micah/svg?seed=${user?.first_name}${user?.last_name}&shirt=collared&shirtColor=6bd9e9&hair=fonze,dougFunny,mrClean,mrT,turban&backgroundColor=ffdfbf&radius=50`,
+                        url: `https://api.dicebear.com/9.x/micah/svg?seed=${user?.first_name}${user?.last_name}&shirt=collared&shirtColor=6bd9e9&hair=fonze,dougFunny,mrClean,mrT,turban&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&radius=10`,
                         scaledSize: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Size(48, 48) : undefined,
                         anchor: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Point(24, 24) : undefined,
                     }}
+                    label={{
+                        text: "Your Location",
+                        className: "translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
+                    }}
                 />
             )}
+
+            {markers.map((marker) => (
+                <Marker
+                    key={marker.id}
+                    position={{ lat: marker.lat, lng: marker.lng }}
+                    title={marker.title}
+                    icon={{
+                        url: `https://api.dicebear.com/9.x/micah/svg?seed=${marker?.first_name}${marker?.last_name}&shirt=collared&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&shirtColor=6bd9e9&radius=10`,
+                        scaledSize: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Size(48, 48) : undefined,
+                        anchor: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Point(36, 36) : undefined,
+                    }}
+                    label={{
+                        text: marker.title,
+                        className: "translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
+                    }}
+                />
+            ))}
         </GoogleMap>
     );
 };

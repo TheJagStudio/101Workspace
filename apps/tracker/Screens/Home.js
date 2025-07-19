@@ -35,47 +35,47 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 			// Use the same session key as Demo.js
 			const sessionStr = await AsyncStorage.getItem("supabase.auth.token");
 			const session = sessionStr ? JSON.parse(sessionStr) : null;
-			// try {
-			// 	await fetch(supabaseUrl+"/rest/v1/salesman?authId=eq." + session?.user.id, {
-			// 		method: "PATCH",
-			// 		headers: {
-			// 			apikey: supabaseAnonKey,
-			// 			Authorization: `Bearer ${session?.access_token}`,
-			// 			"Content-Type": "application/json",
-			// 			Prefer: "return=minimal",
-			// 		},
-			// 		body: JSON.stringify({
-			// 			current_location_lat: location.coords.latitude,
-			// 			current_location_lng: location.coords.longitude,
-			// 		}),
-			// 	});
-			// 	console.log("Location sent to Supabase successfully.");
-			// 	await AsyncStorage.setItem("lastLocation", JSON.stringify(location.coords));
-			// } catch (e) {
-			// 	console.error("Background Task Error in live location update:", e);
-			// }
-			// try {
-			// 	let salesmanInfo = await AsyncStorage.getItem("salesmanInfo");
-			// 	salesmanInfo = JSON.parse(salesmanInfo);
-			// 	await fetch(supabaseUrl+"/rest/v1/tracker_locationpoint", {
-			// 		method: "POST",
-			// 		headers: {
-			// 			apikey: supabaseAnonKey,
-			// 			Authorization: `Bearer ${supabaseAnonKey}`,
-			// 			"Content-Type": "application/json",
-			// 			Prefer: "return=minimal",
-			// 		},
-			// 		body: JSON.stringify({
-			// 			latitude: location.coords.latitude,
-			// 			longitude: location.coords.longitude,
-			// 			timestamp: new Date().toISOString(),
-			// 			salesman_id: salesmanInfo?.id,
-			// 		}),
-			// 	});
-			// 	console.log("route sent to Supabase successfully.");
-			// } catch (e) {
-			// 	console.error("Background Task Error in route update:", e);
-			// }
+			try {
+				await fetch(supabaseUrl+"/rest/v1/salesman?authId=eq." + session?.user.id, {
+					method: "PATCH",
+					headers: {
+						apikey: supabaseAnonKey,
+						Authorization: `Bearer ${session?.access_token}`,
+						"Content-Type": "application/json",
+						Prefer: "return=minimal",
+					},
+					body: JSON.stringify({
+						current_location_lat: location.coords.latitude,
+						current_location_lng: location.coords.longitude,
+					}),
+				});
+				console.log("Location sent to Supabase successfully.");
+				await AsyncStorage.setItem("lastLocation", JSON.stringify(location.coords));
+			} catch (e) {
+				console.error("Background Task Error in live location update:", e);
+			}
+			try {
+				let salesmanInfo = await AsyncStorage.getItem("salesmanInfo");
+				salesmanInfo = JSON.parse(salesmanInfo);
+				await fetch(supabaseUrl+"/rest/v1/tracker_locationpoint", {
+					method: "POST",
+					headers: {
+						apikey: supabaseAnonKey,
+						Authorization: `Bearer ${supabaseAnonKey}`,
+						"Content-Type": "application/json",
+						Prefer: "return=minimal",
+					},
+					body: JSON.stringify({
+						latitude: location.coords.latitude,
+						longitude: location.coords.longitude,
+						timestamp: new Date().toISOString(),
+						salesman_id: salesmanInfo?.id,
+					}),
+				});
+				console.log("route sent to Supabase successfully.");
+			} catch (e) {
+				console.error("Background Task Error in route update:", e);
+			}
 		}
 	}
 });

@@ -5,7 +5,7 @@ export const userAtom = atom({
     "email": "",
     "first_name": "",
     "last_name": "",
-    "is_active": true
+    "is_active": false
 });
 
 // Atom to store tracker settings (location_update_interval_minutes, etc)

@@ -167,7 +167,7 @@ const POMaker = () => {
 			newSelected.add(productId);
 			// Set default quantity if not already set
 			if (!productQuantities[productId]) {
-				let item = tableData.find(product => product.id === productId);
+				let item = tableData?.find(product => product.id === productId);
 				const calculatedQuantity = (item?.minQuantity - item?.availableQuantity) > 0 ? item?.minQuantity - item?.availableQuantity : 1;
 				setProductQuantities(prev => ({
 					...prev,
@@ -188,16 +188,16 @@ const POMaker = () => {
 	}
 
 	function handleSelectAll() {
-		if (selectedProducts.size === tableData.length) {
+		if (selectedProducts.size === tableData?.length) {
 			// Deselect all
 			setSelectedProducts(new Set());
 		} else {
 			// Select all
-			const allIds = new Set(tableData.map(item => item.id));
+			const allIds = new Set(tableData?.map(item => item.id));
 			setSelectedProducts(allIds);
 			// Set default quantities for newly selected items
 			const newQuantities = { ...productQuantities };
-			tableData.forEach(item => {
+			tableData?.forEach(item => {
 				if (!newQuantities[item.id]) {
 					const calculatedQuantity = (item.minQuantity - item.availableQuantity) > 0 ? item.minQuantity - item.availableQuantity : 1;
 					newQuantities[item.id] = calculatedQuantity;
@@ -218,7 +218,7 @@ const POMaker = () => {
 			const selectedProductsData = [];
 			const missingVendorProducts = [];
 			
-			tableData.forEach((item, tableIndex) => {
+			tableData?.forEach((item, tableIndex) => {
 				if (selectedProducts.has(item.id)) {
 					const selectedVendorIndex = selectedVendors[tableIndex];
 					const selectedVendor = item.vendors && item.vendors[selectedVendorIndex];
@@ -270,7 +270,7 @@ const POMaker = () => {
 				return acc;
 			}, {});
 
-			const vendorNames = tableData.reduce((acc, item) => {
+			const vendorNames = tableData?.reduce((acc, item) => {
 				item.vendors?.forEach(vendor => {
 					acc[vendor.id] = vendor.name;
 				});
@@ -479,7 +479,7 @@ const POMaker = () => {
 						<div className="text-sm text-gray-600">
 							Total quantity: <span className="font-semibold">
 								{Array.from(selectedProducts).reduce((sum, productId) => {
-									const item = tableData.find(product => product.id === productId);
+									const item = tableData?.find(product => product.id === productId);
 									const calculatedQuantity = (item?.minQuantity - item?.availableQuantity) > 0 ? item?.minQuantity - item?.availableQuantity : 1;
 									return sum + (productQuantities[productId] || calculatedQuantity);
 								}, 0)}
@@ -489,11 +489,11 @@ const POMaker = () => {
 							Estimated total: <span className="font-semibold">
 								{formatCurrency(
 									Array.from(selectedProducts).reduce((total, productId) => {
-										const item = tableData.find(product => product.id === productId);
+										const item = tableData?.find(product => product.id === productId);
 										if (item) {
 											const calculatedQuantity = (item?.minQuantity - item?.availableQuantity) > 0 ? item?.minQuantity - item?.availableQuantity : 1;
 											const quantity = productQuantities[productId] || calculatedQuantity;
-											const selectedVendorIndex = selectedVendors[tableData.indexOf(item)] || 0;
+											const selectedVendorIndex = selectedVendors[tableData?.indexOf(item)] || 0;
 											const selectedVendor = item.vendors?.[selectedVendorIndex];
 											if (selectedVendor?.prices?.[0]?.price) {
 												const price = parseFloat(selectedVendor.prices[0].price.toString().replace(/[$,]/g, '')) || 0;
@@ -558,16 +558,16 @@ const POMaker = () => {
 									<label className="inline-flex items-center cursor-pointer">
 										<input
 											type="checkbox"
-											checked={selectedProducts.size === tableData.length && tableData.length > 0}
+											checked={selectedProducts.size === tableData?.length && tableData?.length > 0}
 											onChange={handleSelectAll}
 											className="sr-only peer"
 										/>
 										<span className={`w-5 h-5 flex items-center justify-center rounded border-2 transition-colors duration-200
-											${selectedProducts.size === tableData.length && tableData.length > 0
+											${selectedProducts.size === tableData?.length && tableData?.length > 0
 												? 'bg-indigo-600 border-indigo-600'
 												: 'bg-white border-gray-300 peer-hover:border-indigo-400'
 											}`}>
-											{selectedProducts.size === tableData.length && tableData.length > 0 && (
+											{selectedProducts.size === tableData?.length && tableData?.length > 0 && (
 												<svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
 												</svg>
@@ -592,7 +592,7 @@ const POMaker = () => {
 						</thead>
 						<PhotoProvider >
 							<tbody className="overflow-y-auto">
-								{tableData.map((item, index) => {
+								{tableData?.map((item, index) => {
 									const hasVendorIssue = selectedVendors[index] !== 0 && item.vendors?.length > 1;
 									const isSelected = selectedProducts.has(item.id);
 									const needsVendorSelection = isSelected && (!item.vendors || item.vendors.length === 0);
@@ -676,7 +676,7 @@ const POMaker = () => {
 									</tr>
 								);
 								})}
-								{tableData.length === 0 && !loading && (
+								{tableData?.length === 0 && !loading && (
 									<tr>
 										<td colSpan={12} className="text-center py-4 text-gray-500">No data available. First select a vendor or category</td>
 									</tr>
@@ -686,7 +686,7 @@ const POMaker = () => {
 					</table>}
 				</div>
 			</div>
-			{tableData.length > 0 && !loading && (
+			{tableData?.length > 0 && !loading && (
 				<div className={"flex items-center justify-between mt-5 gap-5" + (loading ? " opacity-50 pointer-events-none" : "")}>
 					<div className="bg-white w-fit h-fit rounded-lg shadow-lg ml-auto">
 						{/* add the pagination UI */}

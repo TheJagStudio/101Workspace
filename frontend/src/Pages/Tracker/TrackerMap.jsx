@@ -20,6 +20,9 @@ const TrackerMap = () => {
     const [liveFeed, setLiveFeed] = useState([]);
     const [routeHistory, setRouteHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [totalDistance, setTotalDistance] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [checkpoints, setCheckpoints] = useState([]);
 
     useEffect(() => {
         const salesmanId = searchParams.get('salesmanId');
@@ -36,7 +39,28 @@ const TrackerMap = () => {
                     apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/salesmen/'),
                     apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/notifications/')
                 ]);
+                console.log("Fetched salesmen data:", salesmenData?.["results"]);
                 setSalesmen(salesmenData?.["results"] || []);
+                for (let i = 0; i < salesmenData?.["results"]?.length; i++) {
+                    try {
+                        let salesman = salesmenData["results"][i];
+                        let salesmanId = salesman.user.id;
+                        let { data: locationData, error } = await supabase2
+                            .from('salesman')
+                            .select("*")
+                            .eq('user_id', salesmanId)
+                            .limit(1);
+                        if (error) {
+                            console.error("Failed to fetch location data:", error);
+                        } else {
+                            salesman.current_location_lat = locationData[0].latitude;
+                            salesman.current_location_lng = locationData[0].longitude;
+                        }
+                    } catch (error) {
+                        console.error("Failed to fetch location data:", error);
+                    }
+                }
+
                 // setLiveFeed(notificationsData?.["results"] || []);
             } catch (error) {
                 console.error("Failed to fetch initial data:", error);
@@ -45,12 +69,7 @@ const TrackerMap = () => {
             }
         };
 
-
-
         fetchData();
-
-
-
 
         const channels = supabase2.channel('custom-update-channel')
             .on(
@@ -94,6 +113,101 @@ const TrackerMap = () => {
         };
     }, []);
     useEffect(() => {
+        const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 6371e3; // metres
+            const φ1 = lat1 * Math.PI / 180; // φ in radians
+            const φ2 = lat2 * Math.PI / 180; // φ in radians
+            const Δφ = (lat2 - lat1) * Math.PI / 180; // Δφ in radians
+            const Δλ = (lon2 - lon1) * Math.PI / 180; // Δλ in radians
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c; // in metres
+        }
+
+        const KNNCluster = (points, k) => {
+            if (points.length === 0) return [];
+            if (k <= 0) return points;
+            if (k >= points.length) return points;
+
+            // KNN clustering logic here
+            const clusters = [];
+            const clusterCenters = [];
+            const visited = new Set();
+            for (let i = 0; i < points.length; i++) {
+                if (visited.has(i)) continue;
+                const cluster = [points[i]];
+                visited.add(i);
+                for (let j = i + 1; j < points.length; j++) {
+                    if (visited.has(j)) continue;
+                    const distance = calculateDistance(points[i].lat, points[i].lng, points[j].lat, points[j].lng);
+                    if (distance < k) {
+                        cluster.push(points[j]);
+                        visited.add(j);
+                    }
+                }
+                clusters.push(cluster);
+            }
+            // Calculate cluster centers
+            for (const cluster of clusters) {
+                const latSum = cluster.reduce((sum, point) => sum + point.lat, 0);
+                const lngSum = cluster.reduce((sum, point) => sum + point.lng, 0);
+                clusterCenters.push({
+                    lat: latSum / cluster.length,
+                    lng: lngSum / cluster.length
+                });
+            }
+            return clusterCenters;
+        }
+
+        const findCheckPoints = (points, k, radius) => {
+            if (!points || points.length === 0 || k < 0 || radius <= 0) {
+                return [];
+            }
+
+            const checkPoints = [];
+
+            for (let i = 0; i < points.length; i++) {
+                let neighborCount = 0;
+                for (let j = 0; j < points.length; j++) {
+                    // Don't compare a point to itself
+                    if (i === j) continue;
+
+                    const distance = calculateDistance(
+                        points[i].lat,
+                        points[i].lng,
+                        points[j].lat,
+                        points[j].lng
+                    );
+
+                    if (distance <= radius) {
+                        neighborCount++;
+                    }
+                }
+
+                // If the point has at least 'k' neighbors, it's a check point.
+                if (neighborCount >= k) {
+                    checkPoints.push(points[i]);
+                }
+            }
+            let clusteredPoints = KNNCluster(checkPoints, 50); // Adjust k as needed
+            // merge close points
+            clusteredPoints = clusteredPoints.reduce((acc, point) => {
+                const existing = acc.find(p => calculateDistance(p.lat, p.lng, point.lat, point.lng) < 200);
+                if (existing) {
+                    existing.lat = (existing.lat + point.lat) / 2;
+                    existing.lng = (existing.lng + point.lng) / 2;
+                } else {
+                    acc.push(point);
+                }
+                return acc;
+            }, []);
+            return clusteredPoints;
+        };
+
         const fetchLiveFeed = async () => {
             let { data: tracker_locationpoint, error } = await supabase2
                 .from('tracker_locationpoint')
@@ -109,8 +223,24 @@ const TrackerMap = () => {
                 }
             }
             setLiveFeed(feedArray);
-            console.log("Live feed fetched:", feedArray);
+
+            const firstLocation = tracker_locationpoint[0];
+            const lastLocation = tracker_locationpoint[tracker_locationpoint.length - 1];
+            const startTime = new Date(firstLocation?.timestamp || 0);
+            const endTime = new Date(lastLocation?.timestamp || 0);
+            setDuration(((endTime - startTime) / 1000 / 3600).toFixed(1)); // Duration in hours
+
+            const totalDistance = feedArray.reduce((acc, point, index, arr) => {
+                if (index === 0) return acc; // Skip the first point
+                const prevPoint = arr[index - 1];
+                return acc + calculateDistance(prevPoint.lat, prevPoint.lng, point.lat, point.lng);
+            }, 0);
+            setTotalDistance((totalDistance / 1609.34).toFixed(2));
+
+            const clusteredPoints = findCheckPoints(feedArray, 10, 20); // Adjust k as needed
+            setCheckpoints(clusteredPoints);
         }
+
         fetchLiveFeed()
     }, [selectedSalesmanId, searchParams]);
 
@@ -156,7 +286,7 @@ const TrackerMap = () => {
                     id: s.id,
                     lat: s.current_location_lat,
                     lng: s.current_location_lng,
-                    title: s.user.username,
+                    title: s.user.first_name + ' ' + s.user.last_name,
                     icon: {
                         url: s.status === 'active' ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
                     }
@@ -202,9 +332,9 @@ const TrackerMap = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StatCard icon={<CheckCircle size={24} />} title="Total Checkpoints" value="N/A" color="green" />
-                    <StatCard icon={<Route size={24} />} title="Total Distance (km)" value="N/A" color="blue" />
-                    <StatCard icon={<Clock size={24} />} title="Avg. Duration" value="N/A" color="gray" />
+                    <StatCard icon={<CheckCircle size={24} />} title="Total Checkpoints" value={checkpoints.length} color="green" />
+                    <StatCard icon={<Route size={24} />} title="Total Distance (miles)" value={totalDistance} color="blue" />
+                    <StatCard icon={<Clock size={24} />} title="Total Duration (hours)" value={duration} color="gray" />
                 </div>
 
                 <Card className="flex-grow">
@@ -215,6 +345,7 @@ const TrackerMap = () => {
                             markers={markers}
                             // polylines={polylines}
                             liveRoute={liveFeed}
+                            checkpoints={checkpoints}
                         />
                     </CardContent>
                 </Card>

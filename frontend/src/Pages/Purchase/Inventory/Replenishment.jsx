@@ -216,7 +216,7 @@ const Replenishment = () => {
 						</tr>
 					</thead>
 					<tbody className="h-64 overflow-y-auto">
-						{tableData.map((item, index) => (
+						{tableData?.map((item, index) => (
 							<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 1 ? "" : "bg-gray-100")} key={index}>
 								<td className="py-2 px-1 w-fit text-center">
 									<p className="text-sm text-gray-600">{item?.index}</p>
