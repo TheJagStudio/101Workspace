@@ -33,10 +33,20 @@ import MapViewDirections from "react-native-maps-directions";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "react-native-url-polyfill/auto";
 import { apiRequest } from "../utils/api";
-import { useBatteryLevel } from 'expo-battery';
-import * as Network from 'expo-network';
+import { useBatteryLevel } from "expo-battery";
 import { createClient } from "@supabase/supabase-js";
 import { Linking } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL_SECOND;
@@ -65,6 +75,12 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 
 				if (!session || !session.user || !session.access_token) {
 					console.log("No valid session found, skipping location update");
+					return;
+				}
+
+				// Check network connectivity
+				if (!networkState.isConnected) {
+					console.log("No network connection, skipping location update");
 					return;
 				}
 
@@ -284,8 +300,6 @@ const Home = () => {
 	const [isMapReady, setIsMapReady] = useState(false);
 	const [mapDirectionsKey, setMapDirectionsKey] = useState(0);
 	const batteryLevel = useBatteryLevel();
-	const networkState = Network.useNetworkState();
-	console.log(`Current network type: ${networkState.type}`);
 
 	const navigation = useNavigation();
 	const mapRef = useRef(null);
@@ -731,11 +745,17 @@ const Home = () => {
 
 	// Battery status and signal strength (mocked for now, can be integrated with native modules)
 	useEffect(() => {
-		// Mock signal strength
-		const signalInterval = setInterval(() => {
-			setSignal(Math.random() > 0.1); // 90% chance of good signal
-		}, 15000); // Check every 15 seconds
-
+		if (batteryLevel < 0.2){
+			// console.log("Battery level:", batteryLevel);
+			// send notification if battery is below 20%
+			Notifications.scheduleNotificationAsync({
+				content: {
+					title: "Low Battery Alert",
+					body: "Your battery level is below 20%. Please charge your device.",
+				},
+				trigger: null, // Trigger immediately
+			});
+		}
 		const checkUser = async () => {
 			const accessToken = await AsyncStorage.getItem("accessToken");
 			const refreshToken = await AsyncStorage.getItem("refreshToken");
@@ -747,10 +767,11 @@ const Home = () => {
 			}
 		};
 		checkUser();
-		return () => {
-			clearInterval(signalInterval);
-		};
 	}, []);
+	// const networkInfo = NetInfo.addEventListener((state) => {
+	// 	console.log("Strength", state.details.strength);
+	// 	console.log("Is connected?", state.isConnected);
+	// });
 
 	return (
 		<SafeAreaView className="flex-1 bg-gray-50">
@@ -818,8 +839,8 @@ const Home = () => {
 
 						<View className="items-center flex-1">
 							<View className="flex-row items-center gap-2">
-								<Battery size={18} color={(batteryLevel*100).toFixed(0) < 20 ? "#ef4444" : "#22c55e"} className="mr-1" />
-								<Text className="font-semibold text-gray-800">{(batteryLevel*100).toFixed(0)}%</Text>
+								<Battery size={18} color={(batteryLevel * 100).toFixed(0) < 20 ? "#ef4444" : "#22c55e"} className="mr-1" />
+								<Text className="font-semibold text-gray-800">{(batteryLevel * 100).toFixed(0)}%</Text>
 							</View>
 							<Text className="text-xs text-gray-500 mt-1">Battery</Text>
 						</View>
@@ -834,7 +855,6 @@ const Home = () => {
 					</View>
 				</View>
 				<View className="flex-1">
-
 					{/* Control Buttons */}
 					<View className="flex-row px-4 my-4 gap-3">
 						<TouchableOpacity className={`flex-1 flex-row items-center justify-center py-4 rounded-xl ${isTracking ? "bg-red-500" : "bg-green-500"}`} onPress={handleToggleTracking}>
@@ -847,9 +867,18 @@ const Home = () => {
 							<Text className="text-white font-bold text-base ml-2">{isNavigating ? "Stop Nav." : "Start Nav."}</Text>
 						</TouchableOpacity> */}
 						{/* create button which will open the full route in google maps */}
-						<TouchableOpacity className={`flex-1 flex-row items-center justify-center py-4 rounded-xl ${canNavigate ? (isNavigating ? "bg-yellow-500" : "bg-blue-500") : "bg-gray-400"}`} onPress={()=>{
-							Linking.openURL(`https://www.google.com/maps/dir/?api=1&origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate.latitude},${plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate.longitude}&waypoints=${plannedRouteMarkers.slice(1, -1).map(marker => `${marker.coordinate.latitude},${marker.coordinate.longitude}`).join("|")}`);
-						}} disabled={!canNavigate}>
+						<TouchableOpacity
+							className={`flex-1 flex-row items-center justify-center py-4 rounded-xl ${canNavigate ? (isNavigating ? "bg-yellow-500" : "bg-blue-500") : "bg-gray-400"}`}
+							onPress={() => {
+								Linking.openURL(
+									`https://www.google.com/maps/dir/?api=1&origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate.latitude},${plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate.longitude}&waypoints=${plannedRouteMarkers
+										.slice(1, -1)
+										.map((marker) => `${marker.coordinate.latitude},${marker.coordinate.longitude}`)
+										.join("|")}`
+								);
+							}}
+							disabled={!canNavigate}
+						>
 							<Navigation size={20} color="#fff" className="mr-2" />
 							<Text className="text-white font-bold text-base ml-2">Open in Maps</Text>
 						</TouchableOpacity>
@@ -859,7 +888,7 @@ const Home = () => {
 					<View className="flex-1 min-h-96 mx-4 mb-4 rounded-xl overflow-hidden bg-white border border-gray-200 shadow-md">
 						<MapView ref={mapRef} style={StyleSheet.absoluteFillObject} provider={PROVIDER_GOOGLE} initialRegion={initialRegion} center={currentLocation} showsUserLocation={true} showsMyLocationButton={true} showsCompass={false} showsScale={false} showsTraffic={false} loadingEnabled={true} loadingIndicatorColor="#3498db" loadingBackgroundColor="#f0f0f0" onMapReady={() => setIsMapReady(true)}>
 							{plannedRouteMarkers?.map((marker, index) => (
-								<Marker key={index} coordinate={marker.coordinate} title={marker.title} description={marker.description}  >
+								<Marker key={index} coordinate={marker.coordinate} title={marker.title} description={marker.description}>
 									<MapPin
 										size={20}
 										color="#fff"
@@ -903,18 +932,7 @@ const Home = () => {
 									</View>
 								</Marker>
 							)} */}
-							{isMapReady && plannedRouteMarkers.length >= 1 && (
-								<MapViewDirections
-									origin={currentLocation ? { latitude: currentLocation.latitude, longitude: currentLocation.longitude } : plannedRouteMarkers[0].coordinate}
-									destination={plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate}
-									waypoints={plannedRouteMarkers.slice(0, -1).map((marker) => marker.coordinate)}
-									apikey={process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}
-									strokeWidth={6}
-									strokeColor="red"
-									optimizeWaypoints={true}
-								/>
-							)}
-							
+							{isMapReady && plannedRouteMarkers.length >= 1 && <MapViewDirections origin={currentLocation ? { latitude: currentLocation.latitude, longitude: currentLocation.longitude } : plannedRouteMarkers[0].coordinate} destination={plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate} waypoints={plannedRouteMarkers.slice(0, -1).map((marker) => marker.coordinate)} apikey={process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY} strokeWidth={6} strokeColor="red" optimizeWaypoints={true} />}
 						</MapView>
 						{isNavigating && <NavigationInstructions instructions={routeInstructions} isVisible={showInstructions} onToggle={() => setShowInstructions((prev) => !prev)} nextStep={routeProgress && routeProgress.steps[routeProgress.currentStep + 1]?.instructions} />}
 					</View>

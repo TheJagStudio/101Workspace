@@ -13,7 +13,7 @@ const supabase2 = createClient(
     import.meta.env.VITE_SUPABASE_ANON_KEY_SECOND
 );
 
-const ignoreSalesMan = ["6","20","8","10","12","13","16","21","19"];
+const ignoreSalesMan = ["20","8","10","12","13","16","21","19"];
 
 const TrackerMap = () => {
     const [searchParams, setSearchParams] = useSearchParams();

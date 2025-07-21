@@ -26,8 +26,12 @@
           "fetch",
           "location",
           "processing",
-          "fetch"
+          "fetch",
+          "remote-notification"
         ]
+      },
+      "entitlements": {
+        "com.apple.developer.networking.wifi-info": true
       },
       "bundleIdentifier": "com.thejagstudio.x101tracker"
     },
@@ -50,7 +54,9 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
-        "android.permission.ACCESS_WIFI_STATE"
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM",
       ],
       "package": "com.thejagstudio.x101tracker",
       "config": {
@@ -74,7 +80,16 @@
         }
       ],
       "expo-background-task",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/favicon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ]
     ],
     "extra": {
       "eas": {
