@@ -22,7 +22,6 @@ services:
       - "9876:9876"
     environment:
       - DEBUG=1
-      - SECRET_KEY=django-insecure-0mk0!p468jvsr@i=rt=d(_etd$ej2hzk--vo1&cxrgd4-ex1!f
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=Workspace-99-101-2002
