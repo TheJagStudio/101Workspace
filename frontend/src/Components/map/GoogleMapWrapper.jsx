@@ -10,10 +10,10 @@ const mapContainerStyle = {
 };
 
 const mapOptions = {
-    disableDefaultUI: false,
+    disableDefaultUI: true,
     zoomControl: true,
-    streetViewControl: false,
-    mapTypeControl: false,
+    streetViewControl: true,
+    mapTypeControl: true,
     fullscreenControl: true,
     clickableIcons: true,
     automaticallyAdjustsViewport: true,
@@ -22,12 +22,12 @@ const mapOptions = {
     styles: [ // Optional: A nice map style
         {
             "featureType": "poi",
-            "stylers": [{ "visibility": "off" }]
+            "stylers": [{ "visibility": "on" }]
         },
         {
             "featureType": "road",
             "elementType": "labels.icon",
-            "stylers": [{ "visibility": "off" }]
+            "stylers": [{ "visibility": "on" }]
         },
         {
             "featureType": "transit",
