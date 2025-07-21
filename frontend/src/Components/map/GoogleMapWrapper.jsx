@@ -209,8 +209,8 @@ const GoogleMapWrapper = ({ center, bounds, zoom = 12, markers = [], polylines =
                         className: "peer"
                     }}
                     label={{
-                        text: `Checkpoint ${index + 1}`,
-                        className: "opacity-0 absolute left-8 bottom-6 w-fit h-fit rounded border border-blue-500 text-nowrap whitespace-wrap bg-white p-1 "
+                        text: `Checkpoint ${index + 1} | ${checkpoint.duration}`,
+                        className: "absolute left-8 bottom-6 w-32 h-fit rounded border border-red-500 text-wrap text-left whitespace- bg-white p-1 "
                     }}
                 />
             ))}
@@ -254,7 +254,7 @@ const GoogleMapWrapper = ({ center, bounds, zoom = 12, markers = [], polylines =
             )}
 
             {/* User location marker */}
-            {userLocation && (
+            {/* {userLocation && (
                 <Marker
                     position={userLocation}
                     title="Your Location"
@@ -268,7 +268,7 @@ const GoogleMapWrapper = ({ center, bounds, zoom = 12, markers = [], polylines =
                         className: "hidden translate-y-full mt-6 text-xl w-fit h-fit rounded border border-orange-500 text-wrap whitespace-wrap bg-white p-1 "
                     }}
                 />
-            )}
+            )} */}
 
             {markers.map((marker) => (
                 <Marker
@@ -276,7 +276,7 @@ const GoogleMapWrapper = ({ center, bounds, zoom = 12, markers = [], polylines =
                     position={{ lat: marker.lat, lng: marker.lng }}
                     title={marker.title}
                     icon={{
-                        url: `https://api.dicebear.com/9.x/micah/svg?seed=${marker?.first_name}${marker?.last_name}&shirt=collared&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&shirtColor=6bd9e9&radius=10`,
+                        url: `https://api.dicebear.com/9.x/micah/svg?seed=${marker?.first_name} ${marker?.last_name}&shirt=collared&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&shirtColor=6bd9e9&radius=10`,
                         scaledSize: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Size(48, 48) : undefined,
                         anchor: typeof window !== 'undefined' && window.google && window.google.maps ? new window.google.maps.Point(36, 36) : undefined,
                     }}
