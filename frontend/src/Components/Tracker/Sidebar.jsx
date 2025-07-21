@@ -27,7 +27,6 @@ const Sidebar = () => {
     const [sections, setSections] = useState([]);
 
     useEffect(() => {
-        // Find the matching item key for the current path
         const currentPath = location.pathname;
         if (currentPath.startsWith("/tracker/salesman/home")) {
             setActiveItem("tracker_Map");
@@ -38,9 +37,6 @@ const Sidebar = () => {
         else if (currentPath.startsWith("/tracker/admin/tracker")) {
             setActiveItem("tracker_Global_View");
         }
-        else if (currentPath.startsWith("/tracker/admin")) {
-            setActiveItem("tracker_Salesmen_List");
-        }
         else if (currentPath.startsWith("/tracker/admin/settings")) {
             setActiveItem("tracker_config");
         }
@@ -50,8 +46,10 @@ const Sidebar = () => {
         else if (currentPath.startsWith("/tracker/salesman/profile")) {
             setActiveItem("tracker_Profile");
         }
-
-    }, [location.pathname, items]);
+        else if (currentPath.startsWith("/tracker/admin")) {
+            setActiveItem("tracker_Salesmen_List");
+        }
+    }, [location.pathname]);
 
     useEffect(() => {
         const filteredItems = Items.filter(item => user?.permissions?.[item.key]);

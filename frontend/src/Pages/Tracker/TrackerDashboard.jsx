@@ -9,6 +9,9 @@ const TrackerDashboard = () => {
     const [stats, setStats] = useState({ total_salesmen: 0, active_salesmen: 0, offline_salesmen: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [sortField, setSortField] = useState('name');
+    const [sortOrder, setSortOrder] = useState('asc');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -57,12 +60,53 @@ const TrackerDashboard = () => {
         return Math.floor(seconds) + " seconds ago";
     }
 
+    // Sorting and filtering logic
+    const filteredSalesmen = (salesmen || []).filter(s => {
+        if (filterStatus === 'all') return true;
+        return s.status === filterStatus;
+    });
+
+    const sortedSalesmen = [...filteredSalesmen].sort((a, b) => {
+        let valA, valB;
+        switch (sortField) {
+            case 'name':
+                valA = `${a.user.first_name} ${a.user.last_name}`.toLowerCase();
+                valB = `${b.user.first_name} ${b.user.last_name}`.toLowerCase();
+                break;
+            case 'last_seen':
+                valA = a.last_seen || '';
+                valB = b.last_seen || '';
+                break;
+            case 'battery':
+                valA = a.battery ?? 0;
+                valB = b.battery ?? 0;
+                break;
+            case 'today_visits':
+                valA = a.today_visits ?? 0;
+                valB = b.today_visits ?? 0;
+                break;
+            default:
+                valA = a.id;
+                valB = b.id;
+        }
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     if (loading) return <div>Loading dashboard...</div>;
     if (error) return <div className="text-red-500">{error}</div>;
+
+    const phoneNumberFormat = (phone) => {
+        if (!phone) return '';
+        return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    }
 
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold text-gray-800">Salesmen Overview</h1>
+
+
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard icon={<Users size={24} />} title="Total Salesmen" value={stats?.total_salesmen} color="blue" />
@@ -70,12 +114,49 @@ const TrackerDashboard = () => {
                 <StatCard icon={<UserX size={24} />} title="Offline" value={stats?.offline_salesmen} color="red" />
             </div>
 
+            {/* Filter and Sort Controls */}
+
+
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between">
                     <CardTitle>All Salesmen</CardTitle>
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                        <div>
+                            <label className="mr-2 font-medium">Filter:</label>
+                            <select
+                                className="border border-gray-300 focus:border-orange-500 rounded px-2 py-1  focus:outline-none"
+                                value={filterStatus}
+                                onChange={e => setFilterStatus(e.target.value)}
+                            >
+                                <option value="all">All</option>
+                                <option value="active">Active</option>
+                                <option value="offline">Offline</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="mr-2 font-medium">Sort by:</label>
+                            <select
+                                className="border border-gray-300 focus:border-orange-500 rounded px-2 py-1 focus:outline-none"
+                                value={sortField}
+                                onChange={e => setSortField(e.target.value)}
+                            >
+                                <option value="name">Name</option>
+                                <option value="last_seen">Last Seen</option>
+                                <option value="battery">Battery</option>
+                                <option value="today_visits">Today's Visits</option>
+                            </select>
+                            <button
+                                className="ml-2 px-2 py-1 border border-gray-300 focus:border-orange-500 rounded focus:outline-none"
+                                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                                title="Toggle sort order"
+                            >
+                                {sortOrder === 'asc' ? '↑' : '↓'}
+                            </button>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
+                <CardContent className="!p-0 overflow-hidden">
+                    <div className="overflow-hidden rounded-b-xl">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 md:table-header-group hidden">
                                 <tr>
@@ -87,14 +168,14 @@ const TrackerDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {(salesmen || []).map(s => (
+                                {sortedSalesmen.map(s => (
                                     <tr key={s.id} className="bg-white border md:border-0 md:border-b last:border-b-0 border-gray-300 hover:bg-gray-50 md:table-row grid grid-cols-2 items-center justify-between gap-3 p-2 mb-4 md:mb-0 rounded-lg md:rounded-none shadow md:shadow-none">
                                         <td className="md:px-6 md:py-4 font-medium text-gray-900 whitespace-nowrap md:table-cell block" data-label="Salesman">
                                             <div className="flex items-center space-x-3">
                                                 <img className="w-10 h-10 rounded-full" src={`https://api.dicebear.com/9.x/micah/svg?seed=${s.user.first_name}${s.user.last_name}&shirt=collared&shirtColor=6bd9e9&hair=fonze,dougFunny,mrClean,mrT,turban`} alt={s.user.username} />
                                                 <div>
                                                     <div>{s.user.first_name} {s.user.last_name}</div>
-                                                    <div className="text-xs text-gray-500 flex items-center"><Phone size={12} className="mr-1" />{s.phone_number}</div>
+                                                    <div className="text-xs text-gray-500 flex items-center"><Phone size={12} className="mr-1" />{phoneNumberFormat(s.phone_number)}</div>
                                                 </div>
                                             </div>
                                         </td>

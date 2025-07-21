@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, StatCard } from '../../Compon
 import GoogleMapWrapper from '../../Components/map/GoogleMapWrapper';
 import { apiRequest } from '../../utils/api';
 import { createClient } from '@supabase/supabase-js';
+import { userAtom } from '../../Variables';
+import { useAtom } from 'jotai';
 
 const supabase2 = createClient(
     import.meta.env.VITE_SUPABASE_URL_SECOND,
@@ -24,6 +26,8 @@ const TrackerMap = () => {
     const [duration, setDuration] = useState(0);
     const [checkpoints, setCheckpoints] = useState([]);
     const [reportDate, setReportDate] = useState(new Date());
+    const [bounds, setbounds] = useState(null);
+    const [user] = useAtom(userAtom);
 
     useEffect(() => {
         const salesmanId = searchParams.get('salesmanId');
@@ -36,33 +40,30 @@ const TrackerMap = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [salesmenData, notificationsData] = await Promise.all([
-                    apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/salesmen/'),
-                    apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/notifications/')
+                const [salesmenData] = await Promise.all([
+                    apiRequest(import.meta.env.VITE_SERVER_URL + '/api/tracker/admin/salesmen/')
                 ]);
-                // console.log("Fetched salesmen data:", salesmenData?.["results"]);
+                // sort salesmen by username
+                salesmenData["results"].sort((a, b) => a.user.username.localeCompare(b.user.username));
                 setSalesmen(salesmenData?.["results"] || []);
-                // for (let i = 0; i < salesmenData?.["results"]?.length; i++) {
-                //     try {
-                //         let salesman = salesmenData["results"][i];
-                //         let salesmanId = salesman.user.id;
-                //         let { data: locationData, error } = await supabase2
-                //             .from('salesman')
-                //             .select("*")
-                //             .eq('user_id', salesmanId)
-                //             .limit(1);
-                //         if (error) {
-                //             console.error("Failed to fetch location data:", error);
-                //         } else {
-                //             salesman.current_location_lat = locationData[0].latitude;
-                //             salesman.current_location_lng = locationData[0].longitude;
-                //         }
-                //     } catch (error) {
-                //         console.error("Failed to fetch location data:", error);
-                //     }
-                // }
-
-                // setLiveFeed(notificationsData?.["results"] || []);
+                for (let i = 0; i < salesmenData?.["results"]?.length; i++) {
+                    try {
+                        let salesman = salesmenData["results"][i];
+                        let salesmanId = salesman.user.id;
+                        let { data: locationData, error } = await supabase2
+                            .from('salesman')
+                            .select("*")
+                            .eq('user_id', salesmanId)
+                            .limit(1);
+                        if (error) {
+                            console.error("Failed to fetch location data:", error);
+                        } else {
+                            salesman.current_location_lat = locationData[0].latitude;
+                            salesman.current_location_lng = locationData[0].longitude;
+                        }
+                    } catch (error) {
+                    }
+                }
             } catch (error) {
                 console.error("Failed to fetch initial data:", error);
             } finally {
@@ -72,46 +73,7 @@ const TrackerMap = () => {
 
         fetchData();
 
-        const channels = supabase2.channel('custom-update-channel')
-            .on(
-                'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'salesman' },
-                (payload) => {
-                    // console.log('Change received!', payload?.new)
-                    let newData = payload?.new;
-                    // setSalesmen(prevSalesmen => {
-                    //     const index = prevSalesmen.findIndex(s => s.user.id === newData.user_id);
-                    //     if (index !== -1) {
-                    //         const updatedSalesmen = [...prevSalesmen];
-                    //         updatedSalesmen[index] = {
-                    //             ...updatedSalesmen[index],
-                    //             current_location_lat: newData.current_location_lat,
-                    //             current_location_lng: newData.current_location_lng,
-                    //             // add more fields if needed
-                    //         };
-                    //         return updatedSalesmen;
-                    //     }
-                    //     // Ensure newData matches the expected structure
-                    //     return [
-                    //         ...prevSalesmen,
-                    //         {
-                    //             ...newData,
-                    //             user: { id: newData.user_id, username: newData.username || '' },
-                    //         }
-                    //     ];
-                    // });
-                    // setLiveFeed(prevFeed => {
-                    //     return [...prevFeed, {
-                    //         lat: newData.current_location_lat,
-                    //         lng: newData.current_location_lng
-                    //     }];
-                    // });
-                }
-            )
-            .subscribe();
-        return () => {
-            supabase2.removeChannel(channels);
-        };
+
     }, []);
     useEffect(() => {
         const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -209,6 +171,20 @@ const TrackerMap = () => {
             return clusteredPoints;
         };
 
+        const findExtremePoints = (points) => {
+            if (!points || points.length === 0) return null;
+            let minLat = points[0].lat;
+            let maxLat = points[0].lat;
+            let minLng = points[0].lng;
+            let maxLng = points[0].lng;
+            for (const point of points) {
+                if (point.lat < minLat) minLat = point.lat;
+                if (point.lat > maxLat) maxLat = point.lat;
+                if (point.lng < minLng) minLng = point.lng;
+                if (point.lng > maxLng) maxLng = point.lng;
+            }
+            return { minLat, maxLat, minLng, maxLng };
+        };
 
         const fetchLiveFeed = async () => {
             let { data: tracker_locationpoint, error } = await supabase2
@@ -216,22 +192,25 @@ const TrackerMap = () => {
                 .select("*")
                 .gte('timestamp', reportDate.toISOString().split('T')[0] + 'T00:00:00')
                 .lte('timestamp', reportDate.toISOString().split('T')[0] + 'T23:59:59')
-                .order('timestamp', { ascending: false })
+                .order('timestamp', { ascending: true })
                 .eq('salesman_id', selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId'));
 
             let filteredFeed = [];
             for (const point of (tracker_locationpoint || [])) {
                 const lat = Number(point.latitude || point.lat);
                 const lng = Number(point.longitude || point.lng);
-                filteredFeed.push({ lat, lng });
+                const timestamp = new Date(point.timestamp || point.created_at).getTime();
+                filteredFeed.push({ lat, lng, timestamp });
             }
             setLiveFeed(filteredFeed);
+            setbounds(findExtremePoints(filteredFeed));
 
             const firstLocation = filteredFeed[0];
             const lastLocation = filteredFeed[filteredFeed.length - 1];
-            const startTime = new Date(firstLocation?.timestamp || 0);
-            const endTime = new Date(lastLocation?.timestamp || 0);
+            const startTime = new Date(lastLocation?.timestamp || 0);
+            const endTime = new Date(firstLocation?.timestamp || 0);
             setDuration(((endTime - startTime) / 1000 / 3600).toFixed(1)); // Duration in hours
+
 
             const totalDistance = filteredFeed.reduce((acc, point, index, arr) => {
                 if (index === 0) return acc; // Skip the first point
@@ -244,7 +223,58 @@ const TrackerMap = () => {
             setCheckpoints(clusteredPoints);
         }
 
+        const channelMaker = async () => {
+            try {
+                if (window.channels) {
+                    await supabase2.removeChannel(window.channels);
+                }
+            }
+            catch (e) {
+                console.error("Error removing channel:", e);
+            }
+
+            window.channels = supabase2.channel('salesman_location_updates')
+                .on(
+                    'postgres_changes',
+                    // { event: 'UPDATE', schema: 'public', table: 'salesman' },
+                    { event: 'INSERT', schema: 'public', table: 'tracker_locationpoint' },
+                    (payload) => {
+                        let newData = payload?.new;
+
+                        let salesmenId = salesmen?.filter(s => s?.id === selectedSalesmanId)?.[0]?.id;
+                        if (newData?.salesman_id === salesmenId) {
+                            setLiveFeed(prevFeed => {
+                                return [...prevFeed, {
+                                    lat: newData.latitude,
+                                    lng: newData.longitude
+                                }];
+                            });
+                            setSalesmen(prevSalesmen => {
+                                const index = prevSalesmen.findIndex(s => s.id === newData.salesman_id);
+                                if (index !== -1) {
+                                    const updatedSalesmen = [...prevSalesmen];
+                                    updatedSalesmen[index] = {
+                                        ...updatedSalesmen[index],
+                                        current_location_lat: newData.latitude,
+                                        current_location_lng: newData.longitude,
+                                    };
+                                    return updatedSalesmen;
+                                }
+                                return prevSalesmen;
+                            });
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
         fetchLiveFeed()
+        channelMaker();
+
+
+        // return () => {
+        //     supabase2.removeChannel(channels);
+        // };
     }, [selectedSalesmanId, searchParams, reportDate]);
 
     useEffect(() => {
@@ -277,6 +307,16 @@ const TrackerMap = () => {
         }
     };
 
+    const mapCenter = useMemo(() => {
+        if (selectedSalesmanId && salesmen.length > 0) {
+            const salesman = salesmen.find(s => s.id === selectedSalesmanId);
+            if (salesman && salesman.current_location_lat && salesman.current_location_lng) {
+                return { lat: salesman.current_location_lat, lng: salesman.current_location_lng };
+            }
+        }
+        return null;
+    }, [salesmen, selectedSalesmanId]);
+
     const markers = useMemo(() => {
         if (salesmen) {
             const salesmenToDisplay = selectedSalesmanId
@@ -297,17 +337,6 @@ const TrackerMap = () => {
         }
     }, [salesmen, selectedSalesmanId]);
 
-
-    const mapCenter = useMemo(() => {
-        if (selectedSalesmanId) {
-            const salesman = salesmen?.find(s => s.id === selectedSalesmanId);
-            if (salesman && salesman.current_location_lat) {
-                return { lat: salesman.current_location_lat, lng: salesman.current_location_lng };
-            }
-        }
-        return null
-    }, [salesmen, selectedSalesmanId]);
-
     const FeedIcon = ({ type }) => {
         switch (type) {
             case 'checkpoint': return <CheckCircle className="text-green-500" size={18} />;
@@ -317,7 +346,12 @@ const TrackerMap = () => {
         }
     };
 
-    if (loading) return <div>Loading Tracker...</div>;
+    if (loading) return <div className='w-full h-full flex items-center justify-center'>
+        <svg className="w-24 h-24 text-orange-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2.93 6.243A8.003 8.003 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3.93-1.695zM12 20a8.003 8.003 0 01-6.243-2.93l-3.93 1.695A11.95 11.95 0 0012 24v-4z"></path>
+        </svg>
+    </div>;
 
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-full">
@@ -352,6 +386,7 @@ const TrackerMap = () => {
                     <CardContent className="h-full min-h-96 p-0">
                         <GoogleMapWrapper
                             center={mapCenter}
+                            bounds={bounds}
                             zoom={selectedSalesmanId ? 12 : 10}
                             markers={markers}
                             // polylines={polylines}

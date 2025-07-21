@@ -61,7 +61,7 @@ const mapOptions = {
 };
 
 
-const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], checkpoints = [], liveRoute = [], todayRoute = [] }) => {
+const GoogleMapWrapper = ({ center, bounds, zoom = 12, markers = [], polylines = [], checkpoints = [], liveRoute = [], todayRoute = [] }) => {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: atob('QUl6YVN5QnhCS0t3OHFSYm9vSElBU3ZTMGdraGlHYTRFSXI4cEE0'),
         libraries,
@@ -158,9 +158,17 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], che
         <GoogleMap
             mapContainerStyle={mapContainerStyle}
             zoom={zoom}
-            center={center ? center : userLocation}
             options={mapOptions}
-
+            fitBounds={center ? false : true}
+            center={center}
+            onLoad={(map) => {
+                if (bounds && !center) {
+                    const bounds = new window.google.maps.LatLngBounds();
+                    bounds.extend(new window.google.maps.LatLng(bounds.minLat, bounds.minLng));
+                    bounds.extend(new window.google.maps.LatLng(bounds.maxLat, bounds.maxLng));
+                    map.fitBounds(bounds);
+                }
+            }}
         >
             {/* Today's route stop markers */}
             {todayRoute.map((stop, index) => (
@@ -202,7 +210,7 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], che
                     }}
                     label={{
                         text: `Checkpoint ${index + 1}`,
-                        className: "absolute left-8 bottom-6 w-fit h-fit rounded border border-blue-500 text-nowrap whitespace-wrap bg-white p-1 "
+                        className: "opacity-0 absolute left-8 bottom-6 w-fit h-fit rounded border border-blue-500 text-nowrap whitespace-wrap bg-white p-1 "
                     }}
                 />
             ))}
@@ -226,9 +234,20 @@ const GoogleMapWrapper = ({ center, zoom = 12, markers = [], polylines = [], che
                 <Polyline
                     path={liveRoute}
                     options={{
-                        strokeColor: 'red',
+                        strokeColor: 'black',
                         strokeOpacity: 1,
-                        strokeWeight: 5,
+                        strokeWeight: 7,
+                        editable: false,
+                    }}
+                />
+            )}
+            {Array.isArray(liveRoute) && liveRoute.length > 1 && (
+                <Polyline
+                    path={liveRoute}
+                    options={{
+                        strokeColor: 'yellow',
+                        strokeOpacity: 1,
+                        strokeWeight: 3,
                         editable: false,
                     }}
                 />

@@ -72,7 +72,7 @@ const Header = () => {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-orange-500 text-xs bg-gray-100 peer-focus:bg-orange-50 px-2 py-0.5 rounded">⌘ + K</span>
 
                     {search && (
-                        <div className="absolute left-0 right-0 mt-2 py-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 h-fit w-full sm:w-64 overflow-hidden">
+                        <div className="absolute left-0 right-0 mt-2 py-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 h-fit max-h-64 w-full sm:w-64 overflow-y-auto">
                             {loading && <div className="px-4 py-2 text-sm text-gray-500">Searching...</div>}
                             {!loading && results.length === 0 && <div className="px-4 py-2 text-sm text-gray-500">No results found.</div>}
                             {results.map((item) => (
