@@ -13,6 +13,7 @@ const supabase2 = createClient(
     import.meta.env.VITE_SUPABASE_ANON_KEY_SECOND
 );
 
+const ignoreSalesMan = ["6","20","8","10","12","13","16","21","19"];
 
 const TrackerMap = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -537,7 +538,13 @@ const TrackerMap = () => {
                             className="p-2 border border-gray-300 rounded-md bg-white w-48"
                         >
                             <option value="">All Salesmen</option>
-                            {salesmen.map(s => <option key={s.id} value={s.id}>{s.user.first_name} {s.user.last_name}</option>)}
+                            {salesmen
+                                .filter(s => !ignoreSalesMan.includes(String(s.id)))
+                                .map(s => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.user.first_name} {s.user.last_name}
+                                    </option>
+                                ))}
                         </select>
                         <button onClick={() => {
                             if (isAllTime) {

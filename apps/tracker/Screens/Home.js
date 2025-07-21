@@ -23,7 +23,8 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Zap,
-	RefreshCcw, // Added for refresh functionality
+	RefreshCcw,
+	Scroll, // Added for refresh functionality
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Alert, FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, Animated, ScrollView } from "react-native";
@@ -33,6 +34,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import "react-native-url-polyfill/auto";
 import { apiRequest } from "../utils/api";
 import { useBatteryLevel } from 'expo-battery';
+import * as Network from 'expo-network';
 import { createClient } from "@supabase/supabase-js";
 import { Linking } from "react-native";
 
@@ -282,6 +284,8 @@ const Home = () => {
 	const [isMapReady, setIsMapReady] = useState(false);
 	const [mapDirectionsKey, setMapDirectionsKey] = useState(0);
 	const batteryLevel = useBatteryLevel();
+	const networkState = Network.useNetworkState();
+	console.log(`Current network type: ${networkState.type}`);
 
 	const navigation = useNavigation();
 	const mapRef = useRef(null);
@@ -722,7 +726,7 @@ const Home = () => {
 	}, [currentLocation, plannedRouteMarkers]);
 
 	const canNavigate = useMemo(() => {
-		return plannedRouteMarkers.length >= 2;
+		return plannedRouteMarkers.length >= 1;
 	}, [plannedRouteMarkers]);
 
 	// Battery status and signal strength (mocked for now, can be integrated with native modules)
@@ -750,7 +754,7 @@ const Home = () => {
 
 	return (
 		<SafeAreaView className="flex-1 bg-gray-50">
-			<ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} stickyHeaderIndices={[0]}>
+			<ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} stickyHeaderIndices={[0]} nestedScrollEnabled={true}>
 				{/* Enhanced Header */}
 				<View className="px-4 pt-2 pb-4 bg-white shadow-sm z-20">
 					<View className="flex-row items-center gap-3">
@@ -766,8 +770,8 @@ const Home = () => {
 					</View>
 					{/* Search Results */}
 					{searchResults.length > 0 && (
-						<View className="bg-white rounded-xl border border-gray-200 mb-3 max-h-60 shadow-sm z-10">
-							<ScrollView>
+						<View className="bg-white rounded-xl border border-gray-200 mt-3 max-h-60 shadow-sm z-10">
+							<ScrollView className="max-h-64 h-64 overflow-y-auto" contentContainerStyle={{ flexGrow: 1 }} nestedScrollEnabled={true}>
 								{searchResults.map((item) => (
 									<TouchableOpacity key={item?.id} className="flex-row justify-between items-center py-3 px-4 border-b border-gray-100" onPress={() => handleAddToRoute(item)}>
 										<View className="flex-1">
@@ -805,7 +809,7 @@ const Home = () => {
 					{/* Enhanced Status Bar */}
 					<View className="flex-row justify-between mt-4 bg-gray-50 rounded-xl p-3">
 						<View className="items-center flex-1">
-							<View className="flex-row items-center">
+							<View className="flex-row items-center gap-0">
 								<View className={`w-3 h-3 rounded-full mr-2 ${isTracking ? "bg-green-400" : "bg-red-400"}`} />
 								<Text className={`font-semibold ${isTracking ? "text-green-600" : "text-red-600"}`}>{isTracking ? "Active" : "Inactive"}</Text>
 							</View>
@@ -813,7 +817,7 @@ const Home = () => {
 						</View>
 
 						<View className="items-center flex-1">
-							<View className="flex-row items-center">
+							<View className="flex-row items-center gap-2">
 								<Battery size={18} color={(batteryLevel*100).toFixed(0) < 20 ? "#ef4444" : "#22c55e"} className="mr-1" />
 								<Text className="font-semibold text-gray-800">{(batteryLevel*100).toFixed(0)}%</Text>
 							</View>
@@ -821,7 +825,7 @@ const Home = () => {
 						</View>
 
 						<View className="items-center flex-1">
-							<View className="flex-row items-center">
+							<View className="flex-row items-center gap-0">
 								{signal ? <Wifi size={18} color="#22c55e" /> : <WifiOff size={18} color="#ef4444" />}
 								<Text className="font-semibold text-gray-800 ml-1">{signal ? "Strong" : "Weak"}</Text>
 							</View>
