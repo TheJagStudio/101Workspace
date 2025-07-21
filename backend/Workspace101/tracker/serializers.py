@@ -73,3 +73,4 @@ class AddRouteStopSerializer(serializers.Serializer):
     address = serializers.CharField(required=False, allow_blank=True)
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
+

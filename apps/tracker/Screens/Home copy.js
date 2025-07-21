@@ -4,7 +4,7 @@ import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { Battery, CheckCircle, Clock, MapPin, Play, Route, Search, Settings, Square, Wifi, WifiOff } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { FlatList, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -167,8 +167,8 @@ const Home = () => {
 			// Start background location updates
 			await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
 				accuracy: Location.Accuracy.Highest,
-				timeInterval: 10000, // 10 seconds
-				distanceInterval: 10, // 10 meters
+				timeInterval: 20000, // 20 seconds
+				distanceInterval: 30, // 30 meters
 				foregroundService: {
 					notificationTitle: "Location Tracking",
 					notificationBody: "Your location is being tracked for work routes.",
@@ -227,13 +227,42 @@ const Home = () => {
 		checkCurrentPermissions();
 		handleRegisterTask();
 
+		supabase.auth.getSession().then(async ({ data: { session } }) => {
+			await AsyncStorage.setItem("supabase.auth.token", JSON.stringify(session));
+			if (session) {
+				let userId = session?.user?.id;
+				let { data: salesman, error } = await supabase.from("salesman").select("*").eq("authId", userId).single();
+				if (error) {
+					console.error("Error fetching salesman data:", error);
+					setAlerts((prev) => [
+						...prev,
+						{
+							type: "error",
+							message: "Failed to fetch salesman data.",
+						},
+					]);
+					return;
+				} else {
+					await AsyncStorage.setItem("salesmanInfo", JSON.stringify(salesman));
+					let userInfo = await AsyncStorage.getItem("userInfo");
+					if (!userInfo) {
+						await AsyncStorage.setItem("userInfo", JSON.stringify(salesman));
+					}
+				}
+				await AsyncStorage.setItem("accessToken", session.access_token);
+				await AsyncStorage.setItem("refreshToken", session.refresh_token);
+				await AsyncStorage.setItem("userInfo", JSON.stringify(salesman));
+				await AsyncStorage.setItem("salesmanId", salesman.id.toString());
+			}
+		});
+
 		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/activity/today/`)
 			.then((response) => {
 				setTodaysActivity(response);
 				if (response?.is_tracking) {
 					setIsTracking(response?.is_tracking || false);
 				} else {
-					handleUnregisterTask();
+					// handleUnregisterTask();
 				}
 			})
 			.catch((err) => {
@@ -350,6 +379,21 @@ const Home = () => {
 		}
 	};
 
+	const handleRemoveFromRoute = (placeId) => {
+		apiRequest(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/tracker/salesman/planned_routes/delete_stop/${placeId}/`, {
+			method: "DELETE",
+		}).then(() => {
+			setAlerts((prev) => [
+				...prev,
+				{
+					type: "success",
+					message: "Removed from route successfully.",
+				},
+			]);
+			setRouteHistory((prev) => prev.filter((entry) => entry.id !== placeId));
+		});
+	};
+
 	const handleAddAll = () => {
 		searchResults.forEach((place) => handleAddToRoute(place, true));
 		setSearchResults([]);
@@ -375,7 +419,7 @@ const Home = () => {
 			if (newTrackingStatus) {
 				await handleRegisterTask();
 			} else {
-				await handleUnregisterTask();
+				// await handleUnregisterTask();
 			}
 
 			setIsTracking(newTrackingStatus);
@@ -465,15 +509,12 @@ const Home = () => {
 						<Settings size={30} className="text-white absolute right-2 top-2" color="#fff" />
 					</TouchableOpacity>
 				</View>
-
-				{/* Search Results */}
+				/* Search Results */
 				{searchResults.length > 0 && (
 					<View className="bg-white rounded-xl border border-gray-300 mb-3 pt-1 max-h-56">
-						<FlatList
-							data={searchResults}
-							keyExtractor={(item) => item?.id}
-							renderItem={({ item }) => (
-								<View className="flex-row w-full justify-between items-center py-2 px-3 border-b border-gray-200">
+						<ScrollView style={{ maxHeight: 180 }}>
+							{searchResults.map((item) => (
+								<View key={item?.id} className="flex-row w-full justify-between items-center py-2 px-3 border-b border-gray-200">
 									<View>
 										<Text className="font-bold text-base">{item?.name}</Text>
 										<Text className="text-xs text-gray-500 overflow-hidden w-[70vw]" style={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
@@ -486,8 +527,8 @@ const Home = () => {
 										</TouchableOpacity>
 									)}
 								</View>
-							)}
-						/>
+							))}
+						</ScrollView>
 						<View className="flex-row justify-between bg-gray-200 p-2 rounded-b-xl">
 							<TouchableOpacity className="bg-white py-1 px-3 rounded border border-gray-300" onPress={handleAddAll}>
 								<Text className="text-gray-700 font-semibold">Add All</Text>
@@ -497,9 +538,7 @@ const Home = () => {
 							</TouchableOpacity>
 						</View>
 					</View>
-				)}
-
-				{/* Status Indicators */}
+				)}{" "}
 				<View className="flex-row justify-between mb-4 mt-2">
 					<View className="items-center flex-1">
 						<Text className={`font-bold text-lg ${isTracking ? "text-green-600" : "text-red-600"}`}>{isTracking ? "Active" : "Inactive"}</Text>
@@ -517,62 +556,75 @@ const Home = () => {
 						<Text className="text-xs text-gray-500">Signal</Text>
 					</View>
 				</View>
-
 				{/* Tracking Button */}
 				<TouchableOpacity className={`w-full py-4 rounded-lg items-center mb-4 flex-row justify-center ${isTracking ? "bg-red-500" : "bg-green-500"}`} onPress={handleToggleTracking}>
 					{isTracking ? <Square size={24} className="mr-2" color="#fff" /> : <Play size={24} className="mr-2" color="#fff" />}
 					<Text className="text-white font-bold text-lg ml-2">{isTracking ? "Stop Tracking" : "Start Tracking"}</Text>
 				</TouchableOpacity>
-
 				{/* Map Section */}
 				<View className="mb-4 rounded-xl overflow-hidden bg-white border border-gray-200" style={{ height: "50%" }}>
-					{plannedRouteMarkers.length > 0 ? (
-						<MapView style={StyleSheet.absoluteFill} region={initialRegion} center={initialRegion} showsUserLocation={true} showsMyLocationButton={true} showsCompass={true} showsScale={true} showsTraffic={false} loadingEnabled={true} loadingIndicatorColor="#3498db" loadingBackgroundColor="#f0f0f0">
-							{plannedRouteMarkers.map((marker) => (
-								<Marker key={marker.id} coordinate={marker.coordinate} title={marker.title} description={marker.description}>
-									<View
-										style={{
-											backgroundColor: "#3498db",
-											padding: 5,
-											borderRadius: 50,
-											borderWidth: 3,
-											borderColor: "white",
-										}}
-									>
-										<MapPin size={20} color="#fff" />
-									</View>
-								</Marker>
-							))}
-							{currentLocation && (
-								<Marker
-									coordinate={{
-										latitude: currentLocation.latitude,
-										longitude: currentLocation.longitude,
+					<MapView style={StyleSheet.absoluteFill} region={initialRegion} center={initialRegion} showsUserLocation={true} showsMyLocationButton={true} showsCompass={true} showsScale={true} showsTraffic={false} loadingEnabled={true} loadingIndicatorColor="#3498db" loadingBackgroundColor="#f0f0f0">
+						{plannedRouteMarkers?.map((marker) => (
+							<Marker key={marker.id} coordinate={marker.coordinate} title={marker.title} description={marker.description}>
+								<TouchableOpacity
+									onPress={() => {
+										Alert.alert("Marker Focused", `You focused on ${marker.title}`);
 									}}
-									title="My Location"
+									style={{
+										backgroundColor: "#3498db",
+										padding: 5,
+										borderRadius: 50,
+										borderWidth: 3,
+										borderColor: "white",
+									}}
 								>
-									<View
-										style={{
-											backgroundColor: "#4CAF50",
-											padding: 5,
-											borderRadius: 50,
-											borderWidth: 3,
-											borderColor: "white",
-										}}
-									>
-										<MapPin size={20} color="#fff" />
-									</View>
-								</Marker>
-							)}
-							{plannedRouteMarkers && <MapViewDirections origin={plannedRouteMarkers[0].coordinate} destination={plannedRouteMarkers[plannedRouteMarkers.length - 1].coordinate} apikey={process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY} strokeWidth={4} strokeColor="orange" precision="high" timePrecision="now" optimizeWaypoints={true} waypoints={plannedRouteMarkers.map((marker) => marker.coordinate)} />}
-						</MapView>
-					) : (
-						<View className="flex-1 items-center justify-center">
-							<Text className="text-gray-400">No planned route stops to display on map.</Text>
-						</View>
-					)}
+									<MapPin size={20} color="#fff" />
+								</TouchableOpacity>
+							</Marker>
+						))}
+						{currentLocation && (
+							<Marker
+								coordinate={{
+									latitude: currentLocation.latitude,
+									longitude: currentLocation.longitude,
+								}}
+								title="My Location"
+							>
+								<View
+									style={{
+										backgroundColor: "#4CAF50",
+										padding: 5,
+										borderRadius: 50,
+										borderWidth: 3,
+										borderColor: "white",
+									}}
+								>
+									<MapPin size={20} color="#fff" />
+								</View>
+							</Marker>
+						)}
+						{plannedRouteMarkers && <MapViewDirections origin={plannedRouteMarkers?.[0]?.coordinate} destination={plannedRouteMarkers[plannedRouteMarkers.length - 1]?.coordinate} apikey={process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY} strokeWidth={6} strokeColor="black" precision="low" timePrecision="now" optimizeWaypoints={true} waypoints={plannedRouteMarkers.map((marker) => marker.coordinate)} />}
+						{plannedRouteMarkers && (
+							<MapViewDirections
+								onStart={() => {
+									console.log("Route calculation started");
+								}}
+								onReady={(result) => {
+									console.log("Route is ready:", result);
+								}}
+								origin={plannedRouteMarkers?.[0]?.coordinate}
+								destination={plannedRouteMarkers[plannedRouteMarkers.length - 1]?.coordinate}
+								apikey={process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}
+								strokeWidth={4}
+								strokeColor="yellow"
+								precision="low"
+								timePrecision="now"
+								optimizeWaypoints={true}
+								waypoints={plannedRouteMarkers.map((marker) => marker.coordinate)}
+							/>
+						)}
+					</MapView>
 				</View>
-
 				{/* Today's Activity */}
 				<View className="bg-white rounded-xl p-4 mb-4">
 					<Text className="font-bold text-gray-800 mb-2">Today's Activity</Text>

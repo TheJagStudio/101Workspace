@@ -7,27 +7,32 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.filters import SearchFilter 
+from rest_framework.filters import SearchFilter
 from .models import Salesman, DailyActivity, AdminSettings, SystemNotification, PlannedRoute, RouteStop, LocationPoint
 from .serializers import SalesmanSerializer, DailyActivitySerializer, AdminSettingsSerializer, SystemNotificationSerializer, PlannedRouteReadSerializer, PlannedRouteWriteSerializer, SalesmanStatusUpdateSerializer, SalesmanTrackingStatusSerializer, RouteStopStatusUpdateSerializer, AddRouteStopSerializer
 from .permissions import IsAdmin, IsSalesman
 from dotenv import load_dotenv
+
 load_dotenv()
+
+
 def notifyMe(message, channel):
     try:
         headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            "Content-Type": "application/x-www-form-urlencoded",
         }
         data = message
-        response = requests.post(f'https://thejagstudio-ntfy.hf.space/{channel}', headers=headers, data=data)
+        response = requests.post(f"https://thejagstudio-ntfy.hf.space/{channel}", headers=headers, data=data)
         print(response.text)
     except Exception as e:
         print(f"Error notifying: {e}")
     return
 
+
 # ===================================================================
 # ADMIN VIEWS
 # ===================================================================
+
 
 class AdminSalesmanListView(generics.ListAPIView):
     """
@@ -35,12 +40,13 @@ class AdminSalesmanListView(generics.ListAPIView):
     GET: /api/tracker/admin/salesmen/
     GET: /api/tracker/admin/salesmen/?search=<query>
     """
-    queryset = Salesman.objects.select_related('user').all()
+
+    queryset = Salesman.objects.select_related("user").all()
     serializer_class = SalesmanSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     # Add SearchFilter
     filter_backends = [SearchFilter]
-    search_fields = ['user__username', 'user__first_name', 'user__last_name']
+    search_fields = ["user__username", "user__first_name", "user__last_name"]
 
 
 class AdminSalesmanDetailView(generics.RetrieveAPIView):
@@ -292,11 +298,13 @@ class SalesmanRouteStopUpdateStatusView(generics.UpdateAPIView):
         stop.visited_at = timezone.now()
         stop.save()
 
+
 class SalesmanTodayActivityView(views.APIView):
     """
     (Salesman) Retrieves or creates today's activity log for the logged-in salesman.
     GET: /api/tracker/salesman/activity/today/
     """
+
     permission_classes = [IsAuthenticated, IsSalesman]
 
     def get(self, request, *args, **kwargs):
@@ -318,6 +326,7 @@ class SalesmanMonthlyStatsView(views.APIView):
     (Salesman) Retrieves aggregated stats for the current month for the salesman.
     GET: /api/tracker/salesman/stats/monthly/
     """
+
     permission_classes = [IsAuthenticated, IsSalesman]
 
     def get(self, request, *args, **kwargs):
@@ -325,19 +334,9 @@ class SalesmanMonthlyStatsView(views.APIView):
         today = timezone.now().date()
         first_day_of_month = today.replace(day=1)
 
-        stats = DailyActivity.objects.filter(
-            salesman=salesman,
-            date__gte=first_day_of_month,
-            date__lte=today
-        ).aggregate(
-            total_visits=Sum('checkpoints'),
-            active_days=Count('id')
-        )
-        
-        return Response({
-            "total_visits": stats.get('total_visits') or 0,
-            "active_days": stats.get('active_days') or 0
-        }, status=status.HTTP_200_OK)
+        stats = DailyActivity.objects.filter(salesman=salesman, date__gte=first_day_of_month, date__lte=today).aggregate(total_visits=Sum("checkpoints"), active_days=Count("id"))
+
+        return Response({"total_visits": stats.get("total_visits") or 0, "active_days": stats.get("active_days") or 0}, status=status.HTTP_200_OK)
 
 
 class SalesmanAddRouteStopView(views.APIView):
@@ -346,30 +345,38 @@ class SalesmanAddRouteStopView(views.APIView):
     Creates the route if it doesn't exist.
     POST: /api/tracker/salesman/planned_routes/add_stop/
     """
+
     permission_classes = [IsAuthenticated, IsSalesman]
 
     def post(self, request, *args, **kwargs):
         serializer = AddRouteStopSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         data = serializer.validated_data
         salesman = request.user.salesmen.get()
 
         with transaction.atomic():
-            planned_route, created = PlannedRoute.objects.get_or_create(
-                salesman=salesman,
-                date=timezone.now().date(),
-                defaults={'name': f"Route for {timezone.now().strftime('%Y-%m-%d')}"}
-            )
+            planned_route, created = PlannedRoute.objects.get_or_create(salesman=salesman, date=timezone.now().date(), defaults={"name": f"Route for {timezone.now().strftime('%Y-%m-%d')}"})
 
             # CORRECTED LINE: Using models.Max after importing models
-            last_order = planned_route.stops.aggregate(max_order=models.Max('order'))['max_order'] or 0
-            
-            stop = RouteStop.objects.create(
-                route=planned_route,
-                order=last_order + 1,
-                **data
-            )
+            last_order = planned_route.stops.aggregate(max_order=models.Max("order"))["max_order"] or 0
+
+            stop = RouteStop.objects.create(route=planned_route, order=last_order + 1, **data)
 
         return Response({"message": "Stop added successfully", "stop_id": stop.id}, status=status.HTTP_201_CREATED)
+
+
+class SalesmanDeleteRouteStopView(views.APIView):
+    """
+    (Salesman) Deletes a stop from the planned route for today using the stop's id.
+    DELETE: /api/tracker/salesman/planned_routes/delete_stop/<stop_id>/
+    """
+
+    permission_classes = [IsAuthenticated, IsSalesman]
+
+    def delete(self, request, stop_id, *args, **kwargs):
+        salesman = request.user.salesmen.get()
+        stop = get_object_or_404(RouteStop, id=stop_id, route__salesman=salesman, route__date=timezone.now().date())
+        stop.delete()
+        return Response({"message": "Stop deleted successfully."}, status=200)

@@ -23,4 +23,5 @@ urlpatterns = [
     path("salesman/activity/today/", views.SalesmanTodayActivityView.as_view(), name="salesman-today-activity"),
     path("salesman/stats/monthly/", views.SalesmanMonthlyStatsView.as_view(), name="salesman-monthly-stats"),
     path("salesman/planned_routes/add_stop/", views.SalesmanAddRouteStopView.as_view(), name="salesman-add-route-stop"),
+    path("salesman/planned_routes/delete_stop/<int:stop_id>/", views.SalesmanDeleteRouteStopView.as_view(), name="salesman-delete-route-stop"),
 ]
