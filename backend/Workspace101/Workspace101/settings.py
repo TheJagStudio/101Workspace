@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     "sync",
     "delivery",
     "tracker",
+    "accounts",
+    "utility",
     "import_export",
     "corsheaders",
     "rest_framework",

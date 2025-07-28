@@ -7,6 +7,8 @@ urlpatterns = [
     path("api/auth/", include("authAPI.urls")),
     path("api/sync/", include("sync.urls")),
     path("api/tracker/", include("tracker.urls")),
+    path("api/accounts/", include("accounts.urls")),
+    path("api/utility/", include("utility.urls")),
     path("api/delivery/", include("delivery.urls")),
     path("api-auth/", include("rest_framework.urls")),
     path("admin/", admin.site.urls),

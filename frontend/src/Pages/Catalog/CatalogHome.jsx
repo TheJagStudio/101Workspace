@@ -1,56 +1,40 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
-    Move,
-    Grid,
-    Image,
-    Type,
-    Plus,
-    Trash2,
-    RotateCw,
-    Save,
-    Upload,
-    Settings,
-    Copy,
-    Eye,
-    Download,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
-    Bold,
-    Italic,
-    Underline,
-    AlignCenter,
-    AlignLeft,
-    AlignRight,
-    Layers,
-    EyeOff,
-    Lock,
-    Unlock,
-    GripHorizontal,
-    Square,
     Circle,
-    Triangle,
-    Minus,
+    Eye,
+    EyeOff,
+    GripHorizontal,
     Group,
+    Image,
+    Layers,
+    Lock,
+    Minus,
+    Plus,
+    RotateCw,
+    Square,
+    Trash2,
+    Triangle,
+    Type,
     Ungroup,
+    Unlock,
     ZoomIn,
-    ZoomOut,
-    MoveHorizontal,
-    AlignStartHorizontal,
-    AlignCenterHorizontal,
-    AlignEndHorizontal,
-    AlignStartVertical,
-    AlignCenterVertical,
-    AlignEndVertical,
+    ZoomOut
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
-import ProductLibrary from '../../components/ProductLibrary';
-import PropertiesPanel from '../../components/PropertiesPanel';
-import ShapeElement from '../../components/ShapeElement';
-import PageThumbnail from '../../components/PageThumbnail';
-import AlignmentTools from '../../components/AlignmentTools';
-import {alignElements} from '../../utils/elementAlignment';
+import { ALIGNMENT_TYPES } from '../../constants/canvasConstants';
+import { useCanvas } from '../../context/CanvasContext';
+import Canvas from './Canvas';
+import useKeyboardShortcuts from '../../hooks/useKeyboardShortcuts';
+import useDragAndDrop from '../../hooks/useDragAndDrop';
+import useSelection from '../../hooks/useSelection';
+import useHistory from '../../hooks/useHistory';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import AlignmentTools from '../../Components/Catalog/AlignmentTools';
+import PageThumbnail from '../../Components/Catalog/PageThumbnail';
+import ProductLibrary from '../../Components/Catalog/ProductLibrary';
+import PropertiesPanel from '../../Components/Catalog/PropertiesPanel';
+import ShapeElement from '../../Components/Catalog/ShapeElement';
 
 // A custom hook to keep state in sync with localStorage
 const useLocalStorageState = (key, defaultValue) => {
@@ -159,81 +143,76 @@ const CollapsibleSection = ({ title, children }) => {
 };
 
 
-export default function CatalogHome() {
-    // Multi-page state
-    const [pages, setPages] = useLocalStorageState('catalog-pages', [
-        {
-            id: 'page-1',
-            pageNumber: 1,
-            elements: initialElements,
-            settings: initialSettings
-        }
-    ]);
-    const [activePage, setActivePage] = useState(0);
+/**
+ * Main component for the Catalog Editor
+ * @returns {JSX.Element} The Catalog Editor component
+ */
+const CatalogHome = () => {
+    const {
+        pages,
+        activePage,
+        selectedElements,
+        transform,
+        isPanning,
+        handlePanStart,
+        handlePanMove,
+        handlePanEnd,
+        zoomIn,
+        zoomOut,
+        addElement,
+        updateElement,
+        deleteElements,
+        selectElements,
+        groupElements,
+        ungroupElements,
+        alignElements,
+        setActivePage,
+        setPages,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+    } = useCanvas();
+
+    // Local UI state
     const [selectedElement, setSelectedElement] = useState(null);
+    const [activeTab, setActiveTab] = useState('elements');
     const [isDragging, setIsDragging] = useState(false);
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+    const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
+    const [initialElementState, setInitialElementState] = useState(null);
     const [action, setAction] = useState({ type: null });
-    const [selectedElements, setSelectedElements] = useState(new Set());
-    const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
-    const [isPanning, setIsPanning] = useState(false);
-    const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
     const [shapes] = useState([
         { type: 'rectangle', icon: Square },
         { type: 'circle', icon: Circle },
         { type: 'triangle', icon: Triangle },
         { type: 'line', icon: Minus }
     ]);
-    const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
-    const [initialElementState, setInitialElementState] = useState(null);
-    const [activeTab, setActiveTab] = useState('elements');
 
     const canvasRef = useRef(null);
     const elementRefs = useRef({});
 
-    // Add keyboard event handlers for panning
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.code === 'Space' && !isPanning) {
-                setIsPanning(true);
-                document.body.style.cursor = 'grab';
-            }
-        };
+    // Setup keyboard shortcuts
+    useKeyboardShortcuts({
+        onDelete: () => selectedElements.size > 0 && deleteElements([...selectedElements]),
+        onUndo: undo,
+        onRedo: redo
+    });
 
-        const handleKeyUp = (e) => {
-            if (e.code === 'Space') {
-                setIsPanning(false);
-                document.body.style.cursor = 'default';
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [isPanning]);
-
-    // Add zoom handlers
-    const handleZoomIn = () => {
-        setTransform(prev => ({
-            ...prev,
-            scale: Math.min(prev.scale * 1.2, 3)
-        }));
-    };
-
-    const handleZoomOut = () => {
-        setTransform(prev => ({
-            ...prev,
-            scale: Math.max(prev.scale / 1.2, 0.3)
-        }));
-    };
-
-    // Updated mouse handlers
-    const handleMouseDown = (e, element) => {
+    // Handle element dropping
+    const handleElementDrop = useCallback((position, elementType) => {
         if (isPanning) return;
+
+        addElement({
+            type: elementType,
+            position,
+            size: { width: 100, height: 100 }
+        });
+    }, [addElement, isPanning]);
+
+    // Mouse handlers
+    const handleMouseDown = (e, element) => {
+        if (!canvasRef.current || isPanning) return;
 
         const rect = canvasRef.current.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / (rect.width * transform.scale)) * 100;
@@ -249,50 +228,46 @@ export default function CatalogHome() {
         setSelectedElement(element);
 
         if (!e.shiftKey) {
-            setSelectedElements(new Set([element.id]));
+            selectElements(new Set([element.id]));
         }
     };
-
-    const handleMouseMove = useCallback((e) => {
-        if (isPanning) {
-            const dx = e.clientX - lastMousePos.x;
-            const dy = e.clientY - lastMousePos.y;
-            setTransform(prev => ({
-                ...prev,
-                x: prev.x + dx / prev.scale,
-                y: prev.y + dy / prev.scale
-            }));
-            setLastMousePos({ x: e.clientX, y: e.clientY });
-            return;
-        }
-
-        if (isDragging && selectedElement) {
-            const rect = canvasRef.current.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / (rect.width * transform.scale)) * 100;
-            const y = ((e.clientY - rect.top) / (rect.height * transform.scale)) * 100;
-            
-            const deltaX = x - startPos.x;
-            const deltaY = y - startPos.y;
-
-            const newPages = [...pages];
-            selectedElements.forEach(id => {
-                const element = newPages[activePage].elements.find(el => el.id === id);
-                if (element) {
-                    element.position = {
-                        x: element.position.x + deltaX,
-                        y: element.position.y + deltaY
-                    };
-                }
-            });
-
-            setPages(newPages);
-            setStartPos({ x, y });
-        }
-    }, [isDragging, selectedElement, pages, activePage, startPos, isPanning, lastMousePos, transform.scale, selectedElements]);
 
     const handleMouseUp = () => {
         setIsDragging(false);
         setAction({ type: null });
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging || !selectedElement || !canvasRef.current || isPanning) return;
+
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / (rect.width * transform.scale)) * 100;
+        const y = ((e.clientY - rect.top) / (rect.height * transform.scale)) * 100;
+
+        const deltaX = x - startPos.x;
+        const deltaY = y - startPos.y;
+
+        // Update element position
+        const newPosition = {
+            x: initialElementState.position.x + deltaX,
+            y: initialElementState.position.y + deltaY
+        };
+
+        updateElement(selectedElement.id, { position: newPosition });
+    };
+
+    // Zoom handlers
+    const handleZoomIn = () => {
+        zoomIn();
+    };
+
+    const handleZoomOut = () => {
+        zoomOut();
+    };
+
+    // Element update handler
+    const handleElementUpdate = (elementId, updates) => {
+        updateElement(elementId, updates);
     };
 
     // Selection handlers
@@ -319,7 +294,7 @@ export default function CatalogHome() {
         if (selectedElements.size < 2) return;
 
         const selectedElementsArray = Array.from(selectedElements);
-        const elementsToGroup = selectedElementsArray.map(id => 
+        const elementsToGroup = selectedElementsArray.map(id =>
             pages[activePage].elements.find(el => el.id === id)
         ).filter(Boolean);
 
@@ -348,14 +323,14 @@ export default function CatalogHome() {
             el => !selectedElementsArray.includes(el.id)
         );
         newPages[activePage].elements.push(groupElement);
-        
+
         setPages(newPages);
         setSelectedElements(new Set([groupElement.id]));
         setSelectedElement(groupElement);
     };
 
     const handleUngroup = () => {
-        if (!selectedElement?.type === 'group') return;
+        if (selectedElement?.type !== 'group') return;
 
         const groupElement = pages[activePage].elements.find(
             el => el.id === selectedElement.id
@@ -389,7 +364,7 @@ export default function CatalogHome() {
 
         const alignedElements = alignElements(selectedElementsArray, type);
         const newPages = [...pages];
-        
+
         alignedElements.forEach(alignedEl => {
             const index = newPages[activePage].elements.findIndex(el => el.id === alignedEl.id);
             if (index !== -1) {
@@ -402,258 +377,213 @@ export default function CatalogHome() {
 
     // -- RENDER --
     return (
-        <div 
-            className="flex h-screen bg-gray-50"
-            tabIndex={-1}
-        >
-            {/* Left Sidebar */}
-            <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-                <div className="p-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-700">Catalog Editor</h2>
-                </div>
-                
-                {/* Sidebar Tabs */}
-                <div className="flex border-b border-gray-200">
-                    <button
-                        className={`flex-1 py-2 text-sm font-medium ${activeTab === 'elements' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                        onClick={() => setActiveTab('elements')}
-                    >
-                        Elements
-                    </button>
-                    <button
-                        className={`flex-1 py-2 text-sm font-medium ${activeTab === 'products' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                        onClick={() => setActiveTab('products')}
-                    >
-                        Products
-                    </button>
-                    <button
-                        className={`flex-1 py-2 text-sm font-medium ${activeTab === 'layers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                        onClick={() => setActiveTab('layers')}
-                    >
-                        Layers
-                    </button>
-                </div>
+        <div>
+            <div className="flex h-screen bg-gray-50">
+                {/* Left Sidebar */}
+                <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+                    <div className="p-4 border-b border-gray-200">
+                        <h2 className="text-lg font-semibold text-gray-700">Catalog Editor</h2>
+                    </div>
+                    {/* Sidebar Tabs */}
+                    <div className="flex border-b border-gray-200">
+                        <button
+                            className={`flex-1 py-2 text-sm font-medium ${activeTab === 'elements' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                            onClick={() => setActiveTab('elements')}
+                        >
+                            Elements
+                        </button>
+                        <button
+                            className={`flex-1 py-2 text-sm font-medium ${activeTab === 'products' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                            onClick={() => setActiveTab('products')}
+                        >
+                            Products
+                        </button>
+                        <button
+                            className={`flex-1 py-2 text-sm font-medium ${activeTab === 'layers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                            onClick={() => setActiveTab('layers')}
+                        >
+                            Layers
+                        </button>
+                    </div>
 
-                {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto">
-                    {activeTab === 'elements' && (
-                        <div className="p-4 space-y-4">
-                            <button
-                                onClick={() => addElement('text')}
-                                className="w-full flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-                            >
-                                <Type size={16} />
-                                <span>Add Text</span>
-                            </button>
-                            <button
-                                onClick={() => addElement('image')}
-                                className="w-full flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-                            >
-                                <Image size={16} />
-                                <span>Add Image</span>
-                            </button>
-                            
-                            {/* Shapes Section */}
-                            <div className="border-t border-gray-200 pt-4">
-                                <h3 className="text-sm font-medium text-gray-700 mb-2">Shapes</h3>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {shapes.map(({ type, icon: Icon }) => (
-                                        <button
-                                            key={type}
-                                            onClick={() => addElement('shape', { shapeType: type })}
-                                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                    {/* Tab Content */}
+                    <div className="flex-1 overflow-y-auto">
+                        {activeTab === 'elements' && (
+                            <div className="p-4 space-y-4">
+                                <button
+                                    onClick={() => addElement('text')}
+                                    className="w-full flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                                >
+                                    <Type size={16} />
+                                    <span>Add Text</span>
+                                </button>
+                                <button
+                                    onClick={() => addElement('image')}
+                                    className="w-full flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                                >
+                                    <Image size={16} />
+                                    <span>Add Image</span>
+                                </button>
+
+                                {/* Shapes Section */}
+                                <div className="border-t border-gray-200 pt-4">
+                                    <h3 className="text-sm font-medium text-gray-700 mb-2">Shapes</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {shapes.map(({ type, icon: Icon }) => (
+                                            <button
+                                                key={type}
+                                                onClick={() => addElement('shape', { shapeType: type })}
+                                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                                            >
+                                                <Icon size={16} />
+                                                <span className="capitalize">{type}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'products' && (
+                            <ProductLibrary
+                                products={products}
+                                onProductDragStart={() => { }}
+                            />
+                        )}
+                        {activeTab === 'layers' && (
+                            <div className="p-4">
+                                <div className="space-y-2">
+                                    {pages[activePage].elements.map((element) => (
+                                        <div
+                                            key={element.id}
+                                            className={`flex items-center gap-2 p-2 rounded cursor-pointer ${selectedElements.has(element.id) ? 'bg-indigo-50' : 'hover:bg-gray-50'
+                                                }`}
+                                            onClick={(e) => handleElementClick(e, element)}
                                         >
-                                            <Icon size={16} />
-                                            <span className="capitalize">{type}</span>
-                                        </button>
+                                            <GripHorizontal size={16} className="text-gray-400" />
+                                            <span className="text-sm truncate">
+                                                {element.type === 'text' ? element.content :
+                                                    element.type === 'group' ? `Group (${element.children.length})` :
+                                                        `${element.type} ${element.id.split('-')[1]}`}
+                                            </span>
+                                            {element.visible !== false && <Eye size={16} className="ml-auto text-gray-400" />}
+                                            {element.visible === false && <EyeOff size={16} className="ml-auto text-gray-400" />}
+                                        </div>
                                     ))}
                                 </div>
                             </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Canvas Area */}
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    {/* Toolbar */}
+                    <div className="h-12 border-b border-gray-200 flex items-center px-4 gap-4">
+                        {/* Zoom Controls */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleZoomOut}
+                                className="p-1 rounded hover:bg-gray-100"
+                                title="Zoom Out"
+                            >
+                                <ZoomOut size={16} />
+                            </button>
+                            <span className="text-sm">{Math.round(transform.scale * 100)}%</span>
+                            <button
+                                onClick={handleZoomIn}
+                                className="p-1 rounded hover:bg-gray-100"
+                                title="Zoom In"
+                            >
+                                <ZoomIn size={16} />
+                            </button>
                         </div>
-                    )}
-                    {activeTab === 'products' && (
-                        <ProductLibrary
-                            products={products}
-                            onProductDragStart={() => {}}
+
+                        {/* Alignment Tools */}
+                        <AlignmentTools
+                            onAlign={handleAlign}
+                            selectedElements={selectedElements}
+                            disabled={selectedElements.size < 2}
                         />
-                    )}
-                    {activeTab === 'layers' && (
-                        <div className="p-4">
-                            <div className="space-y-2">
-                                {pages[activePage].elements.map((element) => (
-                                    <div
-                                        key={element.id}
-                                        className={`flex items-center gap-2 p-2 rounded cursor-pointer ${
-                                            selectedElements.has(element.id) ? 'bg-indigo-50' : 'hover:bg-gray-50'
-                                        }`}
-                                        onClick={(e) => handleElementClick(e, element)}
-                                    >
-                                        <GripHorizontal size={16} className="text-gray-400" />
-                                        <span className="text-sm truncate">
-                                            {element.type === 'text' ? element.content : 
-                                             element.type === 'group' ? `Group (${element.children.length})` :
-                                             `${element.type} ${element.id.split('-')[1]}`}
-                                        </span>
-                                        {element.visible !== false && <Eye size={16} className="ml-auto text-gray-400" />}
-                                        {element.visible === false && <EyeOff size={16} className="ml-auto text-gray-400" />}
-                                    </div>
-                                ))}
-                            </div>
+
+                        {/* Group Controls */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleGroup}
+                                disabled={selectedElements.size < 2}
+                                className={`p-1 rounded hover:bg-gray-100 ${selectedElements.size < 2 ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                title="Group Elements"
+                            >
+                                <Group size={16} />
+                            </button>
+                            <button
+                                onClick={handleUngroup}
+                                disabled={selectedElement?.type !== 'group'}
+                                className={`p-1 rounded hover:bg-gray-100 ${selectedElement?.type !== 'group' ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                title="Ungroup Elements"
+                            >
+                                <Ungroup size={16} />
+                            </button>
                         </div>
-                    )}
+                    </div>
+
+                    {/* Canvas */}
+                    <div className="flex-1 overflow-auto p-8 bg-gray-100">
+                        <Canvas
+                            ref={canvasRef}
+                            transform={transform}
+                            isPanning={isPanning}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            activePage={pages[activePage]}
+                            selectedElements={selectedElements}
+                            onElementUpdate={handleElementUpdate}
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Main Canvas Area */}
-            <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Toolbar */}
-                <div className="h-12 border-b border-gray-200 flex items-center px-4 gap-4">
-                    {/* Zoom Controls */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleZoomOut}
-                            className="p-1 rounded hover:bg-gray-100"
-                            title="Zoom Out"
-                        >
-                            <ZoomOut size={16} />
-                        </button>
-                        <span className="text-sm">{Math.round(transform.scale * 100)}%</span>
-                        <button
-                            onClick={handleZoomIn}
-                            className="p-1 rounded hover:bg-gray-100"
-                            title="Zoom In"
-                        >
-                            <ZoomIn size={16} />
-                        </button>
-                    </div>
-
-                    {/* Alignment Tools */}
-                    <AlignmentTools
-                        onAlign={handleAlign}
-                        selectedElements={selectedElements}
-                        disabled={selectedElements.size < 2}
-                    />
-
-                    {/* Group Controls */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleGroup}
-                            disabled={selectedElements.size < 2}
-                            className={`p-1 rounded hover:bg-gray-100 ${
-                                selectedElements.size < 2 ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                            title="Group Elements"
-                        >
-                            <Group size={16} />
-                        </button>
-                        <button
-                            onClick={handleUngroup}
-                            disabled={!selectedElement?.type === 'group'}
-                            className={`p-1 rounded hover:bg-gray-100 ${
-                                !selectedElement?.type === 'group' ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                            title="Ungroup Elements"
-                        >
-                            <Ungroup size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Canvas */}
-                <div className="flex-1 overflow-auto p-8 bg-gray-100">
-                    <div
-                        ref={canvasRef}
-                        className="w-[8.5in] h-[11in] bg-white mx-auto shadow-lg transform origin-center"
-                        style={{
-                            ...pages[activePage].style,
-                            transform: `scale(${transform.scale}) translate(${transform.x}px, ${transform.y}px)`
-                        }}
-                        onDragOver={(e) => e.preventDefault()}
-                        // onDrop={handleDrop}
+            {/* Page Navigator */}
+            <div className="h-32 border-t border-gray-200 overflow-x-auto whitespace-nowrap">
+                <div className="flex gap-4 p-4">
+                    {pages.map((page, index) => (
+                        <PageThumbnail
+                            key={page.id}
+                            page={page}
+                            isActive={index === activePage}
+                            onClick={() => setActivePage(index)}
+                        />
+                    ))}
+                    <button
                         onClick={() => {
-                            setSelectedElement(null);
-                            setSelectedElements(new Set());
+                            const newPage = createNewPage(pages.length + 1);
+                            setPages([...pages, newPage]);
+                            setActivePage(pages.length);
                         }}
+                        className="w-[85px] h-[110px] border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
                     >
-                        {pages[activePage].elements.map((element) => (
-                            <div
-                                key={element.id}
-                                ref={(el) => elementRefs.current[element.id] = el}
-                                className={`absolute ${
-                                    selectedElements.has(element.id) ? 'outline-2 outline-blue-500' : ''
-                                }`}
-                                style={{
-                                    left: `${element.position.x}%`,
-                                    top: `${element.position.y}%`,
-                                    width: `${element.size.width}%`,
-                                    height: `${element.size.height}%`,
-                                    cursor: isPanning ? 'grab' : 'move',
-                                    ...element.style
-                                }}
-                                onClick={(e) => handleElementClick(e, element)}
-                                onMouseDown={(e) => handleMouseDown(e, element)}
-                            >
-                                {element.type === 'text' && (
-                                    <div
-                                        contentEditable={selectedElements.has(element.id)}
-                                        suppressContentEditableWarning={true}
-                                        onBlur={(e) => {
-                                            handleElementUpdate(element.id, {
-                                                content: e.target.innerHTML
-                                            });
-                                        }}
-                                        dangerouslySetInnerHTML={{ __html: element.content }}
-                                        className="w-full h-full"
-                                    />
-                                )}
-                                {element.type === 'image' && (
-                                    <img
-                                        src={element.content}
-                                        alt=""
-                                        className="w-full h-full object-contain"
-                                    />
-                                )}
-                                {element.type === 'shape' && (
-                                    <ShapeElement
-                                        shape={element.shapeType}
-                                        style={element.style}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Page Navigator */}
-                <div className="h-32 border-t border-gray-200 overflow-x-auto whitespace-nowrap">
-                    <div className="flex gap-4 p-4">
-                        {pages.map((page, index) => (
-                            <PageThumbnail
-                                key={index}
-                                page={page}
-                                isActive={index === activePage}
-                                onClick={() => setActivePage(index)}
-                            />
-                        ))}
-                        <button
-                            // onClick={addPage}
-                            className="w-[85px] h-[110px] border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
-                        >
-                            <Plus size={24} />
-                        </button>
-                    </div>
+                        <Plus size={24} />
+                    </button>
                 </div>
             </div>
 
             {/* Right Properties Panel */}
-            <PropertiesPanel
-                selectedElement={selectedElement}
-                // onElementUpdate={handleElementUpdate}
-                activePage={pages[activePage]}
-            />
-        </div>
+            {
+                selectedElement && (
+                    <PropertiesPanel
+                        selectedElement={selectedElement}
+                        onElementUpdate={handleElementUpdate}
+                        activePage={pages[activePage]}
+                    />
+                )
+            }
+        </div >
     );
 }
+
+export default CatalogHome;
 
 // Canvas Element Component
 const CanvasElement = ({ element, isSelected, onMouseDown }) => {

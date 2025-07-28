@@ -466,6 +466,8 @@ class ModulePermissions(models.Model):
     tracker = models.BooleanField(default=False)
     delivery = models.BooleanField(default=False)
     catalog = models.BooleanField(default=False)
+    accounts = models.BooleanField(default=False)
+    utility = models.BooleanField(default=False)
 
     purchase_PO = models.BooleanField(default=False)
     purchase_Inventory = models.BooleanField(default=False)
@@ -478,6 +480,9 @@ class ModulePermissions(models.Model):
     tracker_config = models.BooleanField(default=False)
     tracker_Admin_Profile = models.BooleanField(default=False)
     tracker_Profile = models.BooleanField(default=False)
+
+    utility_sticker = models.BooleanField(default=False)
+    utility_product_sync = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - Permissions"

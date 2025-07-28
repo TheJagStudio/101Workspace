@@ -144,20 +144,26 @@ class ModulePermissionsAdmin(ImportExportModelAdmin):
         "purchase",
         "tracker",
         "delivery",
-        "catalog"
+        "catalog",
+        "accounts",
+        "utility",
     )
     search_fields = ("user__username",)
     list_filter = (
         "purchase",
         "tracker",
         "delivery",
-        "catalog"
+        "catalog",
+        "accounts",
+        "utility",
     )
     list_editable = (
         "purchase",
         "tracker",
         "delivery",
-        "catalog"
+        "catalog",
+        "accounts",
+        "utility",
     )
     autocomplete_fields = ["user"]
 

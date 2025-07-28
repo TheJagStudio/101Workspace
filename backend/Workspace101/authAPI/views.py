@@ -241,6 +241,8 @@ def get_user_info(user):
             "tracker": permissions.tracker,
             "delivery": permissions.delivery,
             "catalog": permissions.catalog,
+            "accounts": permissions.accounts,
+            "utility": permissions.utility,
             "purchase_PO": permissions.purchase_PO,
             "purchase_Inventory": permissions.purchase_Inventory,
             "purchase_Settings": permissions.purchase_Settings,
@@ -250,7 +252,9 @@ def get_user_info(user):
             "tracker_Global_View": permissions.tracker_Global_View,
             "tracker_config": permissions.tracker_config,
             "tracker_Admin_Profile": permissions.tracker_Admin_Profile,
-            "tracker_Profile": permissions.tracker_Profile
+            "tracker_Profile": permissions.tracker_Profile,
+            "utility_sticker": permissions.utility_sticker,
+            "utility_product_sync": permissions.utility_product_sync,
         }
     else:
         userPermissions = {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   AlignStartHorizontal,
   AlignCenterHorizontal,
@@ -6,79 +6,79 @@ import {
   AlignStartVertical,
   AlignCenterVertical,
   AlignEndVertical,
+  ArrowLeftRight,
+  ArrowUpDown,
 } from 'lucide-react';
+import { ALIGNMENT_TYPES } from '../../constants/canvasConstants';
 
-const AlignmentTools = ({ onAlign, selectedElements, disabled }) => {
+const AlignmentButton = memo(({ onClick, disabled, icon: Icon, title }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`
+      p-1.5 rounded transition-all duration-150
+      ${disabled 
+        ? 'opacity-50 cursor-not-allowed' 
+        : 'hover:bg-indigo-50 hover:text-indigo-600 active:bg-indigo-100'
+      }
+    `}
+    title={title}
+  >
+    <Icon size={16} />
+  </button>
+));
+
+const Divider = memo(() => (
+  <div className="w-px h-6 bg-gray-200 mx-1" />
+));
+
+const AlignmentTools = memo(({ onAlign, selectedElements, disabled }) => {
+  const alignmentButtons = [
+    {
+      group: 'horizontal',
+      buttons: [
+        { type: ALIGNMENT_TYPES.LEFT, icon: AlignStartHorizontal, title: 'Align Left' },
+        { type: ALIGNMENT_TYPES.CENTER_X, icon: AlignCenterHorizontal, title: 'Center Horizontally' },
+        { type: ALIGNMENT_TYPES.RIGHT, icon: AlignEndHorizontal, title: 'Align Right' },
+      ]
+    },
+    {
+      group: 'vertical',
+      buttons: [
+        { type: ALIGNMENT_TYPES.TOP, icon: AlignStartVertical, title: 'Align Top' },
+        { type: ALIGNMENT_TYPES.CENTER_Y, icon: AlignCenterVertical, title: 'Center Vertically' },
+        { type: ALIGNMENT_TYPES.BOTTOM, icon: AlignEndVertical, title: 'Align Bottom' },
+      ]
+    },
+    {
+      group: 'distribute',
+      buttons: [
+        { type: ALIGNMENT_TYPES.DISTRIBUTE_X, icon: ArrowLeftRight, title: 'Distribute Horizontally' },
+        { type: ALIGNMENT_TYPES.DISTRIBUTE_Y, icon: ArrowUpDown, title: 'Distribute Vertically' },
+      ]
+    }
+  ];
+
   return (
-    <div className="flex items-center gap-1 p-1 bg-white border border-gray-200 rounded-md">
-      <button
-        onClick={() => onAlign('left')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Align Left"
-      >
-        <AlignStartHorizontal size={16} />
-      </button>
-      <button
-        onClick={() => onAlign('centerX')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Center Horizontally"
-      >
-        <AlignCenterHorizontal size={16} />
-      </button>
-      <button
-        onClick={() => onAlign('right')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Align Right"
-      >
-        <AlignEndHorizontal size={16} />
-      </button>
-      <div className="w-px h-6 bg-gray-200 mx-1" />
-      <button
-        onClick={() => onAlign('top')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Align Top"
-      >
-        <AlignStartVertical size={16} />
-      </button>
-      <button
-        onClick={() => onAlign('centerY')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Center Vertically"
-      >
-        <AlignCenterVertical size={16} />
-      </button>
-      <button
-        onClick={() => onAlign('bottom')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Align Bottom"
-      >
-        <AlignEndVertical size={16} />
-      </button>
-      <div className="w-px h-6 bg-gray-200 mx-1" />
-      <button
-        onClick={() => onAlign('distributeX')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Distribute Horizontally"
-      >
-        {/* <SpaceHorizontally size={16} /> */}
-      </button>
-      <button
-        onClick={() => onAlign('distributeY')}
-        disabled={disabled}
-        className={`p-1.5 rounded hover:bg-gray-100 ${disabled ? 'opacity-50' : ''}`}
-        title="Distribute Vertically"
-      >
-        {/* <SpaceVertically size={16} /> */}
-      </button>
+    <div className="flex items-center gap-1 p-1 bg-white border border-gray-200 rounded-md shadow-sm">
+      {alignmentButtons.map(({ group, buttons }, groupIndex) => (
+        <React.Fragment key={group}>
+          {groupIndex > 0 && <Divider />}
+          {buttons.map(({ type, icon, title }) => (
+            <AlignmentButton
+              key={type}
+              onClick={() => onAlign(type)}
+              disabled={disabled}
+              icon={icon}
+              title={title}
+            />
+          ))}
+        </React.Fragment>
+      ))}
     </div>
   );
-};
+});
+
+AlignmentTools.displayName = 'AlignmentTools';
 
 export default AlignmentTools;

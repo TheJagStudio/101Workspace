@@ -35,8 +35,12 @@ import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
 import Notification from "./Components/utils/Notification";
 import SearchProduct from "./Pages/Purchase/General/SearchProduct";
 import POList from "./Pages/Purchase/General/POList";
-// import CatalogHome from "./Pages/Catalog/CatalogHome";
-// import CatalogOutlet from "./Outlets/CatalogOutlet";
+import CatalogWrapper from "./Pages/Catalog/CatalogWrapper";
+import CatalogOutlet from "./Outlets/CatalogOutlet";
+import UtilityOutlet from "./Outlets/UtilityOutlet";
+import Sticker from "./Pages/Utility/Sticker";
+import ProductSync from "./Pages/Utility/ProductSync";
+
 const Loader = ({ height, width, stroke = "#615fff" }) => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
 		<g>
@@ -69,6 +73,7 @@ function App() {
 				last_name: "",
 				is_active: false,
 			});
+			window.location.href = "/login";
 		}
 	}, [setUser]);
 
@@ -157,9 +162,13 @@ function App() {
 					<Route path="customers" element={<DeliveryCustomer />} />
 					<Route path="reports" element={<DeliveryReport />} />
 				</Route>
-				{/* <Route path="/catalog" element={user?.is_active ? <CatalogOutlet /> : <Navigate to="/login" replace />} >
-					<Route index element={<CatalogHome />} />
-				</Route> */}
+				<Route path="/catalog" element={user?.is_active ? <CatalogOutlet /> : <Navigate to="/login" replace />} >
+					<Route index element={<CatalogWrapper />} />
+				</Route>
+				<Route path="/utility" element={user?.is_active ? <UtilityOutlet logout={logout} /> : <Navigate to="/login" replace />} >
+					{user?.permissions?.utility_sticker && (<Route path="sticker" element={<Sticker />} />)}
+					{user?.permissions?.utility_product_sync && (<Route path="product-sync" element={<ProductSync />} />)}
+				</Route>
 				<Route path="*" element={<Navigate to="/404" replace />} />
 				<Route path="/404" element={<NotFound />} />
 			</Routes>

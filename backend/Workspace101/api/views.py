@@ -1390,13 +1390,51 @@ class dataMaker(APIView):
 
     def get(self, request):
         """
-        Generate data for testing purposes.
+        Generate data for testing purposes by reading invoice line items from JSON files.
         """
-        # Query for products where singleUpc != upc
-        products = Product.objects.exclude(singleUpc=models.F('upc'))
+        products  = Product.objects.all()
+        # I need a mapping for these products in following columns
+        # Product Category,Product Subcategory,Product Name,Product Description,Price,Cost,Barcode,Active,Attribute type,Attribute parent,Attribute 1,Attribute value 1,Image Url
+
+        product_data = []
+        master_products_cache = {p.productId: {
+            "upc": p.upc,
+            "singleUpc": p.singleUpc
+        } for p in Product.objects.filter(masterProductId__isnull=True)}
         for product in products:
             print(product.productName)
-        return JsonResponse({"message": "Data generation completed."})
+            if "deleted" not in str(product.singleUpc).lower() and "deleted" not in str(product.upc).lower():
+                deleted = False
+                if product.masterProductId:
+                    master_product = master_products_cache.get(product.masterProductId)
+                    if master_product:
+                        if "deleted" in str(master_product["upc"]).lower() or "deleted" in str(master_product["singleUpc"]).lower():
+                            deleted = True
+
+                if not deleted:
+                    product_data.append({
+                        "id": product.productId,
+                        "Product Category": None,
+                        "Product Subcategory": None,  # No direct subcategory field in Product model
+                        "Product Name": product.productName,
+                        "Product Description": product.shortDescription if product.shortDescription else product.fullDescription,
+                        "Price": float(product.standardPrice) if product.standardPrice is not None else None,
+                        "Cost": float(product.costPrice) if product.costPrice is not None else None,
+                        "Barcode": product.singleUpc if product.masterProductId else product.upc,
+                        "Master Product Barcode": master_product["upc"] if product.masterProductId and master_product else None,
+                        "Active": product.active,
+                        "Attribute type": "Child" if product.masterProductId else "Parent",
+                        "Attribute parent": None,  # No direct attribute_parent field
+                        "Attribute 1": None,      # No direct attribute_1 field
+                        "Attribute value 1": None, # No direct attribute_value_1 field
+                        "Image Url": product.imageUrl,
+                    })
+        # Convert to csv format
+        import pandas as pd
+        df = pd.DataFrame(product_data)
+        csv_file_path = 'product_data.csv'
+        df.to_csv(csv_file_path, index=False)
+        return JsonResponse({"message": "Successfully done"})
 
 
 class vacuum_sqlite_database(APIView):
@@ -1498,365 +1536,3 @@ class AIReportView(APIView):
 
 
 # ===========================================================================================================
-
-# class SummerSaleUserRegistration(APIView):
-#     permission_classes = []
-
-#     def _get_api_headers(self):
-#         try:
-#             token_obj = SalesgentToken.objects.first()
-#             if not token_obj:
-#                 raise ValueError("Access Token not found in the database.")
-#             access_token = token_obj.accessToken
-#             return {
-#                 "Authorization": f"Bearer {access_token}",
-#                 "Accept": "application/json",
-#             }
-#         except Exception as e:
-#             raise ConnectionError(f"Could not configure API headers: {e}")
-
-#     def _create_erp_customer(self, customer_data, headers):
-#         api_url = "https://erp.101distributorsga.com/api/customer"
-#         state_stateId_map = {"1": "Alabama", "2": "Alaska", "3": "Arizona", "4": "Arkansas", "5": "California", "6": "Colorado", "7": "Connecticut", "8": "Delaware", "9": "District Of Columbia", "10": "Florida", "11": "Georgia", "12": "Hawaii", "13": "Idaho", "14": "Illinois", "15": "Indiana", "16": "Iowa", "17": "Kansas", "18": "Kentucky", "19": "Louisiana", "20": "Maine", "21": "Maryland", "22": "Massachusetts", "23": "Michigan", "24": "Minnesota", "25": "Mississippi", "26": "Missouri", "27": "Montana", "28": "Nebraska", "29": "Nevada", "30": "New Hampshire", "31": "New Jersey", "32": "New Mexico", "33": "New York", "34": "North Carolina", "35": "North Dakota", "36": "Ohio", "37": "Oklahoma", "38": "Oregon", "39": "Pennsylvania", "40": "Rhode Island", "41": "South Carolina", "42": "South Dakota", "43": "Tennessee", "44": "Texas", "45": "Utah", "46": "Vermont", "47": "Virginia", "48": "Washington", "49": "West Virginia", "50": "Wisconsin", "51": "Wyoming", "52": "American Samoa", "53": "Guam", "54": "Northern Mariana Islands", "55": "Puerto Rico", "56": "United States Minor Outlying Islands", "57": "Virgin Islands"}
-#         state_id = customer_data.get("address_1[state]", "").strip()
-#         state = state_stateId_map.get(str(customer_data.get("address_1[state]", "")).strip(), "Georgia") 
-#         state_id = state_id if state_id else "11" 
-#         payload = {
-#             "customerDto": {
-#                 "tier": 1,
-#                 "paymentTermsId": 1,
-#                 "taxable": 1 if state_id == "11" else 0,
-#                 "active": True,
-#                 "saveProductPrice": True,
-#                 "signUpStoreId": 1,
-#                 "countryCode": 1,
-#                 "customerStoreAddressList": [
-#                     {
-#                         "countryId": 1,
-#                         "active": True,
-#                         "defaultAddress": True,
-#                         "billingAddress": True,
-#                         "shippingAddress": True,
-#                         "sameAsBillingAddress": True,
-#                         "address1": customer_data.get("address_1[address_line_1]"),
-#                         "address2": customer_data.get("address_1[address_line_2]", ""),
-#                         "city": customer_data.get("address_1[city]"),
-#                         "stateId": state_id,
-#                         "state": state,
-#                         "zip": customer_data.get("address_1[zip]"),
-#                         "county": customer_data.get("county", ""),
-#                     }
-#                 ],
-#                 "firstName": customer_data.get("names[first_name]"),
-#                 "lastName": customer_data.get("names[last_name]"),
-#                 "email": customer_data.get("email"),
-#                 "phone": int(customer_data.get("phone", "").replace("-", "").replace("(", "").replace(")", "")),
-#                 "taxId": customer_data.get("taxId", ""),
-#                 "tobaccoId": customer_data.get("input_text_3", ""),
-#                 "vaporTaxId": customer_data.get("vaporTaxId", ""),
-#                 "salesTaxId": customer_data.get("salesTaxId", ""),
-#                 "drivingLicenseNumber": customer_data.get("input_text_7", ""),
-#                 "hempLicenseNumber": customer_data.get("input_text_5", ""),
-#                 "feinNumber": customer_data.get("input_text_4", ""),
-#                 "tobaccoLicenseExpirationDate": customer_data.get("tobaccoLicenseExpirationDate", ""),
-#                 "vaporTaxExpirationDate": customer_data.get("vaporTaxExpirationDate", ""),
-#                 "salesTaxIdExpirationDate": customer_data.get("salesTaxExpirationDate", ""),
-#                 "voidCheckNumber": customer_data.get("input_text_6", ""),
-#                 "hempLicenseExpirationDate": customer_data.get("hempLicenseExpirationDate", ""),
-#                 "verified": False,
-#                 "viewSpecificCategory": True,
-#                 "viewSpecificProduct": True,
-#                 "company": customer_data.get("input_text"),
-#                 "dbaName": customer_data.get("input_text_1", ""),
-#                 "notes": customer_data.get("notes", ""),
-#                 "primarySalesRepresentativeId": int(customer_data.get("dropdown", "")),
-#                 "primaryBusiness": customer_data.get("input_text_8", ""),
-#                 "websiteReference": "Word of mouth",
-#                 "createdBy": 20,
-#             }
-#         }
-#         # payload = {
-#         #     "customerDto": {
-#         #         "tier": 1,
-#         #         "paymentTermsId": 1,
-#         #         "taxable": int(customer_data.get("taxable", 1)),
-#         #         "active": True,
-#         #         "saveProductPrice": True,
-#         #         "signUpStoreId": 1,
-#         #         "countryCode": 1,
-#         #         "customerStoreAddressList": [
-#         #             {
-#         #                 "countryId": 1,
-#         #                 "active": True,
-#         #                 "defaultAddress": True,
-#         #                 "billingAddress": True,
-#         #                 "shippingAddress": True,
-#         #                 "sameAsBillingAddress": True,
-#         #                 "address1": customer_data.get("address1"),
-#         #                 "address2": customer_data.get("address2", ""),
-#         #                 "city": customer_data.get("city"),
-#         #                 "stateId": int(customer_data.get("stateId")),
-#         #                 "state": customer_data.get("state"),
-#         #                 "zip": customer_data.get("zip"),
-#         #                 "county": customer_data.get("county", ""),
-#         #             }
-#         #         ],
-#         #         "firstName": customer_data.get("firstName"),
-#         #         "lastName": customer_data.get("lastName"),
-#         #         "email": customer_data.get("email"),
-#         #         "phone": int(customer_data.get("phone", "")),
-#         #         "taxId": customer_data.get("taxId", ""),
-#         #         "tobaccoId": customer_data.get("tobaccoId", ""),
-#         #         "vaporTaxId": customer_data.get("vaporTaxId", ""),
-#         #         "salesTaxId": customer_data.get("salesTaxId", ""),
-#         #         "drivingLicenseNumber": customer_data.get("drivingLicenseNumber", ""),
-#         #         "hempLicenseNumber": customer_data.get("hempLicenseNumber", ""),
-#         #         "feinNumber": customer_data.get("feinNumber", ""),
-#         #         "tobaccoLicenseExpirationDate": customer_data.get("tobaccoLicenseExpirationDate", ""),
-#         #         "vaporTaxExpirationDate": customer_data.get("vaporTaxExpirationDate", ""),
-#         #         "salesTaxIdExpirationDate": customer_data.get("salesTaxExpirationDate", ""),
-#         #         "voidCheckNumber": customer_data.get("voidCheckNumber", ""),
-#         #         "hempLicenseExpirationDate": customer_data.get("hempLicenseExpirationDate", ""),
-#         #         "verified": True,
-#         #         "viewSpecificCategory": True,
-#         #         "viewSpecificProduct": True,
-#         #         "company": customer_data.get("company"),
-#         #         "dbaName": customer_data.get("dbaName", ""),
-#         #         "notes": customer_data.get("notes", ""),
-#         #         "primarySalesRepresentativeId": customer_data.get("primarySalesRepresentativeId", ""),
-#         #         "primaryBusiness": customer_data.get("primaryBusiness", ""),
-#         #         "websiteReference": "Word of mouth",
-#         #         "createdBy": 20,
-#         #     }
-#         # }
-
-#         response = requests.post(api_url, headers=headers, json=payload)
-#         response.raise_for_status()
-#         return response.json()
-
-#     def _upload_erp_document(self, customer_id, file_field_name, file_object, headers):
-#         DOC_TYPE_MAP = {
-#             "ach_form_document": {"id": 60},
-#             "business_license_document": {"id": 55},
-#             "credit_card_auth_document": {"id": 61},
-#             "driving_license_document": {"id": 58},
-#             "fein_license_document": {"id": 56},
-#             "hemp_license_document": {"id": 220},
-#             "sales_tax_certificate_document": {"id": 57},
-#             "tobacco_license_document": {"id": 54},
-#             "void_check_document": {"id": 59},
-#         }
-#         api_url = "https://erp.101distributorsga.com/api/attachment"
-#         doc_meta = DOC_TYPE_MAP.get(file_field_name)
-#         if not doc_meta:
-#             return {"status": "error", "message": f"Unknown document type: {file_field_name}"}
-
-#         attachment_obj_data = {
-#             "name": file_object.name,
-#             "recordId": customer_id,
-#             "moduleId": 4,
-#             "fieldName": "customer_document",
-#             "fieldId": 651,
-#             "active": True,
-#             "documentTypeId": doc_meta["id"],
-#         }
-
-#         files_payload = {
-#             "attachmentObj": (None, json.dumps(attachment_obj_data), "application/json"),
-#             "file": (file_object.name, file_object.read(), file_object.content_type),
-#         }
-
-#         upload_headers = headers.copy()
-
-#         response = requests.post(api_url, headers=upload_headers, files=files_payload)
-#         response.raise_for_status()
-#         return {"status": "success", "data": response.json()}
-
-#     def _validate_request_data(self, data, files):
-#         DOC_TYPE_MAP = {
-#             "ach_form_document": {"id": 60},
-#             "business_license_document": {"id": 55},
-#             "credit_card_auth_document": {"id": 61},
-#             "driving_license_document": {"id": 58},
-#             "fein_license_document": {"id": 56},
-#             "hemp_license_document": {"id": 220},
-#             "sales_tax_certificate_document": {"id": 57},
-#             "tobacco_license_document": {"id": 54},
-#             "void_check_document": {"id": 59},
-#         }
-#         errors = {}
-#         required_fields = ["names[first_name]", "names[last_name]", "email", "phone", "input_text", "address_1[address_line_1]", "address_1[city]", "address_1[state]", "address_1[zip]"]
-
-#         for field in required_fields:
-#             if not data.get(field):
-#                 errors[field] = "This field may not be blank."
-
-#         if data.get("email") and "@" not in data.get("email"):
-#             errors["email"] = "Enter a valid email."
-
-#         for doc_name in DOC_TYPE_MAP.keys():
-#             if doc_name in files and files[doc_name].size == 0:
-#                 errors[doc_name] = "The submitted file is empty."
-
-#         return errors
-
-#     def post(self, request):
-#         data = request.data
-#         files = request.FILES
-#         DOC_TYPE_MAP = {
-#             "ach_form_document": {"id": 60},
-#             "business_license_document": {"id": 55},
-#             "credit_card_auth_document": {"id": 61},
-#             "driving_license_document": {"id": 58},
-#             "fein_license_document": {"id": 56},
-#             "hemp_license_document": {"id": 220},
-#             "sales_tax_certificate_document": {"id": 57},
-#             "tobacco_license_document": {"id": 54},
-#             "void_check_document": {"id": 59},
-#         }
-
-#         # validation_errors = self._validate_request_data(data, files)
-#         # if validation_errors:
-#         #     return Response(validation_errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             headers = self._get_api_headers()
-
-#             created_customer_response = self._create_erp_customer(data, headers)
-#             customer_id = created_customer_response.get("result", {}).get("id")
-
-#             if not customer_id:
-#                 return Response({"error": "Failed to create customer or retrieve customer ID from ERP response."}, status=status.HTTP_502_BAD_GATEWAY)
-
-#             upload_results = {}
-#             for file_key, fileObj in files.items():
-#                 field_name = file_key.replace("file_", "")
-#                 if field_name in DOC_TYPE_MAP:
-#                     try:
-#                         result = self._upload_erp_document(customer_id, field_name, fileObj, headers)
-#                         upload_results[field_name] = result
-#                     except Exception as e:
-#                         upload_results[field_name] = {"status": "error", "message": f"Upload failed for {fileObj.name}: {str(e)}"}
-            
-#             message = f"New customer registration: {data.get('names[first_name]', '')} {data.get('names[last_name]', '')} ({data.get('email', '')}) \n from {data.get('address_1[city]', '')}, {data.get('address_1[state]', '')} \n Phone: {data.get('phone', '')}"
-#             notifyMe(message,"101")
-#             success_message = "Your account has been created successfully. For activation, please contact the registration counter."
-#             return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={success_message}&status=success", status_code=status.HTTP_302_FOUND)
-
-#         except requests.exceptions.HTTPError as err:
-#             try:
-#                 error_details = err.response.json()
-#                 try:
-#                     userDetailsMsg = f"User Details: {data.get('names[first_name]', '')} {data.get('names[last_name]', '')} ({data.get('email', '')}) \n from {data.get('address_1[city]', '')}, {data.get('address_1[state]', '')} \n Phone: {data.get('phone', '')}"
-#                 except:
-#                     userDetailsMsg = "User Details: Not available"
-#                 message = error_details.get("error", "An error occurred while processing your request.").get("message", "Unknown error")  + f"\n\n{userDetailsMsg}"
-#                 notifyMe(message,"101-error")
-#             except json.JSONDecodeError:
-#                 error_details = f"HTTP Error: {err.response.status_code} - {err.response.text}"
-#                 message = error_details
-#                 notifyMe(message,"101-error")
-#             errorMessage = f"Error: {message}"
-#             return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={errorMessage}&status=error", status_code=status.HTTP_302_FOUND)
-#         except (requests.exceptions.RequestException, ConnectionError) as err:
-#             message = f"API Connection Error: {err}"
-#             notifyMe(message,"101-error")
-#             return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={message}&status=error", status_code=status.HTTP_502_BAD_GATEWAY)
-#         except Exception as err:
-#             message = f"An unexpected error occurred: {err}"
-#             notifyMe(message,"101-error")
-#             return redirect(to=f"https://101distributors.com/mega-trade-show-customer-registration/?message={message}&status=error", status_code=status.HTTP_302_FOUND)
-
-
-# class LicenseValidatorAPIView(APIView):
-#     permission_classes = []
-#     def post(self, request):
-#         image_url = request.data.get("image_url", None)
-#         name = request.data.get("name", None)
-#         prompts = {
-#             "hemp_license_document": 'Give me following details:\n- Hemp License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
-#             "tobacco_license_document": 'Give me following details:\n- Tobacco License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
-#             "business_license_document": 'Give me following details:\n- Business License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
-#             "fein_license_document": 'Give me following details:\n- Employer Identification Number (EIN)\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"feinNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}\n\n Note: EIN is a 9-digit number with a dash in between issued by the IRS.',
-#             "driving_license_document": 'Give me following details:\n- Driving License Number\n- Issue Date\n- Expiry Date\n\nin below format:\n{\n"licenseNumber":"...",\n"issueDate":"...",\n"expiryDate":"..."\n}',
-#             "void_check_document": 'Give me following details:\n- Void Check Number\n- Bank Name\n\nin below format:\n{\n"checkNumber":"...",\n"bankName":"..."\n}'
-#         }
-#         prompt = prompts.get(name, None)
-#         headers = {
-#             'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
-#             'Cache-Control': 'no-cache',
-#             'Connection': 'keep-alive',
-#             'Content-Type': 'application/json',
-#             'Origin': 'https://deepinfra.com',
-#             'Pragma': 'no-cache',
-#             'Referer': 'https://deepinfra.com/',
-#             'Sec-Fetch-Dest': 'empty',
-#             'Sec-Fetch-Mode': 'cors',
-#             'Sec-Fetch-Site': 'same-site',
-#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-#             'X-Deepinfra-Source': 'model-embed',
-#             'accept': 'text/event-stream',
-#             'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-#             'sec-ch-ua-mobile': '?0',
-#             'sec-ch-ua-platform': '"Windows"',
-#         }
-
-#         json_data = {
-#             'model': 'google/gemma-3-4b-it',
-#             'messages': [
-#                 {
-#                     'role': 'user',
-#                     'content': [
-#                         {
-#                             'type': 'image_url',
-#                             'image_url': {
-#                                 'url': image_url
-#                             },
-#                         },
-#                         {
-#                             'type': 'text',
-#                             'text': prompt,
-#                         },
-#                     ],
-#                 },
-#             ],
-#             'stream': False,
-#             'response_format': {
-#                 'type': 'json_object',
-#             },
-#         }
-#         response = requests.post('https://api.deepinfra.com/v1/openai/chat/completions', headers=headers, json=json_data)
-#         jsonData = json.loads(response.json()["choices"][0]["message"]["content"])
-#         return JsonResponse(jsonData, status=200)
-
-
-# class OllamaApiView(APIView):
-#     permission_classes = []
-
-#     def get(self, request):
-#         """
-#         Handle POST requests to the Ollama API.
-#         """
-#         try:
-#             prompt = request.GET.get("prompt", "Why is the sky blue?")
-
-#             def LLM(prompt):
-#                 stream = ollamaClient.chat(
-#                     model="qwen3:0.6b",
-#                     # model="gemma3:4b",
-#                     messages=[
-#                         {
-#                             "role": "user",
-#                             "content": prompt,
-#                         },
-#                     ],
-#                     stream=True,
-#                 )
-#                 for chunk in stream:
-#                     yield chunk
-
-#             return StreamingHttpResponse(streaming_content=LLM(prompt), content_type="application/json")
-
-#         except requests.exceptions.RequestException as e:
-#             return Response({"error": str(e)}, status=500)
-

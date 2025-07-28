@@ -162,3 +162,21 @@ pre {
 	-webkit-box-shadow: 0px 1px 0px 0px #d1d5dc inset;
 	-moz-box-shadow: 0px 1px 0px 0px #d1d5dc inset;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-cardFadeIn {
+  animation: cardFadeIn 0.5s ease-out forwards;
+}
