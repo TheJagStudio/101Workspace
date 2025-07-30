@@ -255,6 +255,7 @@ def get_user_info(user):
             "tracker_Profile": permissions.tracker_Profile,
             "utility_sticker": permissions.utility_sticker,
             "utility_product_sync": permissions.utility_product_sync,
+            "accounts_invoice": permissions.accounts_invoice,
         }
     else:
         userPermissions = {

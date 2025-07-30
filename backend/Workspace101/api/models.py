@@ -484,5 +484,7 @@ class ModulePermissions(models.Model):
     utility_sticker = models.BooleanField(default=False)
     utility_product_sync = models.BooleanField(default=False)
 
+    accounts_invoice = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.user.username} - Permissions"

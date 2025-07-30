@@ -44,12 +44,13 @@ const CalendarDropdown = ({
     prevMonth,
     startDate,
     endDate,
-    onDateSelect
+    onDateSelect,
+    onRight = false
 }) => {
     // Dropdown positioning and styling
     return (
         <div
-            className="absolute top-full mt-1 pt-3 w-full min-w-[600px] bg-white border border-gray-200 rounded-md shadow-lg flex z-50"
+            className={"absolute top-full mt-1 pt-3 w-full min-w-[600px] bg-white border border-gray-200 rounded-md shadow-lg flex z-50 " + (onRight ? "right-0" : "left-0")}
             onClick={(e) => e.stopPropagation()}
         >
             <PredefinedRanges
@@ -237,7 +238,7 @@ const MonthView = ({ monthDate, onDateSelect, startDate, endDate }) => {
 
 
 
-const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat}) => {
+const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat,onRight=false}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -321,6 +322,7 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat}) => 
                     startDate={startDate}
                     endDate={endDate}
                     onDateSelect={handleDateSelect}
+                    onRight={onRight}
                 />
             )}
         </div>

@@ -1,19 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Truck } from "lucide-react";
+import { useAtom } from "jotai";
+import { userAtom, searchAtom } from "../../Variables";
 
-const user = {
-    id: "1",
-    name: "Delivery Manager",
-    email: "manager@example.com",
-    password: "manager123",
-    role: "manager",
-};
 
 const Header = () => {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
-    const [search, setSearch] = useState("");
+    const [search, setSearch] = useAtom(searchAtom);
     const [results, setResults] = useState([]);
     const debounceRef = useRef();
+    const [user] = useAtom(userAtom);
     const searchInputRef = useRef();
 
     const handleLogout = () => {
@@ -61,7 +57,7 @@ const Header = () => {
                     <input
                         type="text"
                         ref={searchInputRef}
-                        placeholder="Search Deliveries"
+                        placeholder="Search Invoices"
                         onChange={handleSearchChange}
                         className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-indigo-500 text-sm"
                     />
@@ -109,18 +105,18 @@ const Header = () => {
                     </button>
                 </div>
                 {/* Profile */}
-                {user?.name && (
+                {user?.first_name && (
                     <div className="relative">
                         <button className="flex items-center gap-3" onClick={() => setShowProfileMenu(!showProfileMenu)}>
                             <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center border border-gray-200">
                                 <img
-                                    src={"https://api.dicebear.com/9.x/micah/svg?seed=" + encodeURIComponent(user?.name)}
+                                    src={"https://api.dicebear.com/9.x/micah/svg?seed=" + encodeURIComponent(user?.first_name + " " + user?.last_name) || "https://api.dicebear.com/9.x/micah/svg?seed=default"}
                                     className="w-full h-full object-cover rounded-full"
-                                    alt={user?.name}
+                                    alt={user?.first_name + " " + user?.last_name}
                                 />
                             </div>
                             <div className="flex flex-col items-start">
-                                <span className="text-sm font-medium text-gray-900">{user?.name}</span>
+                                <span className="text-sm font-medium text-gray-900">{user?.first_name + " " + user?.last_name}</span>
                                 <span className="text-xs text-gray-400">{user?.email}</span>
                             </div>
                         </button>
