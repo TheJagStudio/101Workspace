@@ -1,11 +1,13 @@
 import React from 'react';
 import { Check, DollarSign, X } from 'lucide-react';
 import "gridjs/dist/theme/mermaid.css";
+import { useNavigate } from 'react-router-dom';
 const DeliveryTable = ({ invoices = [] }) => {
+    const  navigate = useNavigate();
     return (
         <div className="overflow-x-auto rounded-xl orverflow-hidden border border-b-0 border-gray-200">
             <table className="w-full border-collapse md:table block text-center">
-                <thead className="gridjs-thead md:table-header-group hidden md:table">
+                <thead className="gridjs-thead md:table-header-group hidden">
                     <tr className="gridjs-tr">
                         <th className="gridjs-th md:!py-2 md:!text-lg">#</th>
                         <th className="gridjs-th md:!py-2 md:!text-lg">Customer</th>
@@ -25,36 +27,36 @@ const DeliveryTable = ({ invoices = [] }) => {
                     ) : (
                         invoices.map((invoice, idx) => (
                             <tr
-                                key={invoice.invoiceNumber || idx}
+                                key={invoice?.invoiceNumber || idx}
                                 className="gridjs-tr md:table-row py-2 block !border-b !border-gray-200 md:!border-0 md:bg-transparent md:rounded-lg shadow-none"
                             >
-                                <td className="gridjs-td md:!py-2 !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border md:!border-l-0 !border-gray-200" data-label="#">
+                                <td className="gridjs-td !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 items-center justify-between !border-0 md:!border md:!border-l-0 !border-gray-200" data-label="#">
                                     <span className="font-semibold md:hidden block text-gray-500">#</span>
                                     {idx + 1}
                                 </td>
-                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200 text-left`} data-label="Customer">
+                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice?.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200 text-left`} data-label="Customer">
                                     <span className="font-semibold md:hidden block text-gray-500">Customer</span>
-                                    {invoice.customerName}
+                                    <span className="whitespace-wrap max-w-64 h-fit text-wrap text-right">{invoice?.customerName}</span>
                                 </td>
-                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Invoice No">
+                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice?.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Invoice No">
                                     <span className="font-semibold md:hidden block text-gray-500">Invoice No</span>
-                                    {invoice.invoiceNumber}
+                                    {invoice?.invoiceNumber}
                                 </td>
-                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Cases">
+                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice?.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Cases">
                                     <span className="font-semibold md:hidden block text-gray-500">Cases</span>
-                                    {invoice.caseCount}
+                                    {invoice?.caseCount}
                                 </td>
-                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Check">
+                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice?.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Check">
                                     <span className="font-semibold md:hidden block text-gray-500">Check</span>
-                                    {invoice.checkAmount ? `$${invoice.checkAmount.toFixed(2)}` : '-'}
+                                    {invoice?.checkAmount ? `$${invoice?.checkAmount.toFixed(2)}` : '-'}
                                 </td>
-                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Cash">
+                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice?.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200`} data-label="Cash">
                                     <span className="font-semibold md:hidden block text-gray-500">Cash</span>
-                                    {invoice.cashAmount ? `$${invoice.cashAmount.toFixed(2)}` : '-'}
+                                    {invoice?.cashAmount ? `$${invoice?.cashAmount.toFixed(2)}` : '-'}
                                 </td>
-                                <td className="gridjs-td md:!py-2 !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border md:!border-r-0 !border-gray-200 " data-label="Status">
+                                <td className="gridjs-td md:!py-2 !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell flex px-4 py-2 md:px-0 items-center justify-between !border-0 md:!border md:!border-r-0 !border-gray-200 " data-label="Status">
                                     <span className="font-semibold md:hidden block text-gray-500">Status</span>
-                                    {invoice.paymentStatus === 'paid' ? (
+                                    {invoice?.paymentStatus === 'paid' ? (
                                         <div className="md:w-28 md:mx-auto md:px-3 text-green-600 rounded-full md:bg-green-100 md:shadow-inner font-semibold flex justify-center items-center gap-1">
                                             <Check className="inline" size={16} /> Paid
                                         </div>
@@ -64,16 +66,20 @@ const DeliveryTable = ({ invoices = [] }) => {
                                         </div>
                                     )}
                                 </td>
-                                <td className="gridjs-td md:!py-2 !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border md:!border-r-0 !border-gray-200 " data-label="Status">
+                                <td className="gridjs-td md:!py-2 !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell flex px-4 py-2 md:px-0 items-center justify-between !border-0 md:!border md:!border-r-0 !border-gray-200 " data-label="Status">
                                     <span className="font-semibold md:hidden block text-gray-500">Action</span>
-                                    {invoice.paymentStatus === 'paid' ? (
-                                        <div className="w-fit px-2 md:mx-auto md:px-3 text-gray-700 border border-gray-300 rounded-lg md:bg-white md:shadow-inner font-semibold flex justify-center items-center gap-1">
+                                    {invoice?.paymentStatus !== 'paid' ? (
+                                        <button onClick={()=>{
+                                            navigate(`/delivery/record-payment/${invoice?.invoiceNumber}`);
+                                        }} className="w-fit px-2 md:mx-auto md:px-3 text-gray-700 border border-gray-300 rounded-lg md:bg-white md:shadow-inner font-semibold flex justify-center items-center gap-1">
                                             <DollarSign className="inline" size={16} /> Record Payment
-                                        </div>
+                                        </button>
                                     ) : (
-                                        <div className="w-fit px-2 md:mx-auto md:px-3 text-white border border-green-800 rounded-lg bg-green-600 md:shadow-inner font-semibold flex justify-center items-center gap-1">
+                                        <button onClick={()=>{
+                                            navigate(`/delivery/record-payment/${invoice?.invoiceNumber}`);
+                                        }} className="w-fit px-2 md:mx-auto md:px-3 text-white border border-green-800 rounded-lg bg-green-600 md:shadow-inner font-semibold flex justify-center items-center gap-1">
                                             <DollarSign className="inline" size={16} /> Update Payment
-                                        </div>
+                                        </button>
                                     )}
                                 </td>
                             </tr>

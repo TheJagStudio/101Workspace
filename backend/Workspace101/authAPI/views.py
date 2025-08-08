@@ -256,6 +256,7 @@ def get_user_info(user):
             "utility_sticker": permissions.utility_sticker,
             "utility_product_sync": permissions.utility_product_sync,
             "accounts_invoice": permissions.accounts_invoice,
+            "delivery_admin": permissions.delivery_admin,
         }
     else:
         userPermissions = {

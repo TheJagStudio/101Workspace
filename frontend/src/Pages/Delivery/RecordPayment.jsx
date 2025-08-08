@@ -2,56 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import PaymentForm from '../../Components/Delivery/PaymentForm';
-
-let mockInvoices = [
-    {
-        id: '1',
-        invoiceNumber: '113007',
-        customerId: '1',
-        customerName: 'YAMA LLC',
-        caseCount: 4,
-        paymentStatus: 'not_paid',
-        dateCreated: '2025-05-31T08:00:00Z'
-    },
-    {
-        id: '2',
-        invoiceNumber: '113019',
-        customerId: '2',
-        customerName: 'NATUR INC',
-        caseCount: 8,
-        paymentStatus: 'not_paid',
-        dateCreated: '2025-05-31T08:15:00Z'
-    },
-    {
-        id: '3',
-        invoiceNumber: '112925',
-        customerId: '3',
-        customerName: 'RVK 786 LLC',
-        caseCount: 3,
-        paymentStatus: 'not_paid',
-        dateCreated: '2025-05-31T08:30:00Z'
-    },
-    {
-        id: '4',
-        invoiceNumber: '113283',
-        customerId: '4',
-        customerName: 'OLIVE MINIMART LLC',
-        caseCount: 3,
-        paymentStatus: 'not_paid',
-        dateCreated: '2025-05-31T08:45:00Z'
-    },
-    {
-        id: '5',
-        invoiceNumber: '113298',
-        customerId: '5',
-        customerName: 'SMILES GLENWOOD INC',
-        caseCount: 5,
-        checkAmount: 2343.64,
-        paymentStatus: 'paid',
-        dateCreated: '2025-05-31T09:00:00Z',
-        dateUpdated: '2025-05-31T14:30:00Z'
-    },
-];
+import { apiRequest } from '../../utils/api';
 
 const RecordPayment = () => {
     const { invoiceId } = useParams();
@@ -61,22 +12,42 @@ const RecordPayment = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        setIsLoading(true);
-        if (invoiceId) {
-            const foundInvoice = mockInvoices.find(inv => inv.invoiceNumber === invoiceId);
-            if (foundInvoice) {
-                setInvoice(foundInvoice);
-                setError(null);
-            } else {
-                setError('Invoice not found');
+        const fetchInvoice = async () => {
+            setIsLoading(true);
+            setError(null);
+            
+            try {
+                const url = `${import.meta.env.VITE_SERVER_URL}/api/delivery/invoice/${invoiceId}/`;
+                const data = await apiRequest(url, { method: 'GET' });
+                setInvoice(data);
+            } catch (err) {
+                setError(err?.message || 'Failed to fetch invoice data');
+            } finally {
+                setIsLoading(false);
             }
+        };
+
+        if (invoiceId) {
+            fetchInvoice();
         }
-        setIsLoading(false);
     }, [invoiceId]);
 
     const handleSubmit = async (data) => {
-        // No update logic, just navigate back
-        navigate(-1);
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            const url = `${import.meta.env.VITE_SERVER_URL}/api/delivery/invoice/${invoiceId}/`;
+            await apiRequest(url, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            navigate(-1);
+        } catch (err) {
+            setError(err?.message || 'Failed to update payment');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleCancel = () => {

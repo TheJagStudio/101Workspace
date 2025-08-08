@@ -95,12 +95,12 @@ const Login = () => {
 						{loading ? "Logging in..." : "Login"}
 					</button>
 				</form>
-				<div className="text-center mt-4 text-sm text-gray-500">
+				{/* <div className="text-center mt-4 text-sm text-gray-500">
 					Don't have an account?{" "}
 					<a href="/signup" className="text-red-600 font-medium hover:underline">
 						Sign up for Free
 					</a>
-				</div>
+				</div> */}
 			</div>
 		</div>
 	);

@@ -13,7 +13,7 @@ const supabase2 = createClient(
     import.meta.env.VITE_SUPABASE_ANON_KEY_SECOND
 );
 
-const ignoreSalesMan = ["20","8","10","12","13","16","21","19"];
+const ignoreSalesMan = ["20", "8", "10", "12", "13", "16", "21", "19"];
 
 const TrackerMap = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -88,41 +88,6 @@ const TrackerMap = () => {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c; // in metres
-    }
-
-    const KNNCluster = (points, k) => {
-        if (points.length === 0) return [];
-        if (k <= 0) return points;
-        if (k >= points.length) return points;
-
-        // KNN clustering logic here
-        const clusters = [];
-        const clusterCenters = [];
-        const visited = new Set();
-        for (let i = 0; i < points.length; i++) {
-            if (visited.has(i)) continue;
-            const cluster = [points[i]];
-            visited.add(i);
-            for (let j = i + 1; j < points.length; j++) {
-                if (visited.has(j)) continue;
-                const distance = calculateDistance(points[i].lat, points[i].lng, points[j].lat, points[j].lng);
-                if (distance < k) {
-                    cluster.push(points[j]);
-                    visited.add(j);
-                }
-            }
-            clusters.push(cluster);
-        }
-        // Calculate cluster centers
-        for (const cluster of clusters) {
-            const latSum = cluster.reduce((sum, point) => sum + point.lat, 0);
-            const lngSum = cluster.reduce((sum, point) => sum + point.lng, 0);
-            clusterCenters.push({
-                lat: latSum / cluster.length,
-                lng: lngSum / cluster.length
-            });
-        }
-        return clusterCenters;
     }
 
     const findCheckpoints = (points, radius = 50, minPoints = 5, minStopTimeMinutes = 10) => {
@@ -240,58 +205,23 @@ const TrackerMap = () => {
 
     useEffect(() => {
 
-        // const fetchLiveFeed = async () => {
-        //     let { data: tracker_locationpoint, error } = await supabase2
-        //         .from('tracker_locationpoint')
-        //         .select("*")
-        //         .eq('salesman_id', selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId'))
-        //         .gte('timestamp', reportDate.toISOString().split('T')[0] + 'T00:00:00')
-        //         .lte('timestamp', reportEndDate.toISOString().split('T')[0] + 'T23:59:59')
-        //         .order('timestamp', { ascending: true });
-        //     if (error) {
-        //         setErrors([...errors, {
-        //             id: Date.now(),
-        //             message: "Failed to fetch live feed data: " + error.message,
-        //             status: error.status || 500
-        //         }]);
-        //         return 0;
-        //     }
-
-        //     let filteredFeed = [];
-        //     if (tracker_locationpoint && tracker_locationpoint.length > 0) {
-        //         for (const point of (tracker_locationpoint || [])) {
-        //             const lat = Number(point.latitude || point.lat);
-        //             const lng = Number(point.longitude || point.lng);
-        //             const timestamp = new Date(point.timestamp || point.created_at).getTime();
-        //             filteredFeed.push({ lat, lng, timestamp });
-        //         }
-        //         setLiveFeed(filteredFeed);
-        //         setbounds(findExtremePoints(filteredFeed));
-
-        //         const firstLocation = filteredFeed[0];
-        //         const lastLocation = filteredFeed[filteredFeed.length - 1];
-        //         const startTime = new Date(firstLocation?.timestamp || 0);
-        //         const endTime = new Date(lastLocation?.timestamp || 0);
-        //         setDuration(((endTime - startTime) / 1000 / 3600).toFixed(1)); // Duration in hours
-
-
-        //         const totalDistance = filteredFeed.reduce((acc, point, index, arr) => {
-        //             if (index === 0) return acc; // Skip the first point
-        //             const prevPoint = arr[index - 1];
-        //             return acc + calculateDistance(prevPoint.lat, prevPoint.lng, point.lat, point.lng);
-        //         }, 0);
-        //         setTotalDistance((totalDistance / 1609.34).toFixed(2));
-
-        //         const clusteredPoints = findCheckPoints(filteredFeed, 10, 20); // Adjust k as needed
-        //         setCheckpoints(clusteredPoints);
-        //     }
-        // }
-
         const fetchLiveFeed = async () => {
             try {
                 const salesmanId = selectedSalesmanId ? selectedSalesmanId : searchParams.get('salesmanId');
-                const startDate = reportDate.toISOString().split('T')[0] + 'T00:00:00';
-                const endDate = reportEndDate.toISOString().split('T')[0] + 'T23:59:59';
+                // Adjust for 4 hours behind server time (add 4 hours to local time)
+                // Format as yyyy-mm-dd hh:mm:ss+zz (ISO 8601 with timezone offset)
+                const offsetMs = 4 * 60 * 60 * 1000;
+                const pad = (n) => n.toString().padStart(2, '0');
+                const formatDateTimeWithTZ = (date) => {
+                    const tzOffset = -date.getTimezoneOffset();
+                    const sign = tzOffset >= 0 ? '+' : '-';
+                    const absOffset = Math.abs(tzOffset);
+                    const hours = pad(Math.floor(absOffset / 60));
+                    const minutes = pad(absOffset % 60);
+                    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${sign}${hours}:${minutes}`;
+                };
+                const startDate = formatDateTimeWithTZ(new Date(reportDate.getTime() + offsetMs));
+                const endDate = formatDateTimeWithTZ(new Date(reportEndDate.getTime() + offsetMs));
 
                 let allPoints = [];
                 let currentPage = 0;
@@ -427,30 +357,8 @@ const TrackerMap = () => {
         }
 
 
-        // return () => {
-        //     supabase2.removeChannel(channels);
-        // };
     }, [selectedSalesmanId, searchParams, reportDate]);
 
-    // useEffect(() => {
-    //     if (!selectedSalesmanId) {
-    //         setRouteHistory([]);
-    //         return;
-    //     }
-
-    //     const fetchRouteHistory = async () => {
-    //         try {
-    //             const today = new Date().toISOString().split('T')[0];
-    //             const routeData = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/tracker/admin/salesmen/${selectedSalesmanId}/route_history/?date=${today}`);
-    //             setRouteHistory(Array.isArray(routeData?.["results"]) ? routeData?.["results"] : []);
-    //         } catch (error) {
-    //             console.error("Failed to fetch route history:", error);
-    //             setRouteHistory([]);
-    //         }
-    //     };
-
-    //     fetchRouteHistory();
-    // }, [selectedSalesmanId]);
 
     const handleSelectSalesman = (e) => {
         const id = e.target.value ? parseInt(e.target.value) : null;
@@ -585,18 +493,18 @@ const TrackerMap = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {selectedSalesmanId && (<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatCard icon={<CheckCircle size={24} />} title="Total Checkpoints" value={checkpoints.length} color="green" />
                     <StatCard icon={<Route size={24} />} title="Total Distance (miles)" value={totalDistance} color="blue" />
                     <StatCard icon={<Clock size={24} />} title="Total Duration (hours)" value={duration} color="gray" />
-                </div>
+                </div>)}
 
                 <Card className="flex-grow">
                     <CardContent className="h-full min-h-96 p-0">
                         <GoogleMapWrapper
                             center={mapCenter}
                             bounds={bounds}
-                            zoom={selectedSalesmanId ? 12 : 10}
+                            zoom={selectedSalesmanId ? 12 : 8.5}
                             markers={markers}
                             // polylines={polylines}
                             liveRoute={liveFeed}

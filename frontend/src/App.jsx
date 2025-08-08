@@ -20,9 +20,10 @@ import Deliveries from "./Pages/Delivery/Deliveries";
 import ScanPage from "./Pages/Delivery/ScanPage";
 import RecordPayment from "./Pages/Delivery/RecordPayment";
 import DeliverySetting from "./Pages/Delivery/DeliverySetting";
-import CreateDelivery from "./Pages/Delivery/CreateDelivery";
 import DeliveryCustomer from "./Pages/Delivery/DeliveryCustomer";
 import DeliveryReport from "./Pages/Delivery/DeliveryReport";
+import TruckManagement from "./Pages/Delivery/TruckManagement";
+import DriverManagement from "./Pages/Delivery/DriverManagement";
 import POMaker from "./Pages/Purchase/General/POMaker";
 import DustyInventory from "./Pages/Purchase/Inventory/DustyInventory";
 import TrackerDashboard from "./Pages/Tracker/TrackerDashboard";
@@ -131,7 +132,7 @@ function App() {
 			<Routes>
 				<Route path="/" element={user?.is_active ? <Home logout={logout} /> : <Navigate to="/login" replace />} />
 				<Route path="/login" element={user?.is_active ? <Navigate to="/" replace /> : <Login />} />
-				<Route path="/signup" element={<Signup />} />
+				{/* <Route path="/signup" element={<Signup />} /> */}
 				<Route path="/purchase" element={user?.is_active ? <PurchaseOutlet logout={logout} /> : <Navigate to="/login" replace />}>
 					<Route path="" element={<AIReport />} />
 					<Route path="search" element={<SearchProduct />} />
@@ -156,13 +157,14 @@ function App() {
 				<Route path="/delivery" element={user?.is_active ? <DeliveryOutlet logout={logout} /> : <Navigate to="/login" replace />} >
 					<Route path="" element={<DeliveryDashboard />} />
 					<Route path="deliveries" element={<Deliveries />} />
-					<Route path="scan" element={<ScanPage />} />
+					{user?.permissions?.delivery_admin && (<Route path="scan" element={<ScanPage />} />)}
 					<Route path="record-payment/" element={<RecordPayment />} />
 					<Route path="record-payment/:invoiceId" element={<RecordPayment />} />
-					<Route path="settings" element={<DeliverySetting />} />
-					<Route path="create-delivery" element={<CreateDelivery />} />
-					<Route path="customers" element={<DeliveryCustomer />} />
-					<Route path="reports" element={<DeliveryReport />} />
+					{user?.permissions?.delivery_admin && (<Route path="trucks" element={<TruckManagement />} />)}
+					{user?.permissions?.delivery_admin && (<Route path="drivers" element={<DriverManagement />} />)}
+					{/* {user?.permissions?.delivery_admin && (<Route path="settings" element={<DeliverySetting />} />)} */}
+					{/* {user?.permissions?.delivery_admin && (<Route path="customers" element={<DeliveryCustomer />} />)} */}
+					{/* {user?.permissions?.delivery_admin && (<Route path="reports" element={<DeliveryReport />} />)} */}
 				</Route>
 				<Route path="/catalog" element={user?.is_active ? <CatalogOutlet /> : <Navigate to="/login" replace />} >
 					<Route index element={<CatalogWrapper />} />

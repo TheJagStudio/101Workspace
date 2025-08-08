@@ -210,7 +210,7 @@ class Customer(models.Model):
 
     def __str__(self):
         """String representation of the Customer model."""
-        return f"{self.name} ({self.company or 'N/A'})"
+        return f"{self.company or 'N/A'} ({self.name})"
 
     class Meta:
         verbose_name = "Customer"
@@ -485,6 +485,8 @@ class ModulePermissions(models.Model):
     utility_product_sync = models.BooleanField(default=False)
 
     accounts_invoice = models.BooleanField(default=False)
+
+    delivery_admin = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - Permissions"

@@ -1,9 +1,8 @@
 import { useAtom } from "jotai";
 import { History, MapPin, Settings, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation,useNavigate } from "react-router-dom";
 import { userAtom } from "../../Variables";
-import { set } from "date-fns";
 
 const Sidebar = () => {
     const [user] = useAtom(userAtom);
@@ -21,7 +20,7 @@ const Sidebar = () => {
         { icon: <User size={20} />, text: "Admin Profile", to: "/tracker/admin/profile", key: "tracker_Admin_Profile", section: "ACCOUNT" },
         { icon: <User size={20} />, text: "Profile", to: "/tracker/salesman/profile", key: "tracker_Profile", section: "ACCOUNT" },
     ];
-
+    const navigate = useNavigate();
 
     const [items, setItems] = useState([]);
     const [sections, setSections] = useState([]);
@@ -48,6 +47,14 @@ const Sidebar = () => {
         }
         else if (currentPath.startsWith("/tracker/admin")) {
             setActiveItem("tracker_Salesmen_List");
+        }
+        else if (currentPath === "/tracker"){
+            if (user?.permissions?.tracker_Salesmen_List) {
+                navigate("/tracker/admin", { replace: true });
+            }
+            else if (user?.permissions?.tracker_Map) {
+                navigate("/tracker/salesman/home", { replace: true });
+            }
         }
     }, [location.pathname]);
 

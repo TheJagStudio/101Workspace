@@ -2,11 +2,14 @@ import React from 'react'
 import Sidebar from '../Components/Delivery/Sidebar'
 import { Outlet } from 'react-router-dom'
 import Header from '../Components/Delivery/Header'
+import { useAtom } from 'jotai'
+import { userAtom } from '../Variables'
 
 const DeliveryOutlet = () => {
+    const [user ] = useAtom(userAtom)
     return (
         <div className="flex overflow-hidden">
-            <Sidebar />
+            {user?.permissions?.delivery_admin && (<Sidebar />)}
             <div className="flex-1">
                 <Header />
                 <div className="bg-[#f3f4f6] relative">

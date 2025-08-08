@@ -47,6 +47,7 @@ const Login = () => {
 			if (error) Alert.alert("Login Error", error.message);
 			if (data) {
 				let userId = data?.user?.id;
+				console.log("User ID:", userId);
 				let { data: salesman, error } = await supabase.from("salesman").select("*").eq("authId", userId).single();
 				if (error) {
 					console.error("Error fetching salesman data:", error);
@@ -69,8 +70,9 @@ const Login = () => {
 		} catch (err) {
 			console.log(err);
 			setError("A network error occurred. Please try again.");
+		} finally {
+			setLoading(false);
 		}
-		setLoading(false);
 	};
 
 	useEffect(() => {

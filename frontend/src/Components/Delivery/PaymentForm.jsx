@@ -86,8 +86,7 @@ const PaymentForm = ({ invoice, onSubmit, onCancel }) => {
                                 id="checkAmount"
                                 step="0.01"
                                 min="0"
-                                className={`block w-full pl-7 pr-12 py-2 rounded-md border ${errors.checkAmount ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
-                                    }`}
+                                className={`block w-full pl-7 pr-4 py-2 rounded-md border focus:outline-none ${errors.checkAmount ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
                                 placeholder="0.00"
                                 value={checkAmount}
                                 onChange={e => setCheckAmount(e.target.value)}
@@ -111,8 +110,7 @@ const PaymentForm = ({ invoice, onSubmit, onCancel }) => {
                                 id="cashAmount"
                                 step="0.01"
                                 min="0"
-                                className={`block w-full pl-7 pr-12 py-2 rounded-md border ${errors.cashAmount ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
-                                    }`}
+                                className={`block w-full pl-7 pr-4 py-2 rounded-md border focus:outline-none ${errors.cashAmount ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`}
                                 placeholder="0.00"
                                 value={cashAmount}
                                 onChange={e => setCashAmount(e.target.value)}

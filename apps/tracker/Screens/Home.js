@@ -78,14 +78,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 					return;
 				}
 
-				// Check network connectivity
-				if (!networkState.isConnected) {
-					console.log("No network connection, skipping location update");
-					return;
-				}
-
 				// Update current location
-				await fetch(supabaseUrl + "/rest/v1/salesman?authId=eq." + session?.user.id, {
+				let response = await fetch(supabaseUrl + "/rest/v1/salesman?authId=eq." + session?.user.id, {
 					method: "PATCH",
 					headers: {
 						apikey: supabaseAnonKey,
@@ -96,16 +90,18 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 					body: JSON.stringify({
 						current_location_lat: location.coords.latitude,
 						current_location_lng: location.coords.longitude,
-						last_updated: new Date().toISOString(),
+						last_seen: new Date().toISOString().replace("T", " ").replace("Z", "+00"),
 					}),
 				});
+				// response = await response.text();
+				// console.log(response,new Date().toISOString().replace("T", " ").replace("Z", "+00"))
 
-				console.log("Location sent to Supabase successfully.");
+				// console.log("Location sent to Supabase successfully.");
 				await AsyncStorage.setItem(
 					"lastLocation",
 					JSON.stringify({
 						...location.coords,
-						timestamp: new Date().toISOString(),
+						timestamp: new Date().toISOString().replace("T", " ").replace("Z", "+00"),
 					})
 				);
 
@@ -113,7 +109,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 				const salesmanInfo = await AsyncStorage.getItem("salesmanInfo");
 				if (salesmanInfo) {
 					const parsedSalesmanInfo = JSON.parse(salesmanInfo);
-					await fetch(supabaseUrl + "/rest/v1/tracker_locationpoint", {
+					let response2 = await fetch(supabaseUrl + "/rest/v1/tracker_locationpoint", {
 						method: "POST",
 						headers: {
 							apikey: supabaseAnonKey,
@@ -124,14 +120,16 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 						body: JSON.stringify({
 							latitude: location.coords.latitude,
 							longitude: location.coords.longitude,
-							timestamp: new Date().toISOString(),
+							timestamp: new Date().toISOString().replace("T", " ").replace("Z", "+00"),
 							salesman_id: parsedSalesmanInfo?.id,
-							accuracy: location.coords.accuracy,
-							speed: location.coords.speed,
-							heading: location.coords.heading,
+							// accuracy: location.coords.accuracy,
+							// speed: location.coords.speed,
+							// heading: location.coords.heading,
 						}),
 					});
-					console.log("Route tracking data sent successfully.");
+					// response2 = await response2.text();
+					// console.log("Route tracking data sent successfully:", response2);
+					// console.log("Route tracking data sent successfully.");
 				}
 			} catch (e) {
 				console.error("Background Task Error:", e);
@@ -886,7 +884,7 @@ const Home = () => {
 
 					{/* Map Section */}
 					<View className="flex-1 min-h-96 mx-4 mb-4 rounded-xl overflow-hidden bg-white border border-gray-200 shadow-md">
-						<MapView ref={mapRef} style={StyleSheet.absoluteFillObject} provider={PROVIDER_GOOGLE} initialRegion={initialRegion} center={currentLocation} showsUserLocation={true} showsMyLocationButton={true} showsCompass={false} showsScale={false} showsTraffic={false} loadingEnabled={true} loadingIndicatorColor="#3498db" loadingBackgroundColor="#f0f0f0" onMapReady={() => setIsMapReady(true)}>
+						<MapView ref={mapRef} style={StyleSheet.absoluteFillObject} initialRegion={initialRegion} center={currentLocation} showsUserLocation={true} showsMyLocationButton={true} showsCompass={false} showsScale={false} showsTraffic={false} loadingEnabled={true} loadingIndicatorColor="#3498db" loadingBackgroundColor="#f0f0f0" onMapReady={() => setIsMapReady(true)}>
 							{plannedRouteMarkers?.map((marker, index) => (
 								<Marker key={index} coordinate={marker.coordinate} title={marker.title} description={marker.description}>
 									<MapPin
@@ -1006,7 +1004,7 @@ const Home = () => {
 					}}
 				>
 					{alerts.map((alert, idx) => (
-						<AlertComponent key={alert.id || idx} alert={alert} onRemove={() => removeAlert(alert)} />
+						<AlertComponent key={idx} alert={alert} onRemove={() => removeAlert(alert)} />
 					))}
 				</View>
 			</ScrollView>

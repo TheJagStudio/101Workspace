@@ -72,7 +72,7 @@ const Scanner = ({ onScanComplete }) => {
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-sm p-6 max-w-md mx-auto">
+        <div className="bg-white">
             <div className="text-center mb-6">
                 <div className="mx-auto bg-green-100 rounded-full p-3 w-16 h-16 flex items-center justify-center mb-4">
                     {/* QrCodeIcon replacement */}

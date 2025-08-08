@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Lock, User, Truck, Building } from 'lucide-react';
+import { useAtom } from 'jotai';
+import { userAtom } from '../../Variables';
 
 const ProfileTab = ({ user }) => (
   <div className="bg-white rounded-lg shadow p-6">
@@ -13,7 +15,7 @@ const ProfileTab = ({ user }) => (
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input
             className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring-green-500"
-            defaultValue={user?.name}
+            defaultValue={user?.first_name + ' ' + user?.last_name}
             placeholder="Your name"
           />
         </div>
@@ -31,7 +33,7 @@ const ProfileTab = ({ user }) => (
         <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
         <input
           className="block w-full rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-gray-500"
-          defaultValue={user?.role}
+          defaultValue={user?.permissions?.delivery_admin ? 'Admin' : 'User'}
           disabled
         />
       </div>
@@ -213,13 +215,7 @@ const CompanyTab = () => (
 
 const DeliverySetting = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const user = {
-    id: '1',
-    name: 'Delivery Manager',
-    email: 'manager@example.com',
-    password: 'manager123',
-    role: 'driver',
-  };
+  const [user] = useAtom(userAtom);
 
   return (
     <div className="space-y-6">

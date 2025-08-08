@@ -8,17 +8,16 @@ import {
     Users,
     Settings,
     CreditCard,
-    BarChart
+    BarChart,
+    BoxIcon,
+    User2,
+    UserIcon
 } from "lucide-react";
+import { useAtom } from "jotai";
+import { userAtom } from "../../Variables";
 
 const Sidebar = () => {
-    const { user } = {
-        id: "1",
-        name: "Delivery Manager",
-        email: "manager@example.com",
-        password: "manager123",
-        role: "manager",
-    };
+    const [user] = useAtom(userAtom);
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(true);
@@ -37,15 +36,9 @@ const Sidebar = () => {
             section: "GENERAL",
         },
         {
-            icon: <Truck size={20} />,
+            icon: <BoxIcon size={20} />,
             text: "Deliveries",
             to: "/delivery/deliveries",
-            section: "GENERAL",
-        },
-        {
-            icon: <ClipboardList size={20} />,
-            text: "Create Delivery",
-            to: "/delivery/create-delivery",
             section: "GENERAL",
         },
         {
@@ -55,23 +48,34 @@ const Sidebar = () => {
             section: "GENERAL",
         },
         {
-            icon: <Users size={20} />,
-            text: "Customers",
-            to: "/delivery/customers",
-            section: "SUPPORT",
-        },
-        {
-            icon: <BarChart size={20} />,
-            text: "Reports",
-            to: "/delivery/reports",
-            section: "SUPPORT",
-        },
-        {
-            icon: <Settings size={20} />,
-            text: "Settings",
-            to: "/delivery/settings",
-            section: "SUPPORT",
-        },
+            icon:<Truck size={20} />,
+            text: "Trucks",
+            to: "/delivery/trucks",
+            section: "ADMIN",
+        },{
+            icon: <UserIcon size={20} />,
+            text: "Drivers",
+            to: "/delivery/drivers",
+            section: "ADMIN",
+        }
+        // {
+        //     icon: <Users size={20} />,
+        //     text: "Customers",
+        //     to: "/delivery/customers",
+        //     section: "SUPPORT",
+        // },
+        // {
+        //     icon: <BarChart size={20} />,
+        //     text: "Reports",
+        //     to: "/delivery/reports",
+        //     section: "SUPPORT",
+        // },
+        // {
+        //     icon: <Settings size={20} />,
+        //     text: "Settings",
+        //     to: "/delivery/settings",
+        //     section: "SUPPORT",
+        // },
     ];
 
     const driverItems = [
@@ -81,40 +85,21 @@ const Sidebar = () => {
             to: "/delivery",
             section: "GENERAL",
         },
-        {
-            icon: <ClipboardList size={20} />,
-            text: "My Deliveries",
-            to: "/delivery/deliveries",
-            section: "GENERAL",
-        },
-        {
-            icon: <QrCode size={20} />,
-            text: "Scan Invoice",
-            to: "/delivery/scan",
-            section: "GENERAL",
-        },
-        {
-            icon: <CreditCard size={20} />,
-            text: "Record Payment",
-            to: "/delivery/record-payment",
-            section: "GENERAL",
-        },
-        {
-            icon: <Settings size={20} />,
-            text: "Settings",
-            to: "/delivery/settings",
-            section: "SUPPORT",
-        },
+        // {
+        //     icon: <Settings size={20} />,
+        //     text: "Settings",
+        //     to: "/delivery/settings",
+        //     section: "SUPPORT",
+        // },
     ];
 
-    const items = user?.role === "admin" ? driverItems : managerItems;
+    const items = user?.permissions?.delivery_admin ? managerItems : driverItems;
 
     const sections = Array.from(new Set(items.map((item) => item?.section)));
 
     return (
         <div
-            className={`absolute flex flex-col h-screen sm:relative bg-white shadow-lg shadow-gray-200 border-r border-gray-200 transition-all duration-300 z-50 ${collapsed ? "w-0 sm:w-20" : "w-screen sm:w-64"
-                }`}
+            className={`absolute flex flex-col h-screen sm:relative bg-white shadow-lg shadow-gray-200 border-r border-gray-200 transition-all duration-300 z-50 ${collapsed ? "w-0 sm:w-20" : "w-screen sm:w-64"}`}
         >
             <div className="flex items-center h-16 px-2 border-b border-gray-200">
                 <div className="flex items-center">
