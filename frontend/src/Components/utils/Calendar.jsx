@@ -3,20 +3,22 @@ import {
     format, addDays, startOfMonth, endOfMonth, subMonths, addMonths, getDaysInMonth, getDay, isSameDay, isBefore, isAfter, startOfDay
 } from 'date-fns';
 
-import { CalculatorIcon, ChevronLeft, ChevronRight, CloudSnow, Cross, DoorClosed, XIcon } from 'lucide-react';
+import { CalculatorIcon, Calendar1Icon, ChevronLeft, ChevronRight, CloudSnow, Cross, DoorClosed, XIcon } from 'lucide-react';
 
 
-const DateInputGroup = ({ startDate, endDate, onFocus }) => {
+const DateInputGroup = ({ startDate, endDate, onFocus, setStartDate, setEndDate, accent }) => {
     const dateFormat = "MM/dd/yyyy";
 
     return (
-        <div className="flex items-center border border-gray-300 rounded-md">
+        <div className="flex items-center border border-gray-300 rounded-md px-1">
             <input
                 type="text"
                 value={startDate ? format(startDate, dateFormat) : ''}
                 onFocus={onFocus}
-                readOnly
-                className="p-1 w-26 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-l-md"
+                onChange={(e) => {
+                    setStartDate(e.target.value);
+                }}
+                className={`p-1 w-26 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-l`}
                 placeholder="Start Date"
             />
             <span className="px-1 text-gray-500">{">>"}</span>
@@ -24,12 +26,14 @@ const DateInputGroup = ({ startDate, endDate, onFocus }) => {
                 type="text"
                 value={endDate ? format(endDate, dateFormat) : ''}
                 onFocus={onFocus}
-                readOnly
-                className="p-1 w-26 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                onChange={(e) => {
+                    setEndDate(e.target.value);
+                }}
+                className={`p-1 w-26 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-r`}
                 placeholder="End Date"
             />
             <div className="p-2 text-gray-500">
-                <CalculatorIcon className="h-5 w-5" />
+                <Calendar1Icon className="h-5 w-5" />
             </div>
         </div>
     );
@@ -45,7 +49,8 @@ const CalendarDropdown = ({
     startDate,
     endDate,
     onDateSelect,
-    onRight = false
+    onRight = false,
+    accent = "indigo"
 }) => {
     // Dropdown positioning and styling
     return (
@@ -56,6 +61,7 @@ const CalendarDropdown = ({
             <PredefinedRanges
                 ranges={predefinedRanges}
                 onSelect={onPredefinedRangeSelect}
+                accent={accent}
             />
             <DualCalendarView
                 currentMonth={currentMonth}
@@ -64,6 +70,7 @@ const CalendarDropdown = ({
                 startDate={startDate}
                 endDate={endDate}
                 onDateSelect={onDateSelect}
+                accent={accent}
             />
             {/* You might want a close button or click outside to close */}
             <button
@@ -76,7 +83,7 @@ const CalendarDropdown = ({
     );
 };
 
-const PredefinedRanges = ({ ranges, onSelect }) => {
+const PredefinedRanges = ({ ranges, onSelect, accent }) => {
     const [selectedRange, setSelectedRange] = useState(null);
     return (
         <div className="w-1/4 p-1 border-r border-gray-200 max-h-[250px] overflow-y-auto">
@@ -88,11 +95,10 @@ const PredefinedRanges = ({ ranges, onSelect }) => {
                                 onSelect(item.range);
                                 setSelectedRange(item.label);
                             }}
-                            className={`w-full text-left px-3 py-1.5 text-sm rounded-md focus:outline-none ${
-                                selectedRange === item.label
-                                    ? 'bg-indigo-500 text-white'
-                                    : 'text-gray-700 hover:bg-indigo-500 hover:text-white'
-                            }`}
+                            className={`w-full text-left px-3 py-1.5 text-sm rounded-md focus:outline-none ${selectedRange === item.label
+                                    ? `bg-${accent}-500 text-white`
+                                    : `text-gray-700 hover:bg-${accent}-500 hover:text-white`
+                                }`}
                         >
                             {item.label}
                         </button>
@@ -109,7 +115,8 @@ const DualCalendarView = ({
     nextMonth,
     onDateSelect,
     startDate,
-    endDate
+    endDate,
+    accent
 }) => {
     const rightMonth = addMonths(currentMonth, 1);
 
@@ -117,7 +124,7 @@ const DualCalendarView = ({
         <div className="flex-1 p-4">
             <div className="flex justify-between items-center mb-4">
                 {/* Month navigation - these would typically call functions to change currentMonth */}
-                <button onClick={()=>{
+                <button onClick={() => {
                     for (let i = 0; i < 12; i++) {
                         setCurrentMonth(subMonths(currentMonth, 1));
                         prevMonth();
@@ -142,10 +149,10 @@ const DualCalendarView = ({
                 <button onClick={() => {
                     nextMonth();
                     setCurrentMonth(nextMonth());
-                    }} className="p-1 hover:bg-gray-100 rounded-full focus:outline-none">
+                }} className="p-1 hover:bg-gray-100 rounded-full focus:outline-none">
                     <ChevronRight className="h-5 w-5 text-gray-600" />
                 </button>
-                <button onClick={()=>{
+                <button onClick={() => {
                     // change to next year
                     for (let i = 0; i < 12; i++) {
                         setCurrentMonth(addMonths(currentMonth, 1));
@@ -162,19 +169,21 @@ const DualCalendarView = ({
                     onDateSelect={onDateSelect}
                     startDate={startDate}
                     endDate={endDate}
+                    accent={accent}
                 />
                 <MonthView
                     monthDate={rightMonth}
                     onDateSelect={onDateSelect}
                     startDate={startDate}
                     endDate={endDate}
+                    accent={accent}
                 />
             </div>
         </div>
     );
 };
 
-const MonthView = ({ monthDate, onDateSelect, startDate, endDate }) => {
+const MonthView = ({ monthDate, onDateSelect, startDate, endDate, accent }) => {
     const daysInMonth = getDaysInMonth(monthDate);
     const firstDayOfMonth = getDay(startOfMonth(monthDate)); // 0 (Sun) - 6 (Sat)
     const today = startOfDay(new Date());
@@ -196,13 +205,13 @@ const MonthView = ({ monthDate, onDateSelect, startDate, endDate }) => {
         if (isToday && !isSelectedStart && !isSelectedEnd && !isInRange) {
             cellClasses += " bg-gray-200 text-gray-800";
         } else {
-            cellClasses += " hover:bg-indigo-100";
+            cellClasses += ` hover:bg-${accent}-100`;
         }
 
         if (isSelectedStart || isSelectedEnd) {
-            cellClasses += " bg-indigo-600 text-white hover:bg-indigo-700";
+            cellClasses += ` bg-${accent}-600 text-white hover:bg-${accent}-700`;
         } else if (isInRange) {
-            cellClasses += " bg-indigo-200 text-indigo-700 hover:bg-indigo-300";
+            cellClasses += ` bg-${accent}-200 text-${accent}-700 hover:bg-${accent}-300`;
         } else {
             cellClasses += " text-gray-700";
         }
@@ -238,7 +247,7 @@ const MonthView = ({ monthDate, onDateSelect, startDate, endDate }) => {
 
 
 
-const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat,onRight=false}) => {
+const Calendar = ({ startDate, endDate, setStartDate, setEndDate, dateFormat, onRight = false, accent = "indigo" }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -265,27 +274,31 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat,onRig
         { label: 'Last 30 Days', range: () => ({ startDate: addDays(new Date(), -29), endDate: new Date() }) },
         { label: 'This Month', range: () => ({ startDate: startOfMonth(new Date()), endDate: endOfMonth(new Date()) }) },
         { label: 'Last Month', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 1)), endDate: endOfMonth(subMonths(new Date(), 1)) }) },
-        {label: 'Last 3 Months', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 3)), endDate: endOfMonth(new Date()) }) },
-        {label: 'Last 6 Months', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 6)), endDate: endOfMonth(new Date()) }) },
-        {label: 'Current Quarter', range: () => {
-            const currentDate = new Date();
-            const quarter = Math.floor(currentDate.getMonth() / 3);
-            const startMonth = quarter * 3;
-            const startDate = new Date(currentDate.getFullYear(), startMonth, 1);
-            const endDate = endOfMonth(new Date(currentDate.getFullYear(), startMonth + 2, getDaysInMonth(new Date(currentDate.getFullYear(), startMonth + 2))));
-            return { startDate, endDate };
-        }},
-        {label: 'Last Quarter', range: () => {
-            const currentDate = new Date();
-            const quarter = Math.floor(currentDate.getMonth() / 3) - 1;
-            const startMonth = quarter * 3;
-            const startDate = new Date(currentDate.getFullYear(), startMonth, 1);
-            const endDate = endOfMonth(new Date(currentDate.getFullYear(), startMonth + 2, getDaysInMonth(new Date(currentDate.getFullYear(), startMonth + 2))));
-            return { startDate, endDate };
-        }},
-        {label: 'This Year', range: () => ({ startDate: new Date(new Date().getFullYear(), 0, 1), endDate: new Date(new Date().getFullYear(), 11, 31) }) },
-        {label: 'Last Year', range: () => ({ startDate: new Date(new Date().getFullYear() - 1, 0, 1), endDate: new Date(new Date().getFullYear() - 1, 11, 31) }) },
-        {label: ' To Date', range: () => ({ startDate: new Date(2019, 1, 1), endDate: new Date() }) }
+        { label: 'Last 3 Months', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 3)), endDate: endOfMonth(new Date()) }) },
+        { label: 'Last 6 Months', range: () => ({ startDate: startOfMonth(subMonths(new Date(), 6)), endDate: endOfMonth(new Date()) }) },
+        {
+            label: 'Current Quarter', range: () => {
+                const currentDate = new Date();
+                const quarter = Math.floor(currentDate.getMonth() / 3);
+                const startMonth = quarter * 3;
+                const startDate = new Date(currentDate.getFullYear(), startMonth, 1);
+                const endDate = endOfMonth(new Date(currentDate.getFullYear(), startMonth + 2, getDaysInMonth(new Date(currentDate.getFullYear(), startMonth + 2))));
+                return { startDate, endDate };
+            }
+        },
+        {
+            label: 'Last Quarter', range: () => {
+                const currentDate = new Date();
+                const quarter = Math.floor(currentDate.getMonth() / 3) - 1;
+                const startMonth = quarter * 3;
+                const startDate = new Date(currentDate.getFullYear(), startMonth, 1);
+                const endDate = endOfMonth(new Date(currentDate.getFullYear(), startMonth + 2, getDaysInMonth(new Date(currentDate.getFullYear(), startMonth + 2))));
+                return { startDate, endDate };
+            }
+        },
+        { label: 'This Year', range: () => ({ startDate: new Date(new Date().getFullYear(), 0, 1), endDate: new Date(new Date().getFullYear(), 11, 31) }) },
+        { label: 'Last Year', range: () => ({ startDate: new Date(new Date().getFullYear() - 1, 0, 1), endDate: new Date(new Date().getFullYear() - 1, 11, 31) }) },
+        { label: ' To Date', range: () => ({ startDate: new Date(2019, 1, 1), endDate: new Date() }) }
     ];
 
     const handlePredefinedRangeSelect = (rangeFunc) => {
@@ -303,6 +316,8 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat,onRig
         setCurrentMonth(prev => subMonths(prev, 1));
     };
 
+    
+
 
     return (
         <div className="relative font-sans">
@@ -310,6 +325,9 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat,onRig
                 startDate={startDate}
                 endDate={endDate}
                 onFocus={() => setIsOpen(true)}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                accent={accent}
             />
             {isOpen && (
                 <CalendarDropdown
@@ -323,6 +341,7 @@ const Calendar = ({startDate, endDate, setStartDate, setEndDate,dateFormat,onRig
                     endDate={endDate}
                     onDateSelect={handleDateSelect}
                     onRight={onRight}
+                    accent={accent}
                 />
             )}
         </div>

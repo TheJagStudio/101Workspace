@@ -274,13 +274,14 @@ const Invoice = () => {
                         <div className="flex items-center gap-2">
                             <div className="flex gap-2 items-center text-gray-800">
                                 <span>Invoice Created At: </span>
-                                <Calendar startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} dateFormat={dateFormat} onRight={true} />
+                                <Calendar startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} dateFormat={dateFormat} onRight={true} accent={"pink"} />
                             </div>
-                            {!loading && (<div>
-                                <button onClick={() => {
+                            <div>
+                                <button onClick={async () => {
                                     setLoadingExport(true);
+                                    const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/accounts/invoices/?page=${currentPage - 1}&size=1000000000${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
                                     // Export to Excel logic
-                                    const ws = XLSX.utils.json_to_sheet(invoiceData.map(item => {
+                                    const ws = XLSX.utils.json_to_sheet(data["result"]["content"].map(item => {
                                         const formattedItem = {};
                                         columnSettings.forEach(col => {
                                             if (col.visible) {
@@ -342,11 +343,11 @@ const Invoice = () => {
                                     XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
                                     XLSX.writeFile(wb, `Invoices_${Date.now()}.xlsx`);
                                     setLoadingExport(false);
-                                }} type="button" className="h-8 bg-pink-700 text-white shadow-sm inline-flex items-center px-4 py-1 gap-2 border border-transparent rounded-sm hover:bg-pink-800">
+                                }} disabled={loading} type="button" className="h-8 bg-pink-700 disabled:bg-pink-100 text-white shadow-sm inline-flex items-center px-4 py-1 gap-2 border border-transparent rounded-sm hover:bg-pink-800">
                                     {loadingExport ? (<Loader height={20} width={20} stroke='white' />) : <Send className="w-4 h-4" />}
                                     <span>Export to Excel Invoice</span>
                                 </button>
-                            </div>)}
+                            </div>
                             <div className="flex items-center gap-2">
                                 <div className='relative'>
                                     <button title="Column Setting"
@@ -369,7 +370,7 @@ const Invoice = () => {
                     </div>
                 </div>
                 <div className="relative overflow-x-auto w-full">
-                    <div className="h-fit max-h-[70vh] overflow-y-auto">
+                    <div className="h-fit max-h-[70vh] min-h-96 overflow-y-auto">
                         <table className="min-w-full divide-y divide-zinc-100">
                             <thead className="bg-zinc-50 sticky top-0 z-10">
                                 {renderTableHeader()}
@@ -466,7 +467,7 @@ const Invoice = () => {
                     <li className="ml-4">
                         <div className="relative h-8 inline-block">
                             <CustomDropdown
-                                options={[{ label: '10 / page', value: 10 }, { label: '20 / page', value: 20 }, { label: '50 / page', value: 50 }, { label: '100 / page', value: 100 }, { label: '500 / page', value: 500 }, { label: '1000 / page', value: 1000 }, { label: '5000 / page', value: 5000 }, { label: 'All Invoice', value: 100000000 }]}
+                                options={[{ label: '10 / page', value: 10 }, { label: '20 / page', value: 20 }, { label: '50 / page', value: 50 }, { label: '100 / page', value: 100 }, { label: '500 / page', value: 500 }]}
                                 placeholder="10 / page"
                                 optionUp={true}
                                 value={pageSize}
