@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, BusinessType, InventoryData, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer, AIReport, ModulePermissions
+from .models import Product, Category, BusinessType,  Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer, AIReport, ModulePermissions
 from .models import PurchaseHistory
 from .models import SalesgentToken
 from .models import POLocal, POLocalLineItem
@@ -42,7 +42,7 @@ class categoryFilter(SimpleListFilter):
 
 
 class ProductAdmin(ImportExportModelAdmin):
-    autocomplete_fields = ["inventoryList", "categories"]
+    autocomplete_fields = ["categories"]
     list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active")
     search_fields = ("productName", "sku", "upc", "productId")
     list_filter = ("active", "ecommerce", InventoryStatusFilter, categoryFilter)
@@ -57,12 +57,6 @@ class BusinessTypeAdmin(ImportExportModelAdmin):
     list_display = ("name", "insertedTimestamp")
     search_fields = ("name",)
     list_filter = ("insertedTimestamp",)
-
-
-class InventoryDataAdmin(ImportExportModelAdmin):
-    autocomplete_fields = ["productId"]
-    list_display = ("id", "productId", "availableQuantity", "quantity", "costPrice", "orderId")
-    search_fields = ("productId__productId", "id", "orderId")
 
 
 class VendorAdmin(ImportExportModelAdmin):
@@ -105,7 +99,7 @@ class SalesgentTokenAdmin(ImportExportModelAdmin):
 class ProductHistoryAdmin(ImportExportModelAdmin):
     list_display = ("productId", "quantity", "costPrice", "date")
     search_fields = ("productId__productId", "date")
-
+    autocomplete_fields = ["productId"] 
 
 class CustomerAdmin(ImportExportModelAdmin):
     list_display = ("id", "name", "company", "email", "phone")
@@ -176,7 +170,6 @@ admin.site.index_title = "Welcome to the API Admin Portal"
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(BusinessType, BusinessTypeAdmin)
-admin.site.register(InventoryData, InventoryDataAdmin)
 admin.site.register(Vendor, VendorAdmin)
 admin.site.register(Invoice, InvoiceAdmin)
 admin.site.register(InvoiceLineItem, InvoiceLineItemAdmin)

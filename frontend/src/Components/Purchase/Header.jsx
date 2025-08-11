@@ -85,7 +85,8 @@ const Header = ({ logout }) => {
 						onChange={handleSearchChangeEvent}
 						value={search}
 						id="search"
-						autoComplete="false"
+						name="search"
+						autoComplete="search-products"
 						className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-indigo-500 text-sm"
 					/>
 					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500">

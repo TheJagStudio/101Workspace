@@ -13,9 +13,9 @@ const syncItems = [
 		info: "Sync your latest product data with the server.",
 	},
 	{
-		key: "inventoryData",
-		label: "Inventory Data",
-		info: "Sync your inventory data to keep stock levels accurate.",
+		key: "invoice",
+		label: "Sync Invoices",
+		info: "Sync your invoice data to keep billing information accurate.",
 	},
 	{
 		key: "categories",
@@ -52,7 +52,7 @@ const SyncPage = () => {
 		vendor: false,
 		customer: false,
 		search: false,
-		inventoryData: false,
+		invoice: false,
 		all: false,
 	});
 	const [progress, setProgress] = useState({
@@ -62,7 +62,7 @@ const SyncPage = () => {
 		vendor: 0,
 		search: 0,
 		customer: 0,
-		inventoryData: 0,
+		invoice: 0,
 		all: 0,
 	});
 	const [error, setError] = useState(null);
@@ -144,9 +144,9 @@ const SyncPage = () => {
 			{syncItems.map((item) => {
 				// Special handling for "all"
 				if (item.key === "all") {
-					const allLoading = loading.products || loading.categories || loading.businessType || loading.inventoryData || loading.vendor || loading.customer || loading.search;
-					const allProgress = (progress.products + progress.categories + progress.businessType + progress.inventoryData + progress.vendor + progress.customer + progress.search) / 7;
-					const allCompleted = progress.products === 100 && progress.categories === 100 && progress.businessType === 100 && progress.inventoryData === 100 && progress.vendor === 100 && progress.customer === 100 && progress.search === 100 && !allLoading;
+					const allLoading = loading.products || loading.categories || loading.businessType || loading.invoice || loading.vendor || loading.customer || loading.search;
+					const allProgress = (progress.products + progress.categories + progress.businessType + progress.invoice + progress.vendor + progress.customer + progress.search) / 7;
+					const allCompleted = progress.products === 100 && progress.categories === 100 && progress.businessType === 100 && progress.invoice === 100 && progress.vendor === 100 && progress.customer === 100 && progress.search === 100 && !allLoading;
 
 					return (
 						<div key={item.key} className="mb-8 p-4 border border-dashed rounded-lg shadow-sm bg-white">
@@ -162,7 +162,7 @@ const SyncPage = () => {
 											await handleSync("products");
 											await handleSync("categories");
 											await handleSync("businessType");
-											await handleSync("inventoryData");
+											await handleSync("invoice");
 											await handleSync("vendor");
 											await handleSync("customer");
 											await handleSync("search");

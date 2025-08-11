@@ -10,3 +10,5 @@ typesense
 beautifulsoup4
 ollama
 summa
+requests
+uuid

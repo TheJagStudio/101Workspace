@@ -25,7 +25,7 @@ const PurchaseOutlet = ({ logout }) => {
 			}
 			setLoading(true);
 			try {
-				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/product-history/${activeProduct.id}/`);
+				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/product-history/${activeProduct.id}/`);
 				if (data.status === "success") {
 					setActiveProductHistory(data?.data);
 				} else {

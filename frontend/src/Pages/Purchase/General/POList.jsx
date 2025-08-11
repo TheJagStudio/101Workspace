@@ -61,7 +61,7 @@ const POList = () => {
 			if (status) params.append("status", status);
 			if (startDate) params.append("start", startDate);
 			if (endDate) params.append("end", endDate);
-			const res = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po/?${params.toString()}`);
+			const res = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/po/?${params.toString()}`);
 			setPoData(res.purchase_orders || []);
 			if (res.purchase_orders && res.purchase_orders.length > 0) {
 				setSelectedPOId(res.purchase_orders[0].id); // Select the first PO by default
@@ -80,7 +80,7 @@ const POList = () => {
 		setLineItems([]);
 		setLineItemsLoading(true);
 		try {
-			const res = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po-line-items/${poId}/`);
+			const res = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/po-line-items/${poId}/`);
 			setLineItems(res.line_items || []);
 		} catch (e) {
 			setLineItems([]);
@@ -204,7 +204,7 @@ const POList = () => {
 									setLoadingDelete(true);
 									selectedPOs.forEach(async (poId) => {
 										try {
-											await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po/?po_id=${poId}`, { method: 'DELETE' });
+											await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/po/?po_id=${poId}`, { method: 'DELETE' });
 											setPoData(prev => prev.filter(po => po.id !== poId));
 											if (selectedPOId === poId) {
 												setSelectedPOId(null);
@@ -228,7 +228,7 @@ const POList = () => {
 							onClick={async () => {
 								setLoadingExport(true);
 								const selectedPOsArray = Array.from(selectedPOs);
-								const dataToExport = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po/`, {
+								const dataToExport = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/po/`, {
 									method: "POST",
 									headers: {
 										'Content-Type': 'application/json',

@@ -35,7 +35,7 @@ const PerformanceDash = () => {
 
     async function getData() {
         try {
-            const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}`);
+            const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}`);
             setTableData(data["data"]);
         } catch (error) {
             setTableData([]);

@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { LoaderPinwheel, Send, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const ProductCardPopup = ({ activeProduct, onClose }) => {
-	const [activeTab, setActiveTab] = useState("priceHistory"); // 'priceHistory' or 'availableQuantity' or 'purchase
-
+	const [activeTab, setActiveTab] = useState("priceHistory"); // 'priceHistory' or 'availableQuantity' or 'purchaseHistory'
+	const [loadingExport, setLoadingExport] = useState(false);
 	if (!activeProduct) {
-		return null; 
+		return null;
 	}
 	let totalSub = 0;
-	
+
 	const chartData = activeProduct.history.map((item) => {
 		totalSub += item.quantity || 0;
 		return {
@@ -30,6 +32,50 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 			vendorName: item.vendorName || "Unknown Vendor",
 		};
 	});
+
+	const handleExport = () => {
+		setLoadingExport(true);
+		let exportData = [];
+		let sheetName = '';
+		// Export all three tabs to separate sheets in one Excel file
+		const wb = XLSX.utils.book_new();
+
+		// Price History Sheet
+		const priceHistoryData = chartData.map(item => ({
+			Date: item.timestamp,
+			"Retail Price": item.retailPrice,
+			"Cost Price": item.costPrice,
+			"Sold Quantity": item.quantity,
+		}));
+		const priceHistorySheet = XLSX.utils.json_to_sheet(priceHistoryData);
+		XLSX.utils.book_append_sheet(wb, priceHistorySheet, "PriceHistory");
+
+		// Selling History Sheet
+		const sellingHistoryData = chartData.map(item => ({
+			Date: item.timestamp,
+			"Total Sold Quantity": item.totalSub,
+			"Retail Price": item.retailPrice,
+			"Cost Price": item.costPrice,
+			"Sold Quantity": item.quantity,
+		}));
+		const sellingHistorySheet = XLSX.utils.json_to_sheet(sellingHistoryData);
+		XLSX.utils.book_append_sheet(wb, sellingHistorySheet, "SellingHistory");
+
+		// Purchase History Sheet
+		const purchaseHistoryData = purchaseChartData.map(item => ({
+			Date: item.timestamp,
+			"Purchased Quantity": item.purchasedQuantity,
+			"Cost Price": item.costPrice,
+			"Total Cost Price": item.totalCostPrice,
+			"Vendor": item.vendorName,
+			"Purchase Order ID": item.purchaseOrderId,
+		}));
+		const purchaseHistorySheet = XLSX.utils.json_to_sheet(purchaseHistoryData);
+		XLSX.utils.book_append_sheet(wb, purchaseHistorySheet, "PurchaseHistory");
+
+		XLSX.writeFile(wb, `${activeProduct.productName}_AllHistory_${Date.now()}.xlsx`);
+		setLoadingExport(false);
+	};
 
 	return (
 		<div className="bg-white border border-dashed border-gray-300  rounded-lg shadow-xl p-6 w-full max-w-3xl relative">
@@ -69,6 +115,15 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 				<button onClick={() => setActiveTab("purchase")} className={`py-2 px-4 rounded-r-lg text-sm font-medium ${activeTab === "purchase" ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-800 hover:bg-indigo-200"}`}>
 					Purchase History
 				</button>
+				<button
+					onClick={handleExport}
+					disabled={loadingExport}
+					className="ml-4 py-2 px-4 rounded-lg bg-green-600 text-white flex items-center gap-2 hover:bg-green-700 disabled:bg-green-200"
+					title="Export to Excel"
+				>
+					{loadingExport ? <LoaderPinwheel className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+					<span>Export to Excel</span>
+				</button>
 			</div>
 
 			{/* Graph View */}
@@ -87,7 +142,7 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 							<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
 							<XAxis dataKey="timestamp" />
 							<YAxis tickCount={15} />
-							<Tooltip 
+							<Tooltip
 								content={({ active, payload, label }) => {
 									if (active && payload && payload.length) {
 										const data = payload[0].payload;
@@ -136,7 +191,7 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 							<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
 							<XAxis dataKey="timestamp" />
 							<YAxis tickCount={15} />
-							<Tooltip 
+							<Tooltip
 								content={({ active, payload, label }) => {
 									if (active && payload && payload.length) {
 										const data = payload[0].payload;

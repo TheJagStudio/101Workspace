@@ -40,7 +40,10 @@ const CustomDropdown = ({ options, value, onChange, placeholder, optionUp }) => 
 				</svg>
             </button>
             {open && options.length > 0 && (
-                <ul className={"absolute z-10 mt-1 w-fit min-w-48 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg" + (optionUp ? " bottom-[105%]" : "")}>
+                <ul className={"absolute z-30 mt-1 w-fit min-w-48 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg" + (optionUp ? " bottom-[105%]" : "")}>
+                    <li onClick={() => { setSearchTerm('');onChange(""); setOpen(false); }} className="px-3 py-1.5 cursor-pointer whitespace-nowrap hover:bg-indigo-100 border-b border-gray-200">
+                        <span className="text-gray-500">Select {placeholder}</span>
+                    </li>
                     {options.map(opt => {
                         if (searchTerm && !opt.label.toLowerCase().includes(searchTerm.toLowerCase())) {
                             return null

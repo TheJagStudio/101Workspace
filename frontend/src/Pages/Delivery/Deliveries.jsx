@@ -9,7 +9,7 @@ import * as XLSX from 'xlsx'
 
 const Button = ({ children, onClick, icon, variant, size }) => {
 	const base =
-		'inline-flex items-center gap-2 rounded-md font-medium focus:outline-none transition-colors';
+		'inline-flex items-center gap-2 rounded-md font-medium focus:outline-none transition-colors text-nowrap';
 	const variants = {
 		outline:
 			'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50',
@@ -17,8 +17,8 @@ const Button = ({ children, onClick, icon, variant, size }) => {
 			'bg-green-600 text-white hover:bg-green-700',
 	};
 	const sizes = {
-		sm: 'px-3 py-1.5 text-sm',
-		md: 'px-5 py-2 text-base',
+		sm: 'px-2 py-1.5 text-sm',
+		md: 'px-2 py-2 text-base',
 	};
 	return (
 		<button
@@ -160,8 +160,7 @@ const Deliveries = () => {
 						type="date"
 						value={selectedDate}
 						onChange={e => setSelectedDate(e.target.value)}
-						className="border border-gray-300 bg-white rounded-md px-3 py-2 text-base focus:outline-none focus:ring-green-500 focus:border-green-500"
-						style={{ minWidth: 160 }}
+						className="border border-gray-300 w-fit bg-white rounded-md px-2 py-2 text-base focus:outline-none focus:ring-green-500 focus:border-green-500"
 					/>
 					{deliverySheets.length > 0 && (
 						<Button

@@ -97,7 +97,7 @@ const Summary = () => {
 	async function getData() {
 		setLoading(true);
 		try {
-			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
 			setTableData(data["data"]);
 			setTotalPages(data["totalPages"]);
 		} catch (error) {
@@ -124,7 +124,7 @@ const Summary = () => {
 	useEffect(() => {
 		async function totalData() {
 			try {
-				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
+				const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
 				setTotalClosingInventory(data["totalClosingInventory"]);
 				setTotalRevenue(data["totalRevenue"]);
 				setTotalInventoryCost(data["totalInventoryCost"]);

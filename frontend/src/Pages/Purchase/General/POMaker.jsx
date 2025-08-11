@@ -2,7 +2,7 @@ import { useState, useEffect, use } from 'react';
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from '../../../utils/api';
 import { useAtom } from 'jotai';
-import { isSidebarOpenAtom, warningsAtom, infoAtom, searchAtom,successAtom } from "../../../Variables";
+import { isSidebarOpenAtom, warningsAtom, infoAtom, searchAtom, successAtom } from "../../../Variables";
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
@@ -147,6 +147,7 @@ const POMaker = () => {
 	const [selectedProducts, setSelectedProducts] = useState(new Set());
 	const [productQuantities, setProductQuantities] = useState({});
 	const [creatingPO, setCreatingPO] = useState(false);
+	const [loadAll, setLoadAll] = useState(false);
 
 	function formatCurrency(value) {
 		value = Number(value);
@@ -217,12 +218,12 @@ const POMaker = () => {
 		try {
 			const selectedProductsData = [];
 			const missingVendorProducts = [];
-			
+
 			tableData?.forEach((item, tableIndex) => {
 				if (selectedProducts.has(item.id)) {
 					const selectedVendorIndex = selectedVendors[tableIndex];
 					const selectedVendor = item.vendors && item.vendors[selectedVendorIndex];
-					
+
 					if (selectedVendor) {
 						// Parse price to get numeric value
 						let unitPrice = 0;
@@ -231,7 +232,7 @@ const POMaker = () => {
 							// Remove $ and convert to float
 							unitPrice = parseFloat(priceString.toString().replace(/[$,]/g, '')) || 0;
 						}
-						
+
 						const calculatedQuantity = (item.minQuantity - item.availableQuantity) > 0 ? item.minQuantity - item.availableQuantity : 1;
 						selectedProductsData.push({
 							product_id: item.id,
@@ -248,18 +249,18 @@ const POMaker = () => {
 
 			// Show warnings for products without vendors
 			if (missingVendorProducts.length > 0) {
-				setWarnings(prev => [...prev, { 
-					id: Date.now(), 
-					message: `Please select vendors for: ${missingVendorProducts.join(', ')}`, 
-					status: 400 
+				setWarnings(prev => [...prev, {
+					id: Date.now(),
+					message: `Please select vendors for: ${missingVendorProducts.join(', ')}`,
+					status: 400
 				}]);
 			}
 
 			if (selectedProductsData.length === 0) {
-				setWarnings(prev => [...prev, { 
-					id: Date.now(), 
-					message: "No valid products with vendors selected", 
-				 status: 400 
+				setWarnings(prev => [...prev, {
+					id: Date.now(),
+					message: "No valid products with vendors selected",
+					status: 400
 				}]);
 				return;
 			}
@@ -277,17 +278,17 @@ const POMaker = () => {
 				return acc;
 			}, {});
 
-			const summary = Object.entries(vendorGroups).map(([vendorId, count]) => 
+			const summary = Object.entries(vendorGroups).map(([vendorId, count]) =>
 				`${vendorNames[vendorId]}: ${count} products`
 			).join(', ');
 
-			setInfo(prev => [...prev, { 
-				id: Date.now(), 
-				message: `Creating POs for: ${summary}`, 
-				status: 200 
+			setInfo(prev => [...prev, {
+				id: Date.now(),
+				message: `Creating POs for: ${summary}`,
+				status: 200
 			}]);
 
-			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po-maker/`, {
+			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/po-maker/`, {
 				method: "POST",
 				headers: {
 					'Content-Type': 'application/json',
@@ -298,16 +299,16 @@ const POMaker = () => {
 			});
 
 			if (response.success) {
-				setSuccess(prev => [...prev, { 
-					id: Date.now(), 
-					message: `${response.message}`, 
-					status: 200 
+				setSuccess(prev => [...prev, {
+					id: Date.now(),
+					message: `${response.message}`,
+					status: 200
 				}]);
-				
+
 				// Reset selections
 				setSelectedProducts(new Set());
 				setProductQuantities({});
-				
+
 				// Optionally refresh the data
 				getData();
 			} else {
@@ -329,7 +330,7 @@ const POMaker = () => {
 		setLoading(true);
 		try {
 
-			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/po-maker/?page=${page}&page_size=${pageSize}&categoryId=${currentSubCategory ? currentSubCategory : currentCategory ? currentCategory : currentMasterCategory}&vendor=${currentVendor || ''}`, {
+			const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/po-maker/?page=${page}&page_size=${pageSize}&categoryId=${currentSubCategory ? currentSubCategory : currentCategory ? currentCategory : currentMasterCategory}&vendor=${currentVendor || ''}&loadAll=${loadAll}`, {
 				method: "GET",
 				headers: {
 					'Content-Type': 'application/json',
@@ -357,7 +358,7 @@ const POMaker = () => {
 		const fetchCategories = async () => {
 			setLoading(true);
 			try {
-				const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/categories/`, {
+				const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/categories/`, {
 					method: "GET",
 					headers: {
 						'Content-Type': 'application/json',
@@ -381,7 +382,7 @@ const POMaker = () => {
 		const vendorsByCategory = async () => {
 			if (!currentCategory) return;
 			try {
-				const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/vendors-by-category/${currentCategory}/`, {
+				const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/vendors-by-category/${currentCategory}/`, {
 					method: "GET",
 					headers: {
 						'Content-Type': 'application/json',
@@ -390,7 +391,7 @@ const POMaker = () => {
 				setVendors(response.data || []);
 			} catch (error) {
 				console.error('Error fetching vendors:', error);
-			} 
+			}
 		}
 		vendorsByCategory();
 		setPage(1);
@@ -450,6 +451,18 @@ const POMaker = () => {
 					/>
 				</div>
 
+				<div>
+					{/* button for loading all */}
+					<button
+						onClick={() => {
+							setLoadAll(!loadAll);
+						}}
+						className={"cursor-pointer text-white px-4 py-1.5 rounded-md  " + (loadAll ? "bg-indigo-500 hover:bg-indigo-700" : "bg-indigo-200 hover:bg-indigo-300")}
+					>
+						Load All
+					</button>
+				</div>
+
 				{/* <div className="flex flex-col">
 					<label className="text-sm text-gray-600 mb-1">Vendors</label>
 					<CustomDropdown options={vendors.map(vendor => ({
@@ -463,7 +476,7 @@ const POMaker = () => {
 						getData();
 
 					}}
-					className="bg-indigo-500 text-white px-4 py-1.5 rounded-md hover:bg-blue-700"
+					className="bg-indigo-500 text-white px-4 py-1.5 rounded-md hover:bg-indigo-700 cursor-pointer"
 				>
 					Search
 				</button>
@@ -520,23 +533,22 @@ const POMaker = () => {
 						<button
 							onClick={createPurchaseOrders}
 							disabled={creatingPO || selectedProducts.size === 0}
-							className={`px-4 py-2 rounded-md font-medium transition-colors ${
-								creatingPO 
-									? "bg-gray-400 text-white cursor-not-allowed" 
+							className={`px-4 py-2 rounded-md font-medium transition-colors ${creatingPO
+									? "bg-gray-400 text-white cursor-not-allowed"
 									: "bg-green-600 text-white hover:bg-green-700"
-							}`}
+								}`}
 						>
 							{creatingPO ? (
 								<div className="flex items-center gap-2">
 									<svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-										<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-										<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+										<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+										<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
 									</svg>
 									Creating POs...
 								</div>
 							) : (
 								<div className="flex items-center gap-2">
-									<PackageSearch className="inline mb-1 h-5 w-5" />	
+									<PackageSearch className="inline mb-1 h-5 w-5" />
 									Create Purchase Orders
 								</div>
 							)}
@@ -596,85 +608,81 @@ const POMaker = () => {
 									const hasVendorIssue = selectedVendors[index] !== 0 && item.vendors?.length > 1;
 									const isSelected = selectedProducts.has(item.id);
 									const needsVendorSelection = isSelected && (!item.vendors || item.vendors.length === 0);
-									
+
 									return (
-									<tr 
-										className={`items-start border-b group ${
-											index % 2 === 0 ? "" : "bg-gray-100"
-										} ${
-											hasVendorIssue ? " !bg-red-100 border-red-200 hover:!bg-red-200/75" : " border-gray-300 hover:bg-indigo-50"
-										} ${
-											isSelected ? " !bg-green-50 border-green-200 hover:!bg-green-200/75" : ""
-										} ${
-											needsVendorSelection ? " !bg-yellow-50 border-yellow-200" : ""
-										}`} 
-										key={index}
-										title={needsVendorSelection ? "This product needs a vendor to be selected" : ""}
-									>
-										<td className="py-2 px-2 w-fit text-center">
-											<label className="inline-flex items-center cursor-pointer">
-												<input
-													type="checkbox"
-													checked={selectedProducts.has(item.id)}
-													onChange={(e) => handleProductSelection(item.id, e.target.checked)}
-													className="sr-only peer"
-												/>
-												<span className={`w-5 h-5 flex items-center justify-center rounded border-2 transition-colors duration-200
+										<tr
+											className={`items-start border-b group ${index % 2 === 0 ? "" : "bg-gray-100"
+												} ${hasVendorIssue ? " !bg-red-100 border-red-200 hover:!bg-red-200/75" : " border-gray-300 hover:bg-indigo-50"
+												} ${isSelected ? " !bg-green-50 border-green-200 hover:!bg-green-200/75" : ""
+												} ${needsVendorSelection ? " !bg-yellow-50 border-yellow-200" : ""
+												}`}
+											key={index}
+											title={needsVendorSelection ? "This product needs a vendor to be selected" : ""}
+										>
+											<td className="py-2 px-2 w-fit text-center">
+												<label className="inline-flex items-center cursor-pointer">
+													<input
+														type="checkbox"
+														checked={selectedProducts.has(item.id)}
+														onChange={(e) => handleProductSelection(item.id, e.target.checked)}
+														className="sr-only peer"
+													/>
+													<span className={`w-5 h-5 flex items-center justify-center rounded border-2 transition-colors duration-200
 													${selectedProducts.has(item.id)
-														? 'bg-indigo-600 border-indigo-600'
-														: 'bg-white border-gray-300 peer-hover:border-indigo-400'
-													}`}>
-													{selectedProducts.has(item.id) && (
-														<svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-														</svg>
-													)}
-												</span>
-											</label>
-										</td>
-										<td className="py-2 px-1 w-fit text-center border-l border-gray-300">
-											<p className="text-sm text-gray-600">{item.index}</p>
-										</td>
-										<td className={"py-2 px-2 w-[40%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
-											<div className="flex items-center">
-												{pageSize <= 50 && <PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}><img src={item?.imageUrl || "/static/images/default.png"} alt={item?.productName} className="w-8 h-8 mr-2 mix-blend-multiply" /></PhotoView>}
-												<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
-													({item?.id})
-												</a>
-												<p onClick={() => {
-													setSearch(item?.name);
-													document.querySelector("#search")?.focus();
-												}}
-												label={item?.name}
-												className="truncate whitespace-break-spaces h-6 overflow-ellipsis">{item?.name}</p>
-											</div>
-										</td>
-										<td className={"text-center py-2 px-2 border-l items-start " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatNumber(item?.availableQuantity)}/{formatNumber(item?.minQuantity)}</td>
-										<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
-											<input
-												type="number"
-												min="1"
-												value={productQuantities[item.id] || ((item?.minQuantity - item?.availableQuantity) > 0 ? item?.minQuantity - item?.availableQuantity : 1)}
-												onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-												disabled={!selectedProducts.has(item.id)}
-												className="w-16 px-2 py-1 text-center border border-gray-300 bg-white rounded disabled:bg-gray-100 disabled:text-gray-400"
-											/>
-										</td>
-										<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.costPrice)}</td>
-										<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.standardPrice)}</td>
-										<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatPercentage(item?.profitPercentage)}</td>
-										<td className={"text-left py-1 px-1 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
-											{item?.vendors?.length > 1 && (<VendorList data={item?.vendors} setSelectedVendors={setSelectedVendors} index={index} />)}
-											{item?.vendors?.length === 0 && (<span className="text-gray-400 w-full ml-2">No vendors</span>)}
-											{item?.vendors?.length === 1 && (
-												<div className="flex items-center justify-between gap-2 px-2 py-1 w-full">
-													<span className="text-sm text-gray-700 text-left truncate">{item?.vendors?.[0]?.name}</span>
-													<span className="text-sm text-gray-700 font-bold">{item?.vendors?.[0]?.price}</span>
+															? 'bg-indigo-600 border-indigo-600'
+															: 'bg-white border-gray-300 peer-hover:border-indigo-400'
+														}`}>
+														{selectedProducts.has(item.id) && (
+															<svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+															</svg>
+														)}
+													</span>
+												</label>
+											</td>
+											<td className="py-2 px-1 w-fit text-center border-l border-gray-300">
+												<p className="text-sm text-gray-600">{item.index}</p>
+											</td>
+											<td className={"py-2 px-2 w-[40%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
+												<div className="flex items-center">
+													{pageSize <= 50 && <PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}><img src={item?.imageUrl || "/static/images/default.png"} alt={item?.productName} className="w-8 h-8 mr-2 mix-blend-multiply" /></PhotoView>}
+													<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
+														({item?.id})
+													</a>
+													<p onClick={() => {
+														setSearch(item?.name);
+														document.querySelector("#search")?.focus();
+													}}
+														label={item?.name}
+														className="truncate whitespace-break-spaces h-6 overflow-ellipsis">{item?.name}</p>
 												</div>
-											)}
-										</td>
-									</tr>
-								);
+											</td>
+											<td className={"text-center py-2 px-2 border-l items-start " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatNumber(item?.availableQuantity)}/{formatNumber(item?.minQuantity)}</td>
+											<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
+												<input
+													type="number"
+													min="1"
+													value={productQuantities[item.id] || ((item?.minQuantity - item?.availableQuantity) > 0 ? item?.minQuantity - item?.availableQuantity : 1)}
+													onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+													disabled={!selectedProducts.has(item.id)}
+													className="w-16 px-2 py-1 text-center border border-gray-300 bg-white rounded disabled:bg-gray-100 disabled:text-gray-400"
+												/>
+											</td>
+											<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.costPrice)}</td>
+											<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatCurrency(item?.standardPrice)}</td>
+											<td className={"text-center py-2 px-2 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>{formatPercentage(item?.profitPercentage)}</td>
+											<td className={"text-left py-1 px-1 border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
+												{item?.vendors?.length > 1 && (<VendorList data={item?.vendors} setSelectedVendors={setSelectedVendors} index={index} />)}
+												{item?.vendors?.length === 0 && (<span className="text-gray-400 w-full ml-2">No vendors</span>)}
+												{item?.vendors?.length === 1 && (
+													<div className="flex items-center justify-between gap-2 px-2 py-1 w-full">
+														<span className="text-sm text-gray-700 text-left truncate">{item?.vendors?.[0]?.name}</span>
+														<span className="text-sm text-gray-700 font-bold">{item?.vendors?.[0]?.price}</span>
+													</div>
+												)}
+											</td>
+										</tr>
+									);
 								})}
 								{tableData?.length === 0 && !loading && (
 									<tr>

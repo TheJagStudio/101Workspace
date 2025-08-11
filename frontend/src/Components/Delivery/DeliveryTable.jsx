@@ -28,9 +28,9 @@ const DeliveryTable = ({ invoices = [] }) => {
                         invoices.map((invoice, idx) => (
                             <tr
                                 key={invoice?.invoiceNumber || idx}
-                                className="gridjs-tr md:table-row py-2 block !border-b !border-gray-200 md:!border-0 md:bg-transparent md:rounded-lg shadow-none"
+                                className="gridjs-tr md:table-row block !border-b !border-gray-200 md:!border-0 md:bg-transparent md:rounded-lg shadow-none"
                             >
-                                <td className="gridjs-td !bg-gradient-to-r from-gray-50 via-white to-white md:from-white md:table-cell block px-4 py-2 md:px-0 md:py-0 items-center justify-between !border-0 md:!border md:!border-l-0 !border-gray-200" data-label="#">
+                                <td className={`gridjs-td md:!py-2 !bg-gradient-to-r ${invoice?.paymentStatus === "paid" ? "from-green-100" : "from-red-100"} via-white to-white md:from-white md:table-cell px-4 py-2 md:px-0 md:py-0 flex items-center justify-between !border-0 md:!border !border-gray-200 text-left`} data-label="#">
                                     <span className="font-semibold md:hidden block text-gray-500">#</span>
                                     {idx + 1}
                                 </td>

@@ -4,6 +4,7 @@ import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import TableGrid from "./TableGrid";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import mermaid from 'mermaid';
+import { BrushCleaning, RefreshCw, ReplaceAllIcon } from "lucide-react";
 
 const generateMermaidId = () => `mermaid-graph-${Math.random().toString(36).substring(2, 15)}`;
 
@@ -76,9 +77,156 @@ const Chatbot = () => {
 		);
 	};
 
+	const ChartComponent = ({ type, data, options = {} }) => {
+		const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff88', '#ff0080', '#8000ff'];
+
+		if (!data || !Array.isArray(data) || data.length === 0) {
+			return (
+				<div className="w-full h-64 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg">
+					<p className="text-gray-500">No data available for visualization</p>
+				</div>
+			);
+		}
+
+		const containerStyle = {
+			width: '100%',
+			height: 400,
+			marginTop: '1rem',
+			marginBottom: '1rem'
+		};
+
+		switch (type) {
+			case 'bar_chart':
+				return (
+					<div style={containerStyle}>
+						<ResponsiveContainer width="100%" height="100%">
+							<BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+								<CartesianGrid strokeDasharray="3 3" />
+								<XAxis dataKey={options.x_axis_key || Object.keys(data[0])[0]} />
+								<YAxis />
+								<Tooltip />
+								<Legend />
+								{(options.y_axis_keys || [Object.keys(data[0])[1]]).map((key, index) => (
+									<Bar key={key} dataKey={key} fill={colors[index % colors.length]} />
+								))}
+							</BarChart>
+						</ResponsiveContainer>
+					</div>
+				);
+
+			case 'line_chart':
+				return (
+					<div style={containerStyle}>
+						<ResponsiveContainer width="100%" height="100%">
+							<LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+								<CartesianGrid strokeDasharray="3 3" />
+								<XAxis dataKey={options.x_axis_key || Object.keys(data[0])[0]} />
+								<YAxis />
+								<Tooltip />
+								<Legend />
+								{(options.y_axis_keys || [Object.keys(data[0])[1]]).map((key, index) => (
+									<Line
+										key={key}
+										type="monotone"
+										dataKey={key}
+										stroke={colors[index % colors.length]}
+										strokeWidth={2}
+										dot={{ r: data.length > 30 ? 0 : 4 }}
+									/>
+								))}
+							</LineChart>
+						</ResponsiveContainer>
+					</div>
+				);
+
+			case 'pie_chart':
+				// For pie chart, we need to transform the data structure
+				const pieData = data.map((item, index) => {
+					const keys = Object.keys(item);
+					const labelKey = options.x_axis_key || keys[0];
+					const valueKey = options.y_axis_keys?.[0] || keys[1];
+					return {
+						name: item[labelKey],
+						value: parseInt(item[valueKey]) ? parseInt(item[valueKey]) : 0,
+						fill: colors[index % colors.length]
+					};
+				});
+
+				return (
+					<div style={containerStyle}>
+						<ResponsiveContainer width="100%" height="100%">
+							<PieChart>
+								<Pie
+									data={pieData}
+									cx="50%"
+									cy="50%"
+									labelLine={false}
+									label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+									outerRadius={120}
+									fill="#8884d8"
+									dataKey="value"
+								>
+									{pieData.map((entry, index) => (
+										<Cell key={`cell-${index}`} fill={entry.fill} />
+									))}
+								</Pie>
+								<Tooltip />
+								{/* <Legend /> */}
+							</PieChart>
+						</ResponsiveContainer>
+					</div>
+				);
+
+			default:
+				return (
+					<div className="w-full h-32 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg">
+						<p className="text-gray-500">Unsupported chart type: {type}</p>
+					</div>
+				);
+		}
+	};
+
+	const DiagramComponent = ({ mermaidSyntax }) => {
+		const [diagramSvg, setDiagramSvg] = useState('');
+		const [error, setError] = useState('');
+		const diagramId = useRef(generateMermaidId());
+
+		useEffect(() => {
+			const renderDiagram = async () => {
+				try {
+					setError('');
+					const { svg } = await mermaid.render(diagramId.current, mermaidSyntax);
+					setDiagramSvg(svg);
+				} catch (err) {
+					console.error('Mermaid rendering error:', err);
+					setError('Failed to render diagram');
+				}
+			};
+
+			if (mermaidSyntax) {
+				renderDiagram();
+			}
+		}, [mermaidSyntax]);
+
+		if (error) {
+			return (
+				<div className="w-full h-32 flex items-center justify-center bg-red-50 border border-red-200 rounded-lg">
+					<p className="text-red-600">{error}</p>
+				</div>
+			);
+		}
+
+		return (
+			<div className="w-full my-4 flex justify-center">
+				<div dangerouslySetInnerHTML={{ __html: diagramSvg }} />
+			</div>
+		);
+	};
+
 	useEffect(() => {
 		mermaid.initialize({ startOnLoad: false, theme: 'light' });
 	}, []);
+
 	return (
 		<>
 			{!isChatOpen && (
@@ -110,10 +258,14 @@ const Chatbot = () => {
 									let pythonCode = "";
 									let queryResult = [];
 									let isLoaded = false;
+									let visualization = null;
+
 									if (msg.sender !== "user") {
 										try {
 											pythonCode = msg.data.python_code;
 											queryResult = msg.data.results;
+											visualization = msg.data.visualization;
+
 											try {
 												queryResult = JSON.parse(queryResult);
 												isLoaded = true;
@@ -130,12 +282,37 @@ const Chatbot = () => {
 											} else {
 												isLoaded = false;
 											}
+
+											// Special handling for diagrams - they should render even if results parsing fails
+											const hasDiagramVisualization = visualization && visualization.type === 'diagram' && visualization.data;
+
 											return (
 												<div key={index} className={`flex flex-col gap-2 mb-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
 													{pythonCode !== null && <CodeBlockCustom code={pythonCode} />}
 
-													{isLoaded && msg.sender !== "user" && <div className={`max-w-[50%] w-fit px-4 py-2 rounded-lg shadow-inner text-wrap wrap-break-word  ${msg.sender === "user" ? "bg-indigo-500 text-white rounded-br-none" : "bg-green-200 text-gray-800 rounded-bl-none"}`} >{msg?.data?.natural_language_response}</div>}
-													{isLoaded && (
+													{(isLoaded || hasDiagramVisualization) && msg.sender !== "user" && (
+														<div className={`max-w-[50%] w-fit px-4 py-2 rounded-lg shadow-inner text-wrap wrap-break-word  ${msg.sender === "user" ? "bg-indigo-500 text-white rounded-br-none" : "bg-green-200 text-gray-800 rounded-bl-none"}`}>
+															{msg?.data?.natural_language_response}
+														</div>
+													)}
+
+													{/* Visualization Section */}
+													{(isLoaded || hasDiagramVisualization) && visualization && (
+														<div className="w-full">
+															{visualization.type === 'diagram' ? (
+																<DiagramComponent mermaidSyntax={visualization.data} />
+															) : visualization.type && visualization.type !== 'none' && visualization.type !== 'table' ? (
+																<ChartComponent
+																	type={visualization.type}
+																	data={visualization.data || queryResult}
+																	options={visualization.options || {}}
+																/>
+															) : null}
+														</div>
+													)}
+
+													{/* Table Section */}
+													{isLoaded && (!visualization || visualization.type === 'table' || visualization.type === 'none') && (
 														<div className="w-full text-wrap wrap-break-word ">
 															<TableGrid data={queryResult} />
 														</div>
@@ -145,13 +322,28 @@ const Chatbot = () => {
 										} catch (error) {
 											console.error("Error processing message:", error);
 											return (
-												<div className="flex justify-start mb-3">
+												<div key={index} className="flex justify-start mb-3">
 													<div className="max-w-[70%] px-4 py-2 rounded-lg shadow-inner bg-gray-200 text-gray-700 rounded-bl-none">{error.message}</div>
 												</div>
 											);
 										}
 									} else {
-										return <div className="flex justify-start mb-3">{msg.sender === "user" && <div className={`max-w-[70%] px-4 py-2 rounded-lg shadow-md text-wrap wrap-break-word ${msg.sender === "user" ? "bg-indigo-500 text-white rounded-br-none ml-auto" : "bg-gray-200 text-gray-800 rounded-bl-none"}`}>{msg.text}</div>}</div>;
+										return (
+											<div key={index} className="flex justify-start mb-3">
+												{msg.sender === "user" && (
+													<div className={`max-w-[70%] relative px-4 py-2 rounded-lg shadow-md text-wrap wrap-break-word ${msg.sender === "user" ? "bg-indigo-500 text-white rounded-br-none ml-auto" : "bg-gray-200 text-gray-800 rounded-bl-none"}`}>
+														{msg.text}
+														<div onClick={()=>{
+															// remove all messages after this one
+															setInputMessage(msg.text)
+															sendMessage()
+														}} className="absolute -bottom-5 right-0 hover:rotate-45 transition-all cursor-pointer">
+															<RefreshCw className="h-4 w-4 text-indigo-500" />
+														</div>
+													</div>
+												)}
+											</div>
+										);
 									}
 								})
 							)}
@@ -183,6 +375,13 @@ const Chatbot = () => {
 									<path className="path-custom" strokeLinejoin="round" strokeLinecap="round" stroke="currentColor" fill="currentColor" d="M14.187 8.096 15 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L21.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09L15 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L8.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09zM6 14.25l-.259 1.035a3.38 3.38 0 0 1-2.456 2.456L2.25 18l1.035.259a3.38 3.38 0 0 1 2.456 2.456L6 21.75l.259-1.035a3.38 3.38 0 0 1 2.455-2.456L9.75 18l-1.036-.259a3.38 3.38 0 0 1-2.455-2.456zM6.5 4l-.197.591a1.13 1.13 0 0 1-.711.712L5 5.5l.591.197a1.13 1.13 0 0 1 .712.712L6.5 7l.197-.591a1.13 1.13 0 0 1 .712-.712L8 5.5l-.591-.197a1.13 1.13 0 0 1-.712-.711z" />
 								</svg>
 								{isLoading ? "Sending..." : "Send"}
+							</button>
+							{/* clear chat button */}
+							<button onClick={() => {
+								setMessages([]);
+								setQueryResult([]);
+							}} disabled={messages.length === 0} className="px-3 py-3 ml-2 flex flex-row gap-2 bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg border-t-0 border border-b-2 border-red-300 shadow-md hover:bg-red-500 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200">
+								<BrushCleaning className="h-5 w-5" />
 							</button>
 						</div>
 					</div>

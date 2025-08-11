@@ -5,7 +5,7 @@ import Scanner from '../../Components/Delivery/Scanner'
 import { apiRequest } from '../../utils/api'
 import CustomDropdown from '../../Components/utils/CustomDropdown'
 
-const Button = ({ children, onClick, icon, variant, isLoading, disabled, className }) => {
+const Button = ({ children, onClick, icon, variant, isLoading, disabled, className, showChildren }) => {
     const base =
         'inline-flex items-center gap-2 rounded-md font-medium focus:outline-none transition-colors';
     const variants = {
@@ -21,10 +21,10 @@ const Button = ({ children, onClick, icon, variant, isLoading, disabled, classNa
             type="button"
             onClick={onClick}
             disabled={isLoading || disabled}
-            className={`${base} ${className || variants[variant || 'solid']} ${(isLoading || disabled) ? disabledClass : ''} px-5 py-2 text-base`}
+            className={`${base} ${className || variants[variant || 'solid']} ${(isLoading || disabled) ? disabledClass : ''} px-2 py-2 text-base`}
         >
-            {icon}
-            {isLoading ? 'Loading...' : children}
+                <span >{icon}</span>
+                <span className={!showChildren ? 'hidden sm:block' : ''}>{isLoading ? 'Loading...' : children}</span>
         </button>
     );
 }
@@ -312,46 +312,46 @@ const ScanPage = () => {
                             </div>
                             <div className="p-6">
                                 <div className="space-y-4">
-                                    <div>
+                                    <div className='flex items-center justify-between gap-2 sm:block'>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Invoice Number
                                         </label>
-                                        <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
+                                        <div className="p-1 border border-gray-300 rounded flex-1 bg-gray-50">
                                             {scanResult?.invoiceNumber}
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className='flex items-center justify-between gap-2 sm:block'>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Order ID
                                         </label>
-                                        <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
+                                        <div className="p-1 border border-gray-300 rounded flex-1 bg-gray-50">
                                             {scanResult?.orderId || 'N/A'}
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className='flex items-center justify-between gap-2 sm:block'>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Customer
                                         </label>
-                                        <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
+                                        <div className="p-1 border border-gray-300 rounded flex-1 bg-gray-50">
                                             {scanResult?.customerName}
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className='flex items-center justify-between gap-2 sm:block'>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Shipping Type
                                         </label>
-                                        <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
+                                        <div className="p-1 border border-gray-300 rounded flex-1 bg-gray-50">
                                             {scanResult?.shippingType}
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className='flex items-center justify-between gap-2'>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Status
                                         </label>
-                                        <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
+                                        <div className="p-1">
                                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${scanResult?.status === 'Shipped'
                                                 ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                                : 'bg-gray-200 text-gray-800'
                                                 }`}>
                                                 {scanResult?.status}
                                             </span>
@@ -364,9 +364,9 @@ const ScanPage = () => {
                                         <input
                                             type="number"
                                             id="caseCount"
-                                            min="1"
+                                            min={1}
                                             value={caseCount}
-                                            onChange={(e) => setCaseCount(parseInt(e.target.value) || 1)}
+                                            onChange={(e) => setCaseCount(parseInt(e.target.value))}
                                             className="block w-full border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 focus:outline-none px-3 py-1"
                                         />
                                     </div>
@@ -383,10 +383,12 @@ const ScanPage = () => {
                                 )}
                                 </div>
                             </div>
-                            <div className="px-6 pb-6 pt-0 flex justify-end space-x-3">
+                            <div className="px-6 pb-6 pt-0 flex justify-start space-x-3">
                                 <Button
                                     variant="outline"
                                     onClick={handleBackToScanner}
+                                    icon={<ArrowLeft size={20} />}
+                                    showChildren={false}
                                 >
                                     Back to Scanner
                                 </Button>
@@ -394,6 +396,7 @@ const ScanPage = () => {
                                     onClick={handleAddInvoice}
                                     isLoading={addingInvoice}
                                     icon={<Package size={20} />}
+                                    showChildren={true}
                                 >
                                     Add Invoice
                                 </Button>
@@ -416,7 +419,7 @@ const ScanPage = () => {
                                 </div>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
+                                <div className='z-30'>
                                     <label htmlFor="truck" className="block text-sm font-medium text-gray-700 mb-1">
                                         Select Truck
                                     </label>

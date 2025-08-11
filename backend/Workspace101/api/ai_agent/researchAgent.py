@@ -9,6 +9,7 @@ import traceback
 import re
 from dotenv import load_dotenv
 from summa import summarizer
+import uuid
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,10 +19,12 @@ load_dotenv()
 # For this example, we'll use a placeholder. Replace with your actual key or set as an environment variable.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 searpApi = "b358398c-0f67-4bee-8ed6-c90304f824e8"
+access_token = "ghu_voKb1pCgu0PEAIGfV9Ec17pbqCOKS90qVs7z"
 
 # Replaced f-string
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key={}".format(GEMINI_API_KEY)
 DEEP_INFRA_API_URL = 'https://api.deepinfra.com/v1/openai/chat/completions'
+COPILOT_API_URL = "https://api.individual.githubcopilot.com"
 # Expanded and refined product categories
 PRODUCT_CATEGORIES = ["Vape Devices and Vaporizers (Disposable and Refillable)", "E-Liquids (Nicotine and Nicotine-Free)", "Hemp-Derived Products (CBD, CBG, CBN)", "Delta-8, Delta-10, HHC, and THCa Products", "Kratom (Powders, Capsules, Extracts)", "Hookah, Shisha Tobacco, and Charcoals", "Premium Cigars and Rolling Papers", "Energy Drinks and Nootropic Beverages", "Imported and Specialty Snacks (e.g., Mexican Candy)", "Adult Novelty and Wellness Products", "Smoke Shop Supplies (Glassware, Grinders, Displays)"]
 JURISDICTION = "Georgia, USA"
@@ -130,6 +133,88 @@ class GeminiLLM:
             print({"type": "error", "agent": "GeminiLLM", "phase": "ANALYZE_JSON", "message": "Failed to decode JSON from LLM response.", "details": {"error": str(e), "raw_response": raw_response}})
             return {"error": "Failed to parse JSON response from LLM.", "raw_response": raw_response}
 
+class CopilotLLM:
+    """A wrapper for the GitHub Copilot API with error handling."""
+    
+    def __init__(self, api_url: str = "https://api.individual.githubcopilot.com"):
+        self.api_url = api_url
+        self.model = "gpt-4.1"
+        
+    def _get_token(self):
+        try:
+            resp = requests.get('https://api.github.com/copilot_internal/v2/token', headers={
+                'authorization': f'token {access_token}',
+                'editor-version': 'vscode/1.103.0',
+                'editor-plugin-version': 'copilot-chat/1.350.0',
+                'user-agent': 'GitHubCopilot/1.155.0'
+            })
+            resp_json = resp.json()
+            return resp_json.get('token')
+        except Exception as e:
+            print({"type": "error", "agent": "CopilotLLM", "phase": "GET_TOKEN", "message": "Error getting token", "details": {"error": str(e)}})
+            return None
+
+    def _make_request(self, prompt: str):
+        token = self._get_token()
+        if not token:
+            return None
+            
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "accept": "application/json",
+            "copilot-integration-id": "vscode-chat",
+            "editor-version": 'vscode/1.103.0',
+            "editor-plugin-version": 'copilot-chat/1.350.0',
+            "user-agent": 'GitHubCopilotChat/1.350.0',
+            "openai-intent": "conversation-panel",
+            "x-github-api-version": '2025-04-01',
+            "x-request-id": str(uuid.uuid4()),
+            "x-vscode-user-agent-library-version": "electron-fetch"
+        }
+
+        time.sleep(2)  # Rate limiting
+        try:
+            response = requests.post(
+                f"{self.api_url}/chat/completions",
+                headers=headers,
+                json={
+                    "messages": [{"role": "user", "content": prompt}],
+                    "model": self.model,
+                    "max_tokens": 32768,
+                    "temperature": 0.4,
+                    "stream": False
+                }
+            )
+            response.raise_for_status()
+            print(response.json())
+            return response.json()
+        except requests.RequestException as e:
+            print({"type": "error", "agent": "CopilotLLM", "phase": "API_CALL", "message": "Error calling Copilot API", "details": {"error": str(e)}})
+            if hasattr(e, "response") and e.response:
+                print({"type": "error_detail", "agent": "CopilotLLM", "phase": "API_CALL", "message": "Received error response body from API", "details": {"response_body": e.response.text}})
+            return None
+
+    def analyze(self, prompt: str):
+        result = self._make_request(prompt)
+        if result and "choices" in result and result["choices"][0].get("message", {}).get("content"):
+            return result["choices"][0]["message"]["content"]
+        else:
+            print({"type": "error", "agent": "CopilotLLM", "phase": "ANALYZE", "message": "Could not parse LLM response.", "details": {"raw_response": result}})
+            return "Error: Analysis failed due to an invalid API response."
+
+    def analyze_json(self, prompt: str):
+        raw_response = self.analyze(prompt)
+        try:
+            if raw_response is None:
+                return {"error": "No response from LLM"}
+            # Clean the response string from markdown code blocks
+            clean_str = raw_response.strip().replace("```json", "").replace("```", "").strip()
+            result = json.loads(clean_str)
+            return result
+        except (json.JSONDecodeError, AttributeError) as e:
+            print({"type": "error", "agent": "CopilotLLM", "phase": "ANALYZE_JSON", "message": "Failed to decode JSON from LLM response.", "details": {"error": str(e), "raw_response": raw_response}})
+            return {"error": "Failed to parse JSON response from LLM.", "raw_response": raw_response}
 
 
 class DeepInfraLLM:
@@ -211,7 +296,7 @@ class DeepInfraLLM:
 class MarketResearchAgent:
     """Agent that finds trending products, market sentiment, and innovations."""
 
-    def __init__(self, llm: GeminiLLM, search_tool: WebSearchTool, social_tool: SocialMediaSearchTool, scraper_tool: WebScraperTool):
+    def __init__(self, llm: CopilotLLM, search_tool: WebSearchTool, social_tool: SocialMediaSearchTool, scraper_tool: WebScraperTool):
         self.llm, self.search_tool, self.social_tool, self.scraper_tool = llm, search_tool, social_tool, scraper_tool
         self.name = "Market Research Agent (MRA)"
 
@@ -277,7 +362,7 @@ class MarketResearchAgent:
 class RegulatoryComplianceAgent:
     """Agent that monitors the regulatory landscape."""
 
-    def __init__(self, llm: GeminiLLM, search_tool: WebSearchTool, scraper_tool: WebScraperTool):
+    def __init__(self, llm: CopilotLLM, search_tool: WebSearchTool, scraper_tool: WebScraperTool):
         self.llm, self.search_tool, self.scraper_tool = llm, search_tool, scraper_tool
         self.name = "Regulatory Compliance Agent (RCA)"
 
@@ -323,7 +408,7 @@ class RegulatoryComplianceAgent:
 class CompetitiveIntelligenceAgent:
     """Agent that analyzes the competitive landscape."""
 
-    def __init__(self, llm: GeminiLLM, search_tool: WebSearchTool, scraper_tool: WebScraperTool):
+    def __init__(self, llm: CopilotLLM, search_tool: WebSearchTool, scraper_tool: WebScraperTool):
         self.llm, self.search_tool, self.scraper_tool = llm, search_tool, scraper_tool
         self.name = "Competitive Intelligence Agent (CIA)"
 
@@ -364,7 +449,7 @@ class CompetitiveIntelligenceAgent:
 class SupplierDiscoveryAgent:
     """Agent that finds potential suppliers for high-opportunity products."""
 
-    def __init__(self, llm: GeminiLLM, search_tool: WebSearchTool):
+    def __init__(self, llm: CopilotLLM, search_tool: WebSearchTool):
         self.llm, self.search_tool = llm, search_tool
         self.name = "Supplier Discovery Agent (SDA)"
 
@@ -421,7 +506,7 @@ class SupplierDiscoveryAgent:
 class ReportingAgent:
     """Agent that synthesizes all findings into a detailed HTML report."""
 
-    def __init__(self, llm: GeminiLLM, theme="indigo"):
+    def __init__(self, llm: CopilotLLM, theme="indigo"):
         self.llm = llm
         self.name = "Reporting Agent (RA)"
         self.theme = theme
@@ -605,7 +690,7 @@ class ReportingAgent:
 class Orchestrator:
     def __init__(self, theme):
         print("--- Initializing AI Agency ---")
-        self.llm = GeminiLLM(api_url=GEMINI_API_URL)
+        self.llm = CopilotLLM(api_url=COPILOT_API_URL)
         self.search_tool = WebSearchTool()
         self.social_tool = SocialMediaSearchTool()
         self.scraper_tool = WebScraperTool() # This scraper tool now just extracts 'text' from the search result object

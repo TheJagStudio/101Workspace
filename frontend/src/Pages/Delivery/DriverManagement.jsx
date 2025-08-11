@@ -131,27 +131,6 @@ const DriverManagement = () => {
         }
     }
 
-    const handleDeleteDriver = async (driverId) => {
-        if (!confirm('Are you sure you want to delete this driver? This will also delete their user account.')) return
-        
-        setLoading(true)
-        setError(null)
-        try {
-            const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/delivery/drivers/${driverId}/`, {
-                method: 'DELETE'
-            })
-            
-            if (response.success) {
-                setSuccess('Driver deleted successfully')
-                fetchDrivers()
-            }
-        } catch (err) {
-            setError('Failed to delete driver: ' + (err?.message || err))
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const handleNewDriver = () => {
         setFormData({
             driverLicense: '',
@@ -339,13 +318,6 @@ const DriverManagement = () => {
                                                         title="Edit"
                                                     >
                                                         <Edit className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteDriver(driver.id)}
-                                                        className="text-red-600 hover:text-red-900 p-1"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
                                                     </button>
                                                 </div>
                                             </td>

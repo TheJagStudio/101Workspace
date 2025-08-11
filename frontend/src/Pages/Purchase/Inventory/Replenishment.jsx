@@ -94,7 +94,7 @@ const Replenishment = () => {
 
 	async function getData() {
 		try {
-			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}`);
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}`);
 			setTableData(data["data"]);
 			setTotalPages(data["totalPages"]);
 		} catch (error) {

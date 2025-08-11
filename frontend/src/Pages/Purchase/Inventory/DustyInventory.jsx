@@ -94,7 +94,7 @@ const DustyInventory = () => {
 	async function getData() {
 		setLoading(true);
 		try {
-			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?_report_type=${reportType}&_start_date=${startDate}&_end_date=${endDate}&_sort_by=${sortBy}&_page_num=${page}&_page_size=${pageSize}&_dataType=child&_reverse_sort=${reverseSort}&_load_subcategory=${subCategoryVisible}`);
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/dusty-inventory/?_report_type=${reportType}&_start_date=${startDate}&_end_date=${endDate}&_sort_by=${sortBy}&_page_num=${page}&_page_size=${pageSize}&_dataType=child&_reverse_sort=${reverseSort}&_load_subcategory=${subCategoryVisible}`);
 			setTableData(data["data"]);
 			let totalSize = parseInt(data["totalPages"]);
 			setTotalPages(Math.ceil(totalSize / pageSize));
@@ -126,7 +126,7 @@ const DustyInventory = () => {
 	// 	async function totalData() {
 	// 		setLoadingTotal(true);
 	// 		try {
-	// 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
+	// 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
 	// 			setTotalClosingInventory(data["totalClosingInventory"])
 	// 			setTotalInventoryCost(data["totalInventoryCost"])
 	// 			setTotalRetailValue(data["totalRetailValue"])

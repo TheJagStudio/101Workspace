@@ -156,6 +156,7 @@ const Sidebar = () => {
                                                 }`}
                                             onClick={() => {
                                                 setActiveItem(item?.text);
+                                                setCollapsed(!collapsed);
                                                 navigate(item?.to);
                                             }}
                                         >

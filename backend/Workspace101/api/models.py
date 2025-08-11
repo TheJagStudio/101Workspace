@@ -29,7 +29,6 @@ class Product(models.Model):
     TotalGrossMargin = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     TotalGrossMarginPrecentage = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     TotalRevenue = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
-    inventoryList = models.ManyToManyField("InventoryData", related_name="products", blank=True)
     urlAlias = models.CharField(max_length=500, null=True, blank=True)
     shortDescription = models.TextField(null=True, blank=True)
     fullDescription = models.TextField(null=True, blank=True)
@@ -52,6 +51,7 @@ class Product(models.Model):
     minQuantity = models.IntegerField(null=True, blank=True)
     caseQuantity = models.IntegerField(null=True, blank=True)
     boxQuantity = models.IntegerField(null=True, blank=True)
+    isHotProduct = models.BooleanField(default=False, null=True, blank=True)
     lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     def __str__(self):
@@ -92,42 +92,6 @@ class BusinessType(models.Model):
     insertedTimestamp = models.DateTimeField(auto_now_add=True)
     lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
 
-
-class InventoryData(models.Model):
-    id = models.IntegerField(primary_key=True)
-    productInventoryId = models.IntegerField()
-    productId = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        db_column="productId",
-        related_name="inventory_records",
-    )
-    wareHouseId = models.IntegerField()
-    quantity = models.IntegerField()
-    availableQuantity = models.IntegerField()
-    costPrice = models.DecimalField(max_digits=10, decimal_places=2)
-    orderId = models.IntegerField(null=True, blank=True)
-    orderLineItemId = models.IntegerField(null=True, blank=True)
-    orderFulfillmentId = models.IntegerField(null=True, blank=True)
-    returnOrderId = models.IntegerField(null=True, blank=True)
-    purchaseOrderId = models.IntegerField(null=True, blank=True)
-    billId = models.IntegerField(null=True, blank=True)
-    transferOrderId = models.IntegerField(null=True, blank=True)
-    vendorReturnOrderId = models.IntegerField(null=True, blank=True)
-    compositeProductId = models.IntegerField(null=True, blank=True)
-    adjustmentId = models.IntegerField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-    actionType = models.CharField(max_length=255, null=True, blank=True)
-    salesOrderId = models.IntegerField(null=True, blank=True)
-    createdBy = models.IntegerField()
-    insertedTimestamp = models.DateTimeField()
-    employeeName = models.CharField(max_length=255, null=True, blank=True)
-    storeName = models.CharField(max_length=255, null=True, blank=True)
-    warehouseName = models.CharField(max_length=255, null=True, blank=True)
-    lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
-
-    def __str__(self):
-        return str(self.id)
 
 
 class Vendor(models.Model):

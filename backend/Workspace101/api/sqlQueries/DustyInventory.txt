@@ -110,12 +110,12 @@ BEGIN
       WITH
       inventory_at_start AS (
         SELECT "productId", COALESCE(SUM(quantity), 0) AS starting_qty
-        FROM public.api_inventorydata WHERE "insertedTimestamp" < $1
+        FROM public.api_invoicelineitem WHERE "insertedTimestamp" < $1
         GROUP BY "productId"
       ),
       inventory_at_end AS (
         SELECT "productId", COALESCE(SUM(quantity), 0) AS closing_qty
-        FROM public.api_inventorydata WHERE "insertedTimestamp" <= $2
+        FROM public.api_invoicelineitem WHERE "insertedTimestamp" <= $2
         GROUP BY "productId"
       ),
       sales_in_period AS (
@@ -295,12 +295,12 @@ BEGIN
             WITH
             inventory_at_start AS (
                 SELECT "productId", COALESCE(SUM(quantity), 0) AS starting_qty
-                FROM public.api_inventorydata WHERE "insertedTimestamp" < $1
+                FROM public.api_invoicelineitem WHERE "insertedTimestamp" < $1
                 GROUP BY "productId"
             ),
             inventory_at_end AS (
                 SELECT "productId", COALESCE(SUM(quantity), 0) AS closing_qty
-                FROM public.api_inventorydata WHERE "insertedTimestamp" <= $2
+                FROM public.api_invoicelineitem WHERE "insertedTimestamp" <= $2
                 GROUP BY "productId"
             ),
             sales_in_period AS (

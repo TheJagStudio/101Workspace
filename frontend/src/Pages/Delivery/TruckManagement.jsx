@@ -97,26 +97,6 @@ const TruckManagement = () => {
         }
     }
 
-    const handleDeleteTruck = async (truckId) => {
-        if (!confirm('Are you sure you want to delete this truck?')) return
-        
-        setLoading(true)
-        setError(null)
-        try {
-            const response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/delivery/trucks/${truckId}/`, {
-                method: 'DELETE'
-            })
-            
-            if (response.success) {
-                setSuccess('Truck deleted successfully')
-                fetchTrucks()
-            }
-        } catch (err) {
-            setError('Failed to delete truck: ' + (err?.message || err))
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const handleNewTruck = () => {
         setFormData({ truckNo: '', truckName: '' })
@@ -265,13 +245,6 @@ const TruckManagement = () => {
                                                         title="Edit"
                                                     >
                                                         <Edit className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteTruck(truck.id)}
-                                                        className="text-red-600 hover:text-red-900 p-1"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
                                                     </button>
                                                 </div>
                                             </td>
