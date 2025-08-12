@@ -14,6 +14,11 @@ urlpatterns = [
         name="InventorySummaryView",
     ),
     path(
+        "hot-product/",
+        views.HotProductView.as_view(),
+        name="HotProductView",
+    ),
+    path(
         "inventory-replenishment/",
         views.InventoryReplenishmentView.as_view(),
         name="InventoryReplenishmentView",

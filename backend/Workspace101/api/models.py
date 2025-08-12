@@ -80,6 +80,7 @@ class Category(models.Model):
     taxPaid = models.BooleanField(null=True, blank=True)
     lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
     businessTypeList = models.ManyToManyField("BusinessType", related_name="categories", blank=True)
+    parValueDays = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return str(self.name)

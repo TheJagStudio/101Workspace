@@ -1038,3 +1038,73 @@ class POLineItemView(APIView):
         except POLocal.DoesNotExist:
             return JsonResponse({"error": "Purchase Order not found"}, status=404)
 
+class HotProductView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        categoryId = request.GET.get("categoryId", None)
+        page = int(request.GET.get("page", 1))
+        page_size = int(request.GET.get("page_size", 20))
+
+        products = []
+        
+        if categoryId is None or categoryId == "":
+            products = Product.objects.filter(active=True, isHotProduct=True).distinct()
+        else:
+            category = Category.objects.filter(categoryId=int(categoryId)).first()
+
+            def get_all_child_categories(parent_id):
+                all_categories = Category.objects.all().iterator()
+
+                children_map = defaultdict(list)
+                for cat in all_categories:
+                    if cat.parentId:
+                        children_map[cat.parentId].append(cat)
+
+                all_descendants = []
+                nodes_to_visit = list(children_map.get(parent_id, []))
+
+                while nodes_to_visit:
+                    node = nodes_to_visit.pop()
+                    all_descendants.append(node)
+                    children = children_map.get(node.categoryId, [])
+                    nodes_to_visit.extend(children)
+
+                return all_descendants
+
+            categoryChildList = get_all_child_categories(category.categoryId)
+            if not categoryChildList:
+                categoryChildList = [category]
+
+            products = Product.objects.filter(categories__in=categoryChildList, active=True, isHotProduct=True).distinct()
+
+        # Handle pagination
+        totalPages = (products.count() + page_size - 1) // page_size
+        products = products[(page - 1) * page_size : page * page_size]
+        i = (int(page) - 1) * int(page_size) + 1
+
+        data = []
+        
+        for product in products:
+            temp = {
+                "id": product.productId,
+                "name": product.productName,
+                "imageUrl": product.imageUrl if product.imageUrl else None,
+                "upc": product.upc if product.upc else None,
+                "sku": product.sku if product.sku else None,
+                "quantity": product.availableQuantity if product.availableQuantity else None,
+                "costPrice": float(product.costPrice) if product.costPrice else None,
+                "retailPrice": float(product.stdPrice) if product.stdPrice else None,
+                "masterProductId": product.masterProductId if product.masterProductId else None,
+                "masterProductName": product.masterProductName if product.masterProductName else None,
+                "category": [cat.name for cat in product.categories.all()] if product.categories.exists() else [],               
+            }
+            data.append(temp)
+            i += 1
+
+        return JsonResponse({
+            "totalPages": totalPages,
+            "currentPage": page,
+            "pageSize": page_size,
+            "products": data
+        }, status=200)

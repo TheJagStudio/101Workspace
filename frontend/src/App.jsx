@@ -43,6 +43,7 @@ import Sticker from "./Pages/Utility/Sticker";
 import ProductSync from "./Pages/Utility/ProductSync";
 import AccountOutlet from "./Outlets/AccountOutlet";
 import Invoice from "./Pages/Accounts/Invoice";
+import HotProduct from "./Pages/Purchase/Inventory/HotProduct";
 
 const Loader = ({ height, width, stroke = "#615fff" }) => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
@@ -140,6 +141,7 @@ function App() {
 					{user?.permissions?.purchase_PO && (<Route path="po-list" element={<POList />} />)}
 					<Route path="report" element={<AIReport />} />
 					<Route path="summary" element={<Summary />} />
+					<Route path="hot-product" element={<HotProduct />} />
 					<Route path="performance" element={<PerformanceDash />} />
 					<Route path="replenishment" element={<Replenishment />} />
 					{user?.permissions?.purchase_Settings && (<Route path="setting" element={<Setting />} />)}

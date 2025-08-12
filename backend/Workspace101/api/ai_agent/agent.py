@@ -24,6 +24,7 @@ GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 def get_github_copilot_token():
     """Get a GitHub Copilot API token using access token"""
+    print(GITHUB_ACCESS_TOKEN)
     try:
         resp = requests.get('https://api.github.com/copilot_internal/v2/token', headers={
             'authorization': f'token {GITHUB_ACCESS_TOKEN}',
@@ -242,7 +243,14 @@ class DjangoAIAgent:
             if not self._should_retry_query(result, retry_count, max_retries):
                 if retry_count > 0:
                     result["natural_language_response"] = f"✅ Query successful after {retry_count + 1} attempts. {result.get('natural_language_response', '')}"
-                return result
+                elif result.get("results") is None:
+                    result["results"] = "Error: No results found or query returned no data."
+                    result["natural_language_response"] = f"❌ Query failed after {retry_count + 1} attempts. {result['results']}"
+                elif len(result.get("results", [])) > 0:
+                    result["results"] = "Error: No results found or query returned no data."
+                    result["natural_language_response"] = f"❌ Query failed after {retry_count + 1} attempts. {result['results']}"
+                else:
+                    return result
             
             # If we need to retry, prepare for next iteration
             retry_count += 1

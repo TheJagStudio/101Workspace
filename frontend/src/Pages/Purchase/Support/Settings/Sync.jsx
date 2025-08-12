@@ -13,6 +13,11 @@ const syncItems = [
 		info: "Sync your latest product data with the server.",
 	},
 	{
+		key: "productsHistory",
+		label: "Sync Products History",
+		info: "Sync your product history data with the server.",
+	},
+	{
 		key: "invoice",
 		label: "Sync Invoices",
 		info: "Sync your invoice data to keep billing information accurate.",
@@ -47,6 +52,7 @@ const syncItems = [
 const SyncPage = () => {
 	const [loading, setLoading] = useState({
 		products: false,
+		productsHistory: false,
 		categories: false,
 		businessType: false,
 		vendor: false,
@@ -57,6 +63,7 @@ const SyncPage = () => {
 	});
 	const [progress, setProgress] = useState({
 		products: 0,
+		productsHistory: 0,
 		categories: 0,
 		businessType: 0,
 		vendor: 0,

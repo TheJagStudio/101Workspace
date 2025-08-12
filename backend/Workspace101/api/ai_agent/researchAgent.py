@@ -19,7 +19,7 @@ load_dotenv()
 # For this example, we'll use a placeholder. Replace with your actual key or set as an environment variable.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 searpApi = "b358398c-0f67-4bee-8ed6-c90304f824e8"
-access_token = "ghu_voKb1pCgu0PEAIGfV9Ec17pbqCOKS90qVs7z"
+access_token = os.getenv("GITHUB_ACCESS_TOKEN")
 
 # Replaced f-string
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key={}".format(GEMINI_API_KEY)

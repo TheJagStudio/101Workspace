@@ -2,15 +2,11 @@ from django.http import JsonResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import (
-    Product,
-    SalesgentToken,
-    AIReport
-)
+from .models import Product, SalesgentToken, AIReport
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db import  connection
+from django.db import connection
 import json
 from api.ai_agent.agent import DjangoAIAgent
 import requests
@@ -31,18 +27,18 @@ client = typesense.Client(
 )
 ai_agent = DjangoAIAgent(use_copilot=True)
 
+
 def notifyMe(message, channel):
     try:
         headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            "Content-Type": "application/x-www-form-urlencoded",
         }
         data = message
-        response = requests.post(f'https://thejagstudio-ntfy.hf.space/{channel}', headers=headers, data=data)
+        response = requests.post(f"https://thejagstudio-ntfy.hf.space/{channel}", headers=headers, data=data)
         print(response.text)
     except Exception as e:
         print(f"Error notifying: {e}")
     return
-
 
 
 class SearchProductsView(APIView):
@@ -58,6 +54,7 @@ class SearchProductsView(APIView):
         except typesense.exceptions.ObjectNotFound:
             notifyMe("Search Error: Typesense collection not found.", "101-error")
             return JsonResponse({"error": "Typesense collection not found."}, status=404)
+
 
 class SyncSalesgentTokenView(APIView):
     permission_classes = []
@@ -112,48 +109,21 @@ class dataMaker(APIView):
         """
         Generate data for testing purposes by reading invoice line items from JSON files.
         """
-        products  = Product.objects.all()
-        # I need a mapping for these products in following columns
-        # Product Category,Product Subcategory,Product Name,Product Description,Price,Cost,Barcode,Active,Attribute type,Attribute parent,Attribute 1,Attribute value 1,Image Url
-
-        product_data = []
-        master_products_cache = {p.productId: {
-            "upc": p.upc,
-            "singleUpc": p.singleUpc
-        } for p in Product.objects.filter(masterProductId__isnull=True)}
-        for product in products:
-            print(product.productName)
-            if "deleted" not in str(product.singleUpc).lower() and "deleted" not in str(product.upc).lower():
-                deleted = False
-                if product.masterProductId:
-                    master_product = master_products_cache.get(product.masterProductId)
-                    if master_product:
-                        if "deleted" in str(master_product["upc"]).lower() or "deleted" in str(master_product["singleUpc"]).lower():
-                            deleted = True
-
-                if not deleted:
-                    product_data.append({
-                        "id": product.productId,
-                        "Product Category": None,
-                        "Product Subcategory": None,  # No direct subcategory field in Product model
-                        "Product Name": product.productName,
-                        "Product Description": product.shortDescription if product.shortDescription else product.fullDescription,
-                        "Price": float(product.standardPrice) if product.standardPrice is not None else None,
-                        "Cost": float(product.costPrice) if product.costPrice is not None else None,
-                        "Barcode": product.singleUpc if product.masterProductId else product.upc,
-                        "Master Product Barcode": master_product["upc"] if product.masterProductId and master_product else None,
-                        "Active": product.active,
-                        "Attribute type": "Child" if product.masterProductId else "Parent",
-                        "Attribute parent": None,  # No direct attribute_parent field
-                        "Attribute 1": None,      # No direct attribute_1 field
-                        "Attribute value 1": None, # No direct attribute_value_1 field
-                        "Image Url": product.imageUrl,
-                    })
-        # Convert to csv format
-        import pandas as pd
-        df = pd.DataFrame(product_data)
-        csv_file_path = 'product_data.csv'
-        df.to_csv(csv_file_path, index=False)
+        upcs = ["719410700126", "719410760120", "719410783129", "259400990682", "719410725129", "719410720124", "719410739126", "719410750121", "719410730123", "719410786120", "719410740122", "719410776121", "719410186128", "719410785123", "719410775124", "719410500122", "719410200121", "719410800123", "850001919685", "895301001333", "854040005262", "895301001012", "850001919654", "895301001029", "895301001142", "854040005897", "854040005293", "10853168006486", "600191580413", "198715948974", "400545032458", "628399880234", "641837612662", "BAGBRN-002", "BAGBRN-003", "BAGBRN-004", "10616216621167", "10616216621204", "10616216611328", "10616216601121", "10616216621242", "10616216611083", "1143514808", "10616216622997", "665486975749", "729429456945", "6901745289238", "41443160005", "41443320003", "41443116828", "41443110925", "787188890653", "746626257526", "746626257717", "792138347200", "787188860533", "792138338062", "9555755800036", "578032512304", "868894112069", "868894112052", "676979809366", "676979910253", "676979910208", "638872480301", "638872480424", "352415631899", "36196212484"]
+        for upc in upcs:
+            product = Product.objects.filter(upc=upc).first()
+            if product:
+                # True to isHotProdcut
+                product.isHotProduct = True
+                product.save()
+            else:
+                product = Product.objects.filter(upc="0"+upc).first()
+                if product:
+                    # True to isHotProdcut
+                    product.isHotProduct = True
+                    product.save()
+                else:
+                    print("Product with UPC", "0"+upc, "not found.")
         return JsonResponse({"message": "Successfully done"})
 
 
@@ -225,7 +195,6 @@ class AIReportView(APIView):
         from django.http import StreamingHttpResponse
         import json
 
-
         def stream_response():
             try:
                 report_name = request.data.get("reportName")
@@ -252,7 +221,6 @@ class AIReportView(APIView):
                 yield json.dumps({"error": f"An unexpected error occurred: {str(e)}"}) + "|||"
 
         return StreamingHttpResponse(streaming_content=stream_response(), content_type="application/json")
-
 
 
 # ===========================================================================================================

@@ -270,7 +270,8 @@ const Chatbot = () => {
 												queryResult = JSON.parse(queryResult);
 												isLoaded = true;
 											} catch (error) {
-												console.error("Error parsing query result:", error);
+												console.warn("Results parsing error:", error);
+												isLoaded = true;
 											}
 											// check if the query result is an array
 											if (Array.isArray(queryResult)) {
@@ -280,7 +281,8 @@ const Chatbot = () => {
 													isLoaded = false;
 												}
 											} else {
-												isLoaded = false;
+												isLoaded = true;
+
 											}
 
 											// Special handling for diagrams - they should render even if results parsing fails
@@ -312,11 +314,17 @@ const Chatbot = () => {
 													)}
 
 													{/* Table Section */}
-													{isLoaded && (!visualization || visualization.type === 'table' || visualization.type === 'none') && (
+													{isLoaded && (!visualization || visualization.type === 'table' || visualization.type === 'none') && Array.isArray(queryResult) && (
 														<div className="w-full text-wrap wrap-break-word ">
 															<TableGrid data={queryResult} />
 														</div>
 													)}
+
+													{isLoaded &&(visualization.type === 'none') && !Array.isArray(queryResult) && queryResult && (
+														<div className={`max-w-[50%] w-fit px-4 py-2 rounded-lg shadow-inner text-wrap wrap-break-word  ${queryResult.toString().toLowerCase().includes("error")? "bg-red-500 text-white rounded-bl-none" : "bg-green-200 text-gray-800 rounded-bl-none"}`}>
+															{queryResult}
+														</div>)
+													}
 												</div>
 											);
 										} catch (error) {

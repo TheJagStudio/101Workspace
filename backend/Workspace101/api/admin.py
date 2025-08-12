@@ -21,9 +21,9 @@ class InventoryStatusFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == "yes":
-            return queryset.filter(inventoryList__isnull=False).distinct()
+            return queryset.filter(availableQuantity__gt=0).distinct()
         if self.value() == "no":
-            return queryset.filter(inventoryList__isnull=True)
+            return queryset.filter(availableQuantity=0)
         return queryset
 
 
@@ -40,18 +40,53 @@ class categoryFilter(SimpleListFilter):
             return queryset.filter(categories__name=self.value())
         return queryset
 
+class IsHotProductFilter(SimpleListFilter):
+    title = "Is Hot Product"
+    parameter_name = "is_hot_product"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("yes", "Yes"),
+            ("no", "No"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(isHotProduct=True)
+        if self.value() == "no":
+            return queryset.filter(isHotProduct=False)
+        return queryset
+
 
 class ProductAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["categories"]
     list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active")
     search_fields = ("productName", "sku", "upc", "productId")
-    list_filter = ("active", "ecommerce", InventoryStatusFilter, categoryFilter)
+    list_filter = ("active", "ecommerce", IsHotProductFilter,InventoryStatusFilter, categoryFilter)
 
 
 class CategoryAdmin(ImportExportModelAdmin):
-    list_display = ("categoryId", "name", "parentId")
+    list_display = ("categoryId", "name", "parentId", "parValueDays")
     search_fields = ("name", "categoryId")
 
+    # create a filter which leaves category with parentId None
+    class ParentCategoryFilter(SimpleListFilter):
+        title = "Parent Category"
+        parameter_name = "parent_category"
+
+        def lookups(self, request, model_admin):
+            return [
+                ("yes", "Has Parent"),
+                ("no", "No Parent"),
+            ]
+
+        def queryset(self, request, queryset):
+            if self.value() == "yes":
+                return queryset.filter(parentId__isnull=False, parentId__gt=0)
+            if self.value() == "no":
+                return queryset.filter(parentId__isnull=True) | queryset.filter(parentId=0)
+
+    list_filter = (ParentCategoryFilter,)
 
 class BusinessTypeAdmin(ImportExportModelAdmin):
     list_display = ("name", "insertedTimestamp")
