@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from '../../../utils/api';
+import { PhotoProvider, PhotoView } from 'react-photo-view';
+import 'react-photo-view/dist/react-photo-view.css';
+import { useAtom } from 'jotai';
+import { searchAtom } from "../../../Variables";
 
 const HotProduct = () => {
   const [loading, setLoading] = useState(false);
@@ -8,6 +12,7 @@ const HotProduct = () => {
   const [currentMasterCategory, setCurrentMasterCategory] = useState(null);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [currentSubCategory, setCurrentSubCategory] = useState(null);
+  const [search, setSearch] = useAtom(searchAtom);
 
   // Table and pagination state
   const [tableData, setTableData] = useState([]);
@@ -146,45 +151,56 @@ const HotProduct = () => {
                 <th className="text-center p-4 border-l border-gray-300">Quantity</th>
                 <th className="text-center p-4 border-l border-gray-300">Cost Price</th>
                 <th className="text-center p-4 border-l border-gray-300">Retail Price</th>
-                <th className="text-center p-4 border-l border-gray-300">Category</th>
               </tr>
             </thead>
-            <tbody className="overflow-y-auto">
-              {tableData?.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? "" : "bg-gray-100"}>
-                  <td className="py-2 px-1 w-fit text-center">{(page - 1) * pageSize + index + 1}</td>
-                  <td className="py-0 px-2 border-l border-gray-300 w-[40%]">
-                    <div className="flex items-center ">
-                      <img
-                        src={item.imageUrl || "/static/images/default.png"}
-                        alt={item.name}
-                        className="w-8 h-8 mr-2 mix-blend-multiply"
-                      />
-                      <a
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href={`https://erp.101distributorsga.com/product/${item.id}/edit`}
-                        className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer"
-                      >
-                        ({item.id})
-                      </a>
-                      <span className="truncate text-sm flex items-center whitespace-break-spaces h-12 overflow-ellipsis">{item.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-2 px-2 text-center border-l border-gray-300">{item.upc || "-"}</td>
-                  <td className="py-2 px-2 text-center border-l border-gray-300">{item.sku || "-"}</td>
-                  <td className="py-2 px-2 text-center border-l border-gray-300">{item.quantity ?? "-"}</td>
-                  <td className="py-2 px-2 text-center border-l border-gray-300">{item.costPrice != null ? `$${item.costPrice.toFixed(2)}` : "-"}</td>
-                  <td className="py-2 px-2 text-center border-l border-gray-300">{item.retailPrice != null ? `$${item.retailPrice.toFixed(2)}` : "-"}</td>
-                  <td className="py-2 px-2 text-center border-l border-gray-300 max-w-64 whitespace-nowrap hover:whitespace-break-spaces overflow-ellipsis truncate hover:h-fit">{item.category?.join(", ")}</td>
-                </tr>
-              ))}
-              {tableData?.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={9} className="text-center py-4 text-gray-500">No data available. First select a category and search.</td>
-                </tr>
-              )}
-            </tbody>
+            <PhotoProvider>
+              <tbody className="overflow-y-auto">
+                {tableData?.map((item, index) => (
+                  <tr key={index} className={index % 2 === 0 ? "" : "bg-gray-100"}>
+                    <td className="py-2 px-1 w-fit text-center">{(page - 1) * pageSize + index + 1}</td>
+                    <td className="py-0 px-2 border-l border-gray-300 w-[40%]">
+                      <div className="flex items-center ">
+                        <PhotoView src={item.imageUrl || "/static/images/default.png"}>
+                          <img
+                            src={item.imageUrl || "/static/images/default.png"}
+                            alt={item.name}
+                            className="w-8 h-8 mr-2 mix-blend-multiply cursor-pointer"
+                          />
+                        </PhotoView>
+                        <a
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          href={`https://erp.101distributorsga.com/product/${item.id}/edit`}
+                          className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer"
+                        >
+                          ({item.id})
+                        </a>
+                        <span
+                          className="truncate text-sm flex items-center whitespace-break-spaces h-12 overflow-ellipsis cursor-pointer"
+                          onClick={() => {
+                            setSearch(item.name);
+                            document.querySelector("#search")?.focus();
+                          }}
+                          title="Click to search for this product"
+                        >
+                          {item.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-center border-l border-gray-300">{item.upc || "-"}</td>
+                    <td className="py-2 px-2 text-center border-l border-gray-300">{item.sku || "-"}</td>
+                    <td className="py-2 px-2 text-center border-l border-gray-300">{item.quantity ?? "-"}</td>
+                    <td className="py-2 px-2 text-center border-l border-gray-300">{item.costPrice != null ? `$${item.costPrice.toFixed(2)}` : "-"}</td>
+                    <td className="py-2 px-2 text-center border-l border-gray-300">{item.retailPrice != null ? `$${item.retailPrice.toFixed(2)}` : "-"}</td>
+                  </tr>
+                ))}
+                {tableData?.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={9} className="text-center py-4 text-gray-500">No data available. First select a category and search.</td>
+                  </tr>
+                )}
+              </tbody>
+            </PhotoProvider>
           </table>
         </div>
       </div>

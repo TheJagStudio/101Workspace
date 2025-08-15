@@ -904,7 +904,7 @@ def fetch_product_data(product, token):
 #     yield 100
 
 def syncProductHistory(token):
-    products = list(Product.objects.filter(active=True))
+    products = list(Product.objects.filter(active=True, isClearanceProduct=True))
     product_count = len(products)
     doUpdate = False
     if product_count == 0:

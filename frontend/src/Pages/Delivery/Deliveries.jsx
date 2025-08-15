@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Truck, Calendar, MapPin, Package, Plus, Sheet } from 'lucide-react'
+import { Truck, Calendar, MapPin, Package, Plus, Sheet, User2Icon } from 'lucide-react'
 import {apiRequest} from '../../utils/api'
 import DeliveryTable from '../../Components/Delivery/DeliveryTable'
 import { useAtom } from 'jotai'
@@ -51,27 +51,7 @@ const Deliveries = () => {
 			try {
 				const url = `${import.meta.env.VITE_SERVER_URL}/api/delivery/list-deliveries/?date=${selectedDate}`
 				const data = await apiRequest(url, { method: 'GET' })
-				const sheets = (data.trucks || []).map((truck, idx) => ({
-					id: truck.truckNo,
-					date: selectedDate,
-					truckId: truck.truckNo,
-					truckName: truck.truckName,
-					invoices: (truck.deliveries || []).map(delivery => ({
-						id: delivery.id,
-						invoiceNumber: delivery.invoice,
-						customerId: delivery.customer,
-						customerName: delivery.customer,
-						caseCount: delivery.box,
-						paymentStatus: delivery.payment_status ? 'paid' : 'not_paid',
-						checkAmount: delivery.checkAmount,
-						cashAmount: delivery.cashAmount,
-						dateCreated: delivery.insertedTimestamp,
-						dateUpdated: delivery.deliveryTimestamp,
-						status: delivery.status ? 'delivered' : 'pending',
-					})),
-					status: '', 
-				}))
-				setDeliverySheets(sheets)
+				setDeliverySheets(data["trucks"])
 			} catch (err) {
 				setError('Failed to fetch deliveries: ' + (err?.message || err))
 				setDeliverySheets([])
@@ -99,27 +79,28 @@ const Deliveries = () => {
 		try {
 			const workbook = XLSX.utils.book_new()
 			
-			deliverySheets.forEach(sheet => {
+			deliverySheets?.forEach(sheet => {
 				// Prepare data for each truck
-				const exportData = sheet.invoices.map(invoice => ({
-					'Invoice Number': invoice.invoiceNumber,
-					'Customer ID': invoice.customerId,
+				const exportData = sheet?.deliveries.map(invoice => ({
+					'Invoice Number': invoice.invoice,
+					'Customer ID': invoice.customer,
 					'Customer Name': invoice.customerName,
-					'Case Count': invoice.caseCount,
-					'Payment Status': invoice.paymentStatus === 'paid' ? 'Paid' : 'Not Paid',
+					'Customer Company': invoice.customerCompany,
+					'Case Count': invoice.box,
+					'Payment Status': invoice.payment_status === 'paid' ? 'Paid' : 'Not Paid',
 					'Check Amount': invoice.checkAmount || 0,
 					'Cash Amount': invoice.cashAmount || 0,
 					'Total Amount': (invoice.checkAmount || 0) + (invoice.cashAmount || 0),
-					'Status': invoice.status === 'delivered' ? 'Delivered' : 'Pending',
-					'Date Created': new Date(invoice.dateCreated).toLocaleDateString(),
-					'Date Updated': invoice.dateUpdated ? new Date(invoice.dateUpdated).toLocaleDateString() : '',
+					'Status': invoice.status ? 'Delivered' : 'Pending',
+					'Date Created': new Date(invoice.insertedTimestamp).toLocaleDateString(),
+					'Date Updated': invoice.deliveryTimestamp ? new Date(invoice.deliveryTimestamp).toLocaleDateString() : '',
 				}))
 
 				// Create worksheet for this truck
 				const worksheet = XLSX.utils.json_to_sheet(exportData)
 				
 				// Clean sheet name (remove invalid characters and limit length)
-				let sheetName = `${sheet.truckName}_${sheet.date}`
+				let sheetName = `${sheet?.truckName}_${sheet?.date}`
 				sheetName = sheetName.replace(/[:\\/?*[\]]/g, "").substring(0, 31)
 				
 				XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
@@ -136,7 +117,7 @@ const Deliveries = () => {
 		}
 	}
 
-	if (isLoading && deliverySheets.length === 0) {
+	if (isLoading && deliverySheets?.length === 0) {
 		return (
 			<div className="flex items-center justify-center min-h-screen">
 				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -159,10 +140,10 @@ const Deliveries = () => {
 					<input
 						type="date"
 						value={selectedDate}
-						onChange={e => setSelectedDate(e.target.value)}
+						onChange={e => setSelectedDate(e.target?.value)}
 						className="border border-gray-300 w-fit bg-white rounded-md px-2 py-2 text-base focus:outline-none focus:ring-green-500 focus:border-green-500"
 					/>
-					{deliverySheets.length > 0 && (
+					{deliverySheets?.length > 0 && (
 						<Button
 							onClick={handleExportToExcel}
 							icon={loadingExport ? (
@@ -191,11 +172,11 @@ const Deliveries = () => {
 				<div className="bg-red-50 text-red-700 rounded-md p-3">{error}</div>
 			)}
 
-			{deliverySheets.length === 0 ? (
+			{deliverySheets?.length === 0 ? (
 				<div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
 					<Package className="mx-auto h-12 w-12 text-gray-400" />
 					<h3 className="mt-2 text-lg font-medium text-gray-900">No deliveries found</h3>
-					<p className="mt-1 text-gray-500">Get started by creating a new delivery sheet.</p>
+					<p className="mt-1 text-gray-500">Get started by creating a new delivery sheet?.</p>
 					{user?.role === 'manager' && (
 						<div className="mt-6">
 							<Button
@@ -209,25 +190,29 @@ const Deliveries = () => {
 				</div>
 			) : (
 				<div className="grid grid-cols-1 gap-6">
-					{deliverySheets.map((sheet) => (
-						<div key={sheet.id} className="rounded-lg border border-gray-200 bg-white">
+					{deliverySheets?.map((sheet) => (
+						<div key={sheet?.id} className="rounded-lg border border-gray-200 bg-white">
 							<div className="pt-6 px-6 pb-0 flex flex-col gap-1">
-								<div className="flex items-center justify-between">
+								<div className="flex items-center justify-start gap-5">
 									<div className="flex items-center">
 										<Truck className="mr-2 h-5 w-5 text-green-600" />
-										<span>{sheet.truckName}</span>
+										<span>{sheet?.truckName}</span>
+									</div>
+									<div className="flex items-center">
+										<User2Icon className="mr-2 h-5 w-5 text-green-600" />
+										<span>{sheet?.driver}</span>
 									</div>
 								</div>
 								<div className="text-gray-500 text-sm">
 									<div className="flex flex-col sm:flex-row sm:space-x-6 text-sm text-gray-500">
 										<span className="flex items-center">
 											<Calendar className="mr-1 h-4 w-4" />
-											{new Date(sheet.date).toLocaleDateString()}
+											{new Date(sheet?.date).toLocaleDateString()}
 										</span>
-										{sheet.location && (
+										{sheet?.location && (
 											<span className="flex items-center mt-1 sm:mt-0">
 												<MapPin className="mr-1 h-4 w-4" />
-												{sheet.location}
+												{sheet?.location}
 											</span>
 										)}
 									</div>
@@ -237,24 +222,24 @@ const Deliveries = () => {
 								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 									<div className="bg-gray-50 p-3 rounded-lg">
 										<p className="text-sm text-gray-500">Total Invoices</p>
-										<p className="text-xl font-semibold">{sheet.invoices.length}</p>
+										<p className="text-xl font-semibold">{sheet?.deliveries.length}</p>
 									</div>
 									<div className="bg-gray-50 p-3 rounded-lg">
 										<p className="text-sm text-gray-500">Total Cases</p>
 										<p className="text-xl font-semibold">
-											{sheet.invoices.reduce((sum, inv) => sum + (inv.caseCount || 0), 0)}
+											{sheet?.deliveries.reduce((sum, inv) => sum + (inv.box || 0), 0)}
 										</p>
 									</div>
 									<div className="bg-gray-50 p-3 rounded-lg">
 										<p className="text-sm text-gray-500">Payment Status</p>
 										<p className="text-xl font-semibold">
-											{sheet.invoices.filter(inv => inv.paymentStatus === 'paid').length} / {sheet.invoices.length} Paid
+											{sheet?.deliveries.filter(inv => inv.payment_status === 'paid').length} / {sheet?.deliveries.length} Paid
 										</p>
 									</div>
 								</div>
 
 								<DeliveryTable
-									invoices={sheet.invoices.slice(0, 3)}
+									invoices={sheet?.deliveries}
 									onEditInvoice={user?.role === 'manager' ? handleEditInvoice : undefined}
 									onUpdatePayment={handleUpdatePayment}
 									isManager={user?.role === 'manager'}

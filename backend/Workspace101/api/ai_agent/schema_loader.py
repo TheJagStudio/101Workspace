@@ -135,18 +135,18 @@ def generate_full_context_for_llm():
     return "\n".join(full_context)
 
 # Example usage for testing
-# if __name__ == "__main__":
-#     import os
-#     import sys
-#     import django
-#     # Ensure the parent directory is in sys.path
-#     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-#     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Workspace101.settings')
-#     django.setup()
+if __name__ == "__main__":
+    import os
+    import sys
+    import django
+    # Ensure the parent directory is in sys.path
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Workspace101.settings')
+    django.setup()
     
-#     schema_info = get_django_model_schema()
-#     # print(schema_info)
+    schema_info = get_django_model_schema()
+    # print(schema_info)
     
-#     # Generate text for LLM
-#     llm_context = generate_full_context_for_llm()
-#     print(llm_context)
+    # Generate text for LLM
+    llm_context = generate_full_context_for_llm()
+    print(llm_context)

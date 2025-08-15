@@ -13,6 +13,7 @@ from datetime import datetime, date
 import django  # <-- Add this import
 import sys
 import io
+import ast
 import json
 
 # Load environment variables first
@@ -58,86 +59,166 @@ The output of this tool will be the result of the executed query or an error mes
 
 
 """
+QUERY_RESULT_LIMIT = 1000
+ALLOWED_CALLS = {
+    'all', 'filter', 'get', 'exclude', 'annotate', 'order_by', 'reverse',
+    'distinct', 'values', 'values_list', 'dates', 'datetimes', 'none',
+    'select_related', 'prefetch_related', 'extra', 'defer', 'only', 'using',
+    'select_for_update', 'raw', 'count', 'exists', 'first', 'last', 'latest',
+    'earliest', 'aggregate', 'explain',
+    # Aggregates and other safe functions
+    'Sum', 'Count', 'Avg', 'Max', 'Min', 'datetime', 'date', 'list'
+}
+class CodeValidator(ast.NodeVisitor):
+    """
+    This visitor walks the Python Abstract Syntax Tree (AST) to ensure
+    the code is safe. It enforces a strict read-only policy.
+    """
+    def visit(self, node):
+        # Prevent any node types that could modify data or state.
+        disallowed_nodes = (
+            ast.Import, ast.ImportFrom,           # No imports (e.g., import os)
+            ast.Assign, ast.AugAssign, ast.AnnAssign, # No variable/attribute assignment (e.g., p.name = 'x')
+            ast.Delete, ast.Del,                  # No 'del' statements
+            ast.With, ast.AsyncWith,              # No 'with' statements (e.g., with open(...))
+            ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, # No defining functions/classes
+            ast.Global, ast.Nonlocal,             # No changing scope
+            ast.Exec,                             # No exec
+            ast.Try, ast.Raise, ast.Assert,       # No complex control flow/exceptions
+        )
+        if isinstance(node, disallowed_nodes):
+            raise PermissionError(f"Operation of type '{type(node).__name__}' is not allowed.")
+        super().visit(node)
 
+    def visit_Call(self, node):
+        """
+        Check every function call to ensure it's on our allowed list.
+        This blocks .save(), .delete(), .update(), .create(), open(), eval(), etc.
+        """
+        # The name of the function being called is in `node.func.attr` for methods
+        # (e.g., .filter) or in `node.func.id` for global functions (e.g., Sum).
+        func_name = None
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id
+
+        if func_name and func_name not in ALLOWED_CALLS:
+            # Check for dunder methods as a fallback
+            if func_name.startswith('__') and func_name.endswith('__'):
+                 raise PermissionError("Calling dunder methods is not allowed.")
+            raise PermissionError(f"Function call '{func_name}()' is not allowed.")
+
+        # Continue walking the tree for nested calls
+        self.generic_visit(node)
 
 def ExecuteOrmQuery(python_code: str) -> str:
+    """
+    Securely executes a read-only Django ORM query provided as a string.
+
+    Security Measures:
+    1.  **AST Validation**: The code is parsed into an Abstract Syntax Tree and checked
+        against a strict whitelist of allowed operations. It blocks assignments,
+        imports, function definitions, and any method call not explicitly allowed
+        (e.g., .save(), .delete(), .update(), .create() are all blocked).
+    2.  **Restricted Built-ins**: The `exec` function is run with a minimal set of
+        safe built-in functions, preventing access to dangerous ones like `open` or `eval`.
+    3.  **Result Limiting**: The final QuerySet is sliced to a maximum of `QUERY_RESULT_LIMIT`
+        to prevent Denial-of-Service attacks from large queries.
+    4.  **No Direct DB Write Keywords**: As a final fallback, checks for raw SQL write
+        statements.
+
+    **Architectural Recommendation**: For the highest level of security, this function
+    should be configured to use a database connection with a read-only user.
+    This makes data modification impossible at the database level.
+    """
     if not python_code:
-        print("Error: Empty Python code provided for execution.")
         return "Error: Empty Python code provided for execution."
-    # forbidden_keywords = [
-    #     "os.", "subprocess", "eval(", "exec(", "import ", "open(", "shutil",
-    #     "sys.", "requests", "urllib", "socket", "pickle", "config", "settings"
-    # ]
-    forbidden_keywords = []
-    if any(keyword in python_code for keyword in forbidden_keywords):
-        print("Error: The generated code contains forbidden keywords. Only Django ORM operations are allowed.")
-        return "Error: The generated code contains forbidden keywords. Only Django ORM operations are allowed."
-    if "DROP TABLE" in python_code.upper() or "DELETE FROM" in python_code.upper():
-        print("Error: Detected potential malicious database operation. Operation blocked.")
-        return "Error: Detected potential malicious database operation. Operation blocked."
-    safe_globals = {
-        "Product": Product,
-        "Category": Category,
-        "BusinessType": BusinessType,
-        "Vendor": Vendor,
-        "Invoice": Invoice,
-        "InvoiceLineItem": InvoiceLineItem,
-        "Salesman": Salesman,
-        "LocationPoint": LocationPoint,
-        "DailyActivity": DailyActivity,
-        "AdminSettings": AdminSettings,
-        "Sum": Sum,
-        "Count": Count,
-        "Avg": Avg,
-        "Max": Max,
-        "Min": Min,
-        "datetime": datetime,
-        "date": date,
-        "list": list,
+
+    # --- Layer 1: Static Code Analysis (AST) ---
+    try:
+        tree = ast.parse(python_code, mode='exec')
+        validator = CodeValidator()
+        validator.visit(tree)
+    except (SyntaxError, PermissionError, Exception) as e:
+        print(f"Security Error: Code validation failed. Reason: {e}")
+        return f"The provided code is not allowed due to security restrictions. Reason: {e}"
+    
+    # --- Layer 2: Fallback Raw SQL Check (Defense in Depth) ---
+    if "DROP TABLE" in python_code.upper() or "DELETE FROM" in python_code.upper() or "UPDATE " in python_code.upper():
+        print("Detected potential malicious database operation. Operation blocked.")
+        return "Detected potential malicious database operation. Operation blocked."
+
+    # --- Layer 3: Restricted Execution Environment (Sandboxing) ---
+    # Provide a minimal, safe set of built-in functions.
+    # Excludes dangerous functions like open, eval, exec, __import__, etc.
+    safe_builtins = {
+        'print': print, 'len': len, 'list': list, 'dict': dict, 'str': str,
+        'int': int, 'float': float, 'bool': bool, 'None': None, 'range': range,
     }
+
+    # Whitelist of globals accessible to the executed code.
+    safe_globals = {
+        "__builtins__": safe_builtins,
+        "Product": Product, "Category": Category, "BusinessType": BusinessType,
+        "Vendor": Vendor, "Invoice": Invoice, "InvoiceLineItem": InvoiceLineItem,
+        "Salesman": Salesman, "LocationPoint": LocationPoint, "DailyActivity": DailyActivity,
+        "AdminSettings": AdminSettings, "Sum": Sum, "Count": Count, "Avg": Avg,
+        "Max": Max, "Min": Min, "datetime": datetime, "date": date,
+    }
+
     _locals = {}
     try:
+        # Redirect stdout to capture any print statements from the code
         old_stdout = sys.stdout
         sys.stdout = mystdout = io.StringIO()
+        
         try:
             exec(python_code, safe_globals, _locals)
         finally:
-            sys.stdout = old_stdout
+            sys.stdout = old_stdout # Always restore stdout
+        
         cli_output = mystdout.getvalue()
+
         if "results" in _locals:
             results = _locals["results"]
-            if hasattr(results, "values") and callable(results.values):
+            
+            # --- Layer 4: Resource Limiting (DoS Protection) ---
+            if isinstance(results, django.db.models.query.QuerySet):
+                # Apply the result limit BEFORE evaluation
+                results = results[:QUERY_RESULT_LIMIT]
+                # Now evaluate the queryset and convert to a list of dicts
                 results = list(results.values())
-            elif isinstance(results, django.db.models.query.QuerySet):
+            elif hasattr(results, "values") and callable(results.values):
+                # Handle cases like .aggregate() which return a dict
                 results = list(results.values())
             elif not isinstance(results, (list, dict, str, int, float, bool, type(None))):
                 results = str(results)
+            
+            # Serialize the final results to JSON
             try:
                 return json.dumps(results, indent=2, default=str)
             except TypeError:
                 print(f"Error serializing results to JSON: {results}")
-                return f"Error: Could not serialize results to JSON. Raw: {results}"
+                return f"Could not serialize results to JSON. Raw: {results}"
         else:
-            print("Error: The executed code did not produce a 'results' variable.")
-            return "Error: The executed code did not produce a 'results' variable. CLI Output: " + cli_output
+            return "The executed code did not produce a 'results' variable. CLI Output: " + cli_output
+
     except Exception as e:
+        # Handle common Django and Python errors gracefully
         if isinstance(e, django.core.exceptions.FieldDoesNotExist):
-            print(f"Django ORM Error: Field does not exist. Check model schema. Details: {e}")
             return f"Django ORM Error: Field does not exist. Check model schema. Details: {e}"
         elif isinstance(e, django.db.utils.ProgrammingError):
-            print(f"Database Programming Error: {e}. This might be due to an incorrect query structure or column name.")
-            return f"Database Programming Error: {e}. This might be due to an incorrect query structure or column name."
+            return f"Database Programming Error: Incorrect query structure or column name. Details: {e}"
         elif isinstance(e, django.db.models.ObjectDoesNotExist):
-            print(f"Django ORM Error: Object does not exist. No matching record found. Details: {e}")
             return f"Django ORM Error: Object does not exist. No matching record found. Details: {e}"
         else:
-            print(f"Error executing Django ORM query: {type(e).__name__} - {e}")
-            return f"Error executing Django ORM query: {type(e).__name__} - {e}"
+            return f"Error executing query: {type(e).__name__} - {e}"
 
 
 class DjangoAIAgent:
 
-    def __init__(self, temperature=0.1, use_copilot=False):
+    def __init__(self, temperature=0.1, use_copilot=True):
         self.use_copilot = use_copilot
         self.temperature = temperature
         
@@ -241,17 +322,18 @@ class DjangoAIAgent:
             
             # Check if we got a successful result (no ORM errors)
             if not self._should_retry_query(result, retry_count, max_retries):
-                if retry_count > 0:
-                    result["natural_language_response"] = f"✅ Query successful after {retry_count + 1} attempts. {result.get('natural_language_response', '')}"
-                elif result.get("results") is None:
-                    result["results"] = "Error: No results found or query returned no data."
-                    result["natural_language_response"] = f"❌ Query failed after {retry_count + 1} attempts. {result['results']}"
-                elif len(result.get("results", [])) > 0:
-                    result["results"] = "Error: No results found or query returned no data."
-                    result["natural_language_response"] = f"❌ Query failed after {retry_count + 1} attempts. {result['results']}"
-                else:
+                # If python_code is None, it means we have a direct natural language response
+                if result.get("python_code") is None and result.get("natural_language_response"):
                     return result
-            
+                
+                if not self._is_orm_error(result):
+                    result["results"] = result.get("results", "No results found.")
+                    result["retry_count"] = retry_count
+                    result["retry_attempts"] = retry_attempts.copy()
+                    return result
+
+                
+
             # If we need to retry, prepare for next iteration
             retry_count += 1
             error_message = result.get("results", "Unknown error")
@@ -535,7 +617,7 @@ This JSON string should adhere to the following structure:
                                     vis_info["data"] = orm_result_str
                             final_data_for_frontend["visualization"] = vis_info
                         else:
-                            raise ValueError("Error occurred while executing ORM query")
+                            raise ValueError(orm_result_str)
 
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON from GitHub Copilot: {e}")

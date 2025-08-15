@@ -24,6 +24,7 @@ const Sidebar = () => {
 		"replenishment": "Replenishment",
 		"performance": "Performance",
 		"dusty-inventory": "Dusty Inventory",
+		"clearance-loss": "Clearance Loss",
 		"setting": "Setting",
 	};
 
@@ -189,6 +190,18 @@ const Sidebar = () => {
 								{!collapsed && (
 									<>
 										Dusty Inventory<span className="ml-auto bg-indigo-100 text-indigo-600 rounded-full px-1 text-xl aspect-square w-auto h-7 pb-0.5 inline-flex items-center justify-center">★</span>
+									</>
+								)}
+							</Link>
+						</li>
+						<li className="mb-1">
+							<Link to="/purchase/clearance-loss" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Clearance Loss" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Clearance Loss")}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className={`w-5 h-5 scale-110 mr-3 ${activeItem === "Clearance Loss" ? "text-indigo-500" : "text-gray-500"}`}>
+									<path fill="currentColor" d="M112 120C112 106.7 101.3 96 88 96C74.7 96 64 106.7 64 120L64 464C64 508.2 99.8 544 144 544L552 544C565.3 544 576 533.3 576 520C576 506.7 565.3 496 552 496L144 496C126.3 496 112 481.7 112 464L112 120zM384 360C384 373.3 394.7 384 408 384L520 384C533.3 384 544 373.3 544 360L544 248C544 234.7 533.3 224 520 224C506.7 224 496 234.7 496 248L496 302.1L385 191.1C375.6 181.7 360.4 181.7 351.1 191.1L272.1 270.1L201.1 199.1C191.7 189.7 176.5 189.7 167.2 199.1C157.9 208.5 157.8 223.7 167.2 233L255.2 321C264.6 330.4 279.8 330.4 289.1 321L368.1 242L462.2 336.1L408.1 336.1C394.8 336.1 384.1 346.8 384.1 360.1z" />
+								</svg>
+								{!collapsed && (
+									<>
+										Clearance Loss
 									</>
 								)}
 							</Link>

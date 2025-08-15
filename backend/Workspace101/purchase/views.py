@@ -1096,8 +1096,7 @@ class HotProductView(APIView):
                 "costPrice": float(product.costPrice) if product.costPrice else None,
                 "retailPrice": float(product.stdPrice) if product.stdPrice else None,
                 "masterProductId": product.masterProductId if product.masterProductId else None,
-                "masterProductName": product.masterProductName if product.masterProductName else None,
-                "category": [cat.name for cat in product.categories.all()] if product.categories.exists() else [],               
+                "masterProductName": product.masterProductName if product.masterProductName else None              
             }
             data.append(temp)
             i += 1
@@ -1108,3 +1107,172 @@ class HotProductView(APIView):
             "pageSize": page_size,
             "products": data
         }, status=200)
+
+class ClearanceLossReportView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 1. Get and validate date parameters
+        try:
+            # Ensure startDate is provided, or handle the error
+            startDate = request.GET.get("startDate")
+            if not startDate:
+                return JsonResponse({"error": "startDate parameter is required."}, status=400)
+            
+            # Use today's date if endDate is not provided
+            endDate = request.GET.get("endDate") or timezone.now()
+        except Exception as e:
+            return JsonResponse({"error": f"Invalid date format: {e}"}, status=400)
+
+        # 2. Load the original cost data
+        try:
+            with open("./data/clearance_loss.json", "r") as f:
+                original_costs = json.load(f)
+        except FileNotFoundError:
+            return JsonResponse({"error": "Original cost data file not found."}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Error decoding original cost data file."}, status=500)
+
+        # 3. Fetch data from the database efficiently
+        clearance_products = Product.objects.filter(isClearanceProduct=True, childProductList=[])
+        product_map = {p.productId: p for p in clearance_products}
+        
+        # Fetch relevant product history records
+        product_history = ProductHistory.objects.filter(
+            productId__in=clearance_products.values_list('productId', flat=True),
+            date__range=[startDate, endDate]
+        ).select_related('productId').order_by('date')
+
+        # 4. Process data and calculate losses in a single pass
+        monthly_breakdown = defaultdict(lambda: {
+            'totalLoss': 0.0,
+            'products': defaultdict(lambda: {
+                'totalLoss': 0.0,
+                'totalQuantity': 0
+            })
+        })
+        
+        overall_total_loss = 0.0
+
+        for entry in product_history:
+            # Ensure required data exists to avoid errors
+            if not entry.quantity or not entry.retailPrice:
+                continue
+
+            product_id_str = str(entry.productId.productId)
+            original_cost = float(original_costs.get(product_id_str, entry.productId.standardPrice or entry.productId.costPrice or 0))
+            retail_price = float(entry.retailPrice)
+            
+            # Calculate loss for this specific transaction
+            transaction_loss = entry.quantity * (retail_price - original_cost)
+
+            # Only account for transactions that resulted in a loss
+            if transaction_loss < 0:
+                month_key = entry.date.strftime('%Y-%m')
+                product_id = entry.productId.productId
+                
+                # Update monthly totals
+                monthly_breakdown[month_key]['totalLoss'] += transaction_loss
+                overall_total_loss += transaction_loss
+                
+                # Update product-specific details for that month
+                product_details = monthly_breakdown[month_key]['products'][product_id]
+                product_details['totalLoss'] += transaction_loss
+                product_details['totalQuantity'] += entry.quantity
+                
+        # 5. Format the final report for the JSON response
+        final_report = {}
+        for month_key, data in sorted(monthly_breakdown.items()):
+            product_loss_list = []
+            for product_id, loss_data in data['products'].items():
+                product_obj = product_map.get(product_id)
+                product_loss_list.append({
+                    "productId": product_id,
+                    "name": product_obj.productName if product_obj else "Unknown",
+                    "imageUrl": product_obj.imageUrl if product_obj and product_obj.imageUrl else None,
+                    "loss": loss_data['totalLoss'],
+                    "quantitySoldAtLoss": loss_data['totalQuantity'],
+                    "originalCost": float(original_costs.get(str(product_id), 0)),
+                    "currentCost": float(product_obj.standardPrice) if product_obj and product_obj.standardPrice else None,
+                })
+                
+            final_report[month_key] = {
+                'totalLoss': data['totalLoss'],
+                # Sort products by the most loss first
+                'productLoss': sorted(product_loss_list, key=lambda x: x['loss'])
+            }
+
+        return JsonResponse({
+            "message": "Monthly Clearance Loss Report",
+            "overallTotalLoss": overall_total_loss,
+            "monthlyBreakdown": final_report
+        }, status=200)
+
+# class ClearanceLossReportView(APIView):
+#     # permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         startDate = request.GET.get("startDate", None)
+#         # endDate is today
+#         endDate = request.GET.get("endDate", None) or timezone.now()
+#         products = Product.objects.filter(isClearanceProduct=True)
+#         product_map = {p.productId: p for p in products}
+#         # get productHistory
+#         product_history = ProductHistory.objects.filter(productId__in=products, date__range=[startDate, endDate]).order_by('-date').values()
+#         historyMap = {}
+#         for entry in product_history:
+#             product_id = entry['productId_id']
+#             if product_id not in historyMap:
+#                 historyMap[product_id] = []
+#             historyMap[product_id].append(entry)
+
+#         with open("./data/clearance_loss.json", "r") as f:
+#             data = json.load(f)
+            
+#         monthly_losses = defaultdict(lambda: defaultdict(float))
+
+#         productLoss = []
+#         for product in products:
+#             product_id = product.productId
+#             history = historyMap.get(product_id, [])
+#             loss = 0
+#             originalCost = data[str(product_id)] if str(product_id) in data else 0
+#             for entry in history:
+#                 tempLoss = entry['quantity'] * (float(entry['retailPrice'] or 0) - originalCost)
+#                 if tempLoss < 0:
+#                     loss += tempLoss
+#             if loss < 0:
+#                 month_key = entry['date'].strftime('%Y-%m')
+#                 monthly_losses[month_key][product_id] += loss
+#                 productLoss.append({"productId": product_id, "loss": loss,"originalCost": originalCost,"currentCost": float(product.stdPrice) if product.stdPrice else None,"name": product.productName})
+
+#         final_report = {}
+#         overall_total_loss = 0
+
+#         for month_key in sorted(monthly_losses.keys()):
+#             product_loss_list = []
+#             monthly_total_loss = 0
+
+#             for product_id, total_loss in monthly_losses[month_key].items():
+#                 if total_loss < 0:
+#                     product = product_map.get(product_id)
+#                     product_loss_list.append({
+#                         "productId": product_id,
+#                         "name": product.productName,
+#                         "loss": total_loss,
+#                         "originalCost": data.get(str(product_id), 0),
+#                         "currentCost": float(product.stdPrice) if product.stdPrice else None,
+#                     })
+#                     monthly_total_loss += total_loss
+            
+#             if monthly_total_loss < 0:
+#                 final_report[month_key] = {
+#                     'totalLoss': monthly_total_loss,
+#                     'productLoss': sorted(product_loss_list, key=lambda x: x['loss'], reverse=True)
+#                 }
+#                 overall_total_loss += monthly_total_loss
+#         return JsonResponse({
+#             "message": "Monthly Clearance Loss Report",
+#             "overallTotalLoss": overall_total_loss,
+#             "monthlyBreakdown": final_report
+#         }, status=200)

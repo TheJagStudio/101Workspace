@@ -286,7 +286,7 @@ const Chatbot = () => {
 											}
 
 											// Special handling for diagrams - they should render even if results parsing fails
-											const hasDiagramVisualization = visualization && visualization.type === 'diagram' && visualization.data;
+											const hasDiagramVisualization = visualization && visualization?.type === 'diagram' && visualization?.data;
 
 											return (
 												<div key={index} className={`flex flex-col gap-2 mb-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -301,26 +301,26 @@ const Chatbot = () => {
 													{/* Visualization Section */}
 													{(isLoaded || hasDiagramVisualization) && visualization && (
 														<div className="w-full">
-															{visualization.type === 'diagram' ? (
-																<DiagramComponent mermaidSyntax={visualization.data} />
-															) : visualization.type && visualization.type !== 'none' && visualization.type !== 'table' ? (
+															{visualization?.type === 'diagram' ? (
+																<DiagramComponent mermaidSyntax={visualization?.data} />
+															) : visualization?.type && visualization?.type !== 'none' && visualization?.type !== 'table' ? (
 																<ChartComponent
-																	type={visualization.type}
-																	data={visualization.data || queryResult}
-																	options={visualization.options || {}}
+																	type={visualization?.type}
+																	data={visualization?.data || queryResult}
+																	options={visualization?.options || {}}
 																/>
 															) : null}
 														</div>
 													)}
 
 													{/* Table Section */}
-													{isLoaded && (!visualization || visualization.type === 'table' || visualization.type === 'none') && Array.isArray(queryResult) && (
+													{isLoaded && (!visualization || visualization?.type === 'table' || visualization?.type === 'none') && Array.isArray(queryResult) &&  queryResult.length > 0  (
 														<div className="w-full text-wrap wrap-break-word ">
 															<TableGrid data={queryResult} />
 														</div>
 													)}
 
-													{isLoaded &&(visualization.type === 'none') && !Array.isArray(queryResult) && queryResult && (
+													{isLoaded &&(visualization?.type === 'none') && !Array.isArray(queryResult) && queryResult && (
 														<div className={`max-w-[50%] w-fit px-4 py-2 rounded-lg shadow-inner text-wrap wrap-break-word  ${queryResult.toString().toLowerCase().includes("error")? "bg-red-500 text-white rounded-bl-none" : "bg-green-200 text-gray-800 rounded-bl-none"}`}>
 															{queryResult}
 														</div>)

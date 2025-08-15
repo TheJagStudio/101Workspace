@@ -52,6 +52,7 @@ class Product(models.Model):
     caseQuantity = models.IntegerField(null=True, blank=True)
     boxQuantity = models.IntegerField(null=True, blank=True)
     isHotProduct = models.BooleanField(default=False, null=True, blank=True)
+    isClearanceProduct = models.BooleanField(default=False, null=True, blank=True)
     lastSyncTimestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     def __str__(self):

@@ -57,5 +57,10 @@ urlpatterns = [
         "po-line-items/<int:po_id>/",
         views.POLineItemView.as_view(),
         name="POLineItemView",
-    )
+    ),
+    path(
+        "clearance-loss-report/",
+        views.ClearanceLossReportView.as_view(),
+        name="ClearanceLossReportView",
+    ),
 ]

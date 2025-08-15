@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, BusinessType,  Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer, AIReport, ModulePermissions
+from .models import Product, Category, BusinessType, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer, AIReport, ModulePermissions
 from .models import PurchaseHistory
 from .models import SalesgentToken
 from .models import POLocal, POLocalLineItem
@@ -40,6 +40,7 @@ class categoryFilter(SimpleListFilter):
             return queryset.filter(categories__name=self.value())
         return queryset
 
+
 class IsHotProductFilter(SimpleListFilter):
     title = "Is Hot Product"
     parameter_name = "is_hot_product"
@@ -58,11 +59,29 @@ class IsHotProductFilter(SimpleListFilter):
         return queryset
 
 
+class IsClearanceProductFilter(SimpleListFilter):
+    title = "Is Clearance Product"
+    parameter_name = "is_clearance_product"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("yes", "Yes"),
+            ("no", "No"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(isClearanceProduct=True)
+        if self.value() == "no":
+            return queryset.filter(isClearanceProduct=False)
+        return queryset
+
+
 class ProductAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["categories"]
-    list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active")
+    list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active","lastSyncTimestamp")
     search_fields = ("productName", "sku", "upc", "productId")
-    list_filter = ("active", "ecommerce", IsHotProductFilter,InventoryStatusFilter, categoryFilter)
+    list_filter = ("active", "ecommerce", IsHotProductFilter, IsClearanceProductFilter, InventoryStatusFilter, categoryFilter)
 
 
 class CategoryAdmin(ImportExportModelAdmin):
@@ -87,6 +106,7 @@ class CategoryAdmin(ImportExportModelAdmin):
                 return queryset.filter(parentId__isnull=True) | queryset.filter(parentId=0)
 
     list_filter = (ParentCategoryFilter,)
+
 
 class BusinessTypeAdmin(ImportExportModelAdmin):
     list_display = ("name", "insertedTimestamp")
@@ -134,7 +154,8 @@ class SalesgentTokenAdmin(ImportExportModelAdmin):
 class ProductHistoryAdmin(ImportExportModelAdmin):
     list_display = ("productId", "quantity", "costPrice", "date")
     search_fields = ("productId__productId", "date")
-    autocomplete_fields = ["productId"] 
+    autocomplete_fields = ["productId"]
+
 
 class CustomerAdmin(ImportExportModelAdmin):
     list_display = ("id", "name", "company", "email", "phone")
