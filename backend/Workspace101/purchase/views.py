@@ -1109,7 +1109,7 @@ class HotProductView(APIView):
         }, status=200)
 
 class ClearanceLossReportView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # 1. Get and validate date parameters
@@ -1208,71 +1208,42 @@ class ClearanceLossReportView(APIView):
             "monthlyBreakdown": final_report
         }, status=200)
 
-# class ClearanceLossReportView(APIView):
-#     # permission_classes = [IsAuthenticated]
+class ParLevelView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     def get(self, request):
-#         startDate = request.GET.get("startDate", None)
-#         # endDate is today
-#         endDate = request.GET.get("endDate", None) or timezone.now()
-#         products = Product.objects.filter(isClearanceProduct=True)
-#         product_map = {p.productId: p for p in products}
-#         # get productHistory
-#         product_history = ProductHistory.objects.filter(productId__in=products, date__range=[startDate, endDate]).order_by('-date').values()
-#         historyMap = {}
-#         for entry in product_history:
-#             product_id = entry['productId_id']
-#             if product_id not in historyMap:
-#                 historyMap[product_id] = []
-#             historyMap[product_id].append(entry)
+    def get(self, request):
+        dataType = request.query_params.get("dataType", "category")
 
-#         with open("./data/clearance_loss.json", "r") as f:
-#             data = json.load(f)
-            
-#         monthly_losses = defaultdict(lambda: defaultdict(float))
+        if dataType == "category":
+            par_levels = Category.objects.values('categoryId', 'name', 'parValueDays','parentId')
+        else:
+            par_levels = Product.objects.values('productId', 'productName', 'parLevel')
 
-#         productLoss = []
-#         for product in products:
-#             product_id = product.productId
-#             history = historyMap.get(product_id, [])
-#             loss = 0
-#             originalCost = data[str(product_id)] if str(product_id) in data else 0
-#             for entry in history:
-#                 tempLoss = entry['quantity'] * (float(entry['retailPrice'] or 0) - originalCost)
-#                 if tempLoss < 0:
-#                     loss += tempLoss
-#             if loss < 0:
-#                 month_key = entry['date'].strftime('%Y-%m')
-#                 monthly_losses[month_key][product_id] += loss
-#                 productLoss.append({"productId": product_id, "loss": loss,"originalCost": originalCost,"currentCost": float(product.stdPrice) if product.stdPrice else None,"name": product.productName})
+        return JsonResponse({
+            "message": "Success",
+            "data": list(par_levels)
+        }, status=200)
 
-#         final_report = {}
-#         overall_total_loss = 0
+    def post(self, request):
+        data = request.data.get("changes", [])
+        dataType = request.query_params.get("dataType", "category")
+        print(data)
 
-#         for month_key in sorted(monthly_losses.keys()):
-#             product_loss_list = []
-#             monthly_total_loss = 0
+        if dataType == "category":
+            # Bulk update category parValueDays
+            update_objs = []
+            for change in data:
+                update_objs.append(Category(
+                    categoryId=change.get("categoryId"),
+                    parValueDays=change.get("parValueDays")
+                ))
+            if update_objs:
+                Category.objects.bulk_update(update_objs, ['parValueDays'])
+        else:
+            # Update product par levels
+            for change in data:
+                Product.objects.filter(productId=change.get("productId")).update(parLevel=change.get("parLevel"))
 
-#             for product_id, total_loss in monthly_losses[month_key].items():
-#                 if total_loss < 0:
-#                     product = product_map.get(product_id)
-#                     product_loss_list.append({
-#                         "productId": product_id,
-#                         "name": product.productName,
-#                         "loss": total_loss,
-#                         "originalCost": data.get(str(product_id), 0),
-#                         "currentCost": float(product.stdPrice) if product.stdPrice else None,
-#                     })
-#                     monthly_total_loss += total_loss
-            
-#             if monthly_total_loss < 0:
-#                 final_report[month_key] = {
-#                     'totalLoss': monthly_total_loss,
-#                     'productLoss': sorted(product_loss_list, key=lambda x: x['loss'], reverse=True)
-#                 }
-#                 overall_total_loss += monthly_total_loss
-#         return JsonResponse({
-#             "message": "Monthly Clearance Loss Report",
-#             "overallTotalLoss": overall_total_loss,
-#             "monthlyBreakdown": final_report
-#         }, status=200)
+        return JsonResponse({
+            "message": "Changes submitted successfully"
+        }, status=200)

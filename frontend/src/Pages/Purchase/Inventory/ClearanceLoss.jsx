@@ -4,6 +4,7 @@ import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 import { useAtom } from 'jotai';
 import { searchAtom } from '../../../Variables';
+import { apiRequest } from '../../../utils/api';
 
 const Loader = ({ height, width }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
@@ -32,9 +33,8 @@ const ClearanceLoss = () => {
                 const params = new URLSearchParams({
                     startDate: selectedDate
                 });
-                const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/purchase/clearance-loss-report/?${params}`);
-                const data = await res.json();
-                if (res.ok) {
+                const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/clearance-loss-report/?${params}`);
+                if (data) {
                     setReport(data);
                 } else {
                     setError(data?.error || 'Failed to fetch report');

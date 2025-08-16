@@ -19,6 +19,7 @@ const Sidebar = () => {
 		"report": "Dashboard",
 		"po-maker": "PoMaker",
 		"po-list": "PoList",
+		"par-level": "Par Level",
 		"summary": "Summary",
 		"hot-product": "Hot Product",
 		"replenishment": "Replenishment",
@@ -116,19 +117,18 @@ const Sidebar = () => {
 								{!collapsed && "Generated POs"}
 							</Link>
 						</li>)}
-						{/* <li className="mb-1">
-							<Link to="#" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Message" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Message")}>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 mr-3 ${activeItem === "Message" ? "text-indigo-500" : "text-gray-500"}`}>
-									<path fill="currentColor" d="M10 14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm11-5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM10 2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm11 0a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+						<li className="mb-1">
+							<Link to="/purchase/par-level" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "ParLevel" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("ParLevel")}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" className={`w-5 h-5 mr-3 ${activeItem === "ParLevel" ? "text-indigo-500" : "text-gray-500"}`}>
+									<path fill="currentColor" d="M43 23.1h5c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-5c-.6 0-.9-.5-.8-1 0 0 .3-1 .3-2s-.3-2.1-.3-2.1c-.1-.6.3-1 .8-.9M10.8 41H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h6.8c1 1.8 3 3 5.2 3 3.3 0 6-2.7 6-6s-2.7-6-6-6c-2.2 0-4.2 1.2-5.2 3m15.4 1s.3 1.1.3 2.1-.3 2-.3 2c-.1.5.2 1 .8 1h21c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H27c-.6-.1-.9.3-.8.9m4-36s.3 1.1.3 2.1-.3 2-.3 2c-.1.5.2 1 .8 1h17c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H31c-.5-.1-.9.3-.8.9M14.8 5H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h10.8c1 1.8 3 3 5.2 3 3.3 0 6-2.7 6-6s-2.7-6-6-6c-2.2 0-4.2 1.2-5.2 3m12 18H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h22.8c1 1.8 3 3 5.2 3 3.3 0 6-2.7 6-6s-2.7-6-6-6c-2.2 0-4.2 1.2-5.2 3" />
 								</svg>
 								{!collapsed && (
 									<>
-										Message
-										<span className="ml-auto bg-gray-200 text-gray-700 rounded-full px-2 py-0.5 text-xs">8</span>
+										Par Level
 									</>
 								)}
 							</Link>
-						</li> */}
+						</li>
 					</ul>
 				</div>
 

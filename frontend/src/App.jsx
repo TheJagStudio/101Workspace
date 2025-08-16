@@ -36,7 +36,6 @@ import SalesmanProfile from "./Pages/Tracker/SalesmanProfile";
 import Notification from "./Components/utils/Notification";
 import SearchProduct from "./Pages/Purchase/General/SearchProduct";
 import POList from "./Pages/Purchase/General/POList";
-import CatalogWrapper from "./Pages/Catalog/CatalogWrapper";
 import CatalogOutlet from "./Outlets/CatalogOutlet";
 import UtilityOutlet from "./Outlets/UtilityOutlet";
 import Sticker from "./Pages/Utility/Sticker";
@@ -45,6 +44,8 @@ import AccountOutlet from "./Outlets/AccountOutlet";
 import Invoice from "./Pages/Accounts/Invoice";
 import HotProduct from "./Pages/Purchase/Inventory/HotProduct";
 import ClearanceLoss from "./Pages/Purchase/Inventory/ClearanceLoss";
+import Catalog from "./Pages/Catalog/Catalog";
+import ParLevel from "./Pages/Purchase/General/ParLevel";
 
 const Loader = ({ height, width, stroke = "#615fff" }) => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
@@ -140,6 +141,7 @@ function App() {
 					<Route path="search" element={<SearchProduct />} />
 					{user?.permissions?.purchase_PO && (<Route path="po-maker" element={<POMaker />} />)}
 					{user?.permissions?.purchase_PO && (<Route path="po-list" element={<POList />} />)}
+					{user?.permissions?.purchase_PO && (<Route path="par-level" element={<ParLevel />} />)}
 					<Route path="report" element={<AIReport />} />
 					<Route path="summary" element={<Summary />} />
 					<Route path="hot-product" element={<HotProduct />} />
@@ -171,7 +173,7 @@ function App() {
 					{/* {user?.permissions?.delivery_admin && (<Route path="reports" element={<DeliveryReport />} />)} */}
 				</Route>
 				<Route path="/catalog" element={user?.is_active ? <CatalogOutlet /> : <Navigate to="/login" replace />} >
-					<Route index element={<CatalogWrapper />} />
+					<Route index element={<Catalog />} />
 				</Route>
 				<Route path="/utility" element={user?.is_active ? <UtilityOutlet logout={logout} /> : <Navigate to="/login" replace />} >
 					{user?.permissions?.utility_sticker && (<Route path="sticker" element={<Sticker />} />)}

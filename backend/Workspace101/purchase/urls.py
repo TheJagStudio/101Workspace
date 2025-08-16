@@ -63,4 +63,5 @@ urlpatterns = [
         views.ClearanceLossReportView.as_view(),
         name="ClearanceLossReportView",
     ),
+    path("par-level/", views.ParLevelView.as_view(), name="ParLevelView"),
 ]
