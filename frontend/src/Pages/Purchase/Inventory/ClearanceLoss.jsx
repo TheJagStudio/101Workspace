@@ -145,7 +145,7 @@ const ClearanceLoss = () => {
                                     selected={selectedDate ? new Date(selectedDate) : undefined}
                                     captionLayout="dropdown"
                                     onSelect={date => {
-                                        if (date) setSelectedDate(date);
+                                        if (date) setSelectedDate(format(date, 'MM/dd/yyyy'));
                                         setDatePickerOpen(false);
                                     }}
                                     max={new Date()}
