@@ -18,6 +18,7 @@ import json
 from django.utils import timezone
 import concurrent.futures
 from datetime import timedelta
+import os
 
 client = typesense.Client(
     {
@@ -270,14 +271,57 @@ class SyncSalesgentTokenView(APIView):
 
 class dataMaker(APIView):
     def get(self, request):
-        categories = Category.objects.all()
-        for cat in categories:
-            cat.parValueDays = 10
-            cat.save()
-            print(f"Updated category {cat.name} with parValueDays = 10")
+        finalData = {}
+        products = Product.objects.filter(isClearanceProduct=True)
+        for product in products:
+            # check for file
+            if not os.path.exists(f"./dataClear/{product.productId}_audit.json"):
+                headers = {
+                    'Accept': 'application/json, text/plain',
+                    'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkaGF2YWwucEAxMDFkaXN0cmlidXRvcnNnYS5jb20iLCJ1c2VyVHlwZSI6IkVtcGxveWVlIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwic3RvcmVJZCI6MSwiZXhwIjoxNzU1NDg0NjQxLCJ1c2VySWQiOjIwLCJpYXQiOjE3NTUzNjQ2NDEsInJlc2V0UGFzc3dvcmRSZXF1aXJlZCI6ZmFsc2V9.MmTgazlT6U1IEcxrG1k0uhjLsa4_6OmKgldGyqsHrjg',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                    'Pragma': 'no-cache',
+                    'Referer': 'https://erp.101distributorsga.com/product/'+str(product.productId)+'/edit',
+                    'Sec-Fetch-Dest': 'empty',
+                    'Sec-Fetch-Mode': 'cors',
+                    'Sec-Fetch-Site': 'same-origin',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+                    'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"Windows"',
+                }
+
+                response = requests.get(
+                    'https://erp.101distributorsga.com/api/audit?recordId='+str(product.productId)+'&moduleId=1&storeIds=1,2',
+                    headers=headers,
+                )
+                with open("./dataClear/"+str(product.productId)+"_audit.json", "w") as f:
+                    f.write(json.dumps(response.json()["result"]))
+                    
+            try:
+                with open("./dataClear/"+str(product.productId)+"_audit.json", "r") as f:
+                    data = json.load(f)
+                mainPrice = {}
+                for entry in data:
+                    if "data" in entry:
+                        for item in entry['data']:
+                            if "updatedValues" in item:
+                                for values in item["updatedValues"]:
+                                    if values["updatedFieldName"] == "std_price":
+                                        if float(values["newValue"]) > float(values["oldValue"]):
+                                            mainPrice[entry["date"]] = max(mainPrice.get(entry["date"], float("-inf")), float(values["newValue"]))
+                                        else:
+                                            mainPrice[entry["date"]] = max(mainPrice.get(entry["date"], float("-inf")), float(values["oldValue"]))
+                finalData[product.productId] = mainPrice
+            except Exception as e:
+                pass
+            print("Processed Product ID:", product.productId)
+        with open("./data/clearance_loss.json", "w") as f:
+            json.dump(finalData, f)
         return JsonResponse({
-            "status": "Completed",
-            "total_categories_updated": categories.count()
+            "status": "Completed"
         })
 
 class vacuum_sqlite_database(APIView):

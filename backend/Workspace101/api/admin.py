@@ -75,13 +75,30 @@ class IsClearanceProductFilter(SimpleListFilter):
         if self.value() == "no":
             return queryset.filter(isClearanceProduct=False)
         return queryset
+    
+class IsParentProductFilter(SimpleListFilter):
+    title = "Is Parent Product"
+    parameter_name = "is_parent_product"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("yes", "Yes"),
+            ("no", "No"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(childProductList=[])
+        if self.value() == "no":
+            return queryset.filter(childProductList=[])
+        return queryset
 
 
 class ProductAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["categories"]
     list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active","lastSyncTimestamp")
     search_fields = ("productName", "sku", "upc", "productId")
-    list_filter = ("active", "ecommerce", IsHotProductFilter, IsClearanceProductFilter, InventoryStatusFilter, categoryFilter)
+    list_filter = ("active", "ecommerce", IsHotProductFilter, IsClearanceProductFilter,IsParentProductFilter, InventoryStatusFilter, categoryFilter)
 
 
 class CategoryAdmin(ImportExportModelAdmin):
@@ -152,7 +169,7 @@ class SalesgentTokenAdmin(ImportExportModelAdmin):
 
 
 class ProductHistoryAdmin(ImportExportModelAdmin):
-    list_display = ("productId", "quantity", "costPrice", "date")
+    list_display = ("productId", "quantity", "costPrice", "retailPrice", "date")
     search_fields = ("productId__productId", "date")
     autocomplete_fields = ["productId"]
 
