@@ -24,7 +24,7 @@ const Sticker = () => {
     const [loadingMessage, setLoadingMessage] = useState('');
     const [fileName, setFileName] = useState('Choose File');
     const [infoMessage, setInfoMessage] = useState('');
-    
+
     // Search State
     const [isBulkMode, setIsBulkMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -101,10 +101,10 @@ const Sticker = () => {
         });
         setInfoMessage(`Added "${product.productName || 'product'}" to the sheet.`);
     }, [userEdits]);
-    
+
     const removeProduct = (indexToRemove) => {
         const productName = excelData[indexToRemove]?.productName || 'product';
-        
+
         // Filter out the product for immutable update
         const newData = excelData.filter((_, index) => index !== indexToRemove);
 
@@ -118,7 +118,7 @@ const Sticker = () => {
             }
             return acc;
         }, {});
-        
+
         setExcelData(newData);
         setUserEdits(newEdits);
         saveToLocalStorage(newData, newEdits);
@@ -167,7 +167,7 @@ const Sticker = () => {
             setLoadingMessage('');
         }
     }, 300), []);
-    
+
     useEffect(() => {
         performSearch(searchQuery);
     }, [searchQuery, performSearch]);
@@ -188,7 +188,7 @@ const Sticker = () => {
         for (const upc of upcCodes) {
             try {
                 const response = await fetch(`https://purityai-typesense.hf.space/collections/101/documents/search?q=${upc}&query_by=upc,sku&per_page=1`, {
-                     headers: { 'X-TYPESENSE-API-KEY': 'Hu52dwsas2AdxdE' }
+                    headers: { 'X-TYPESENSE-API-KEY': 'Hu52dwsas2AdxdE' }
                 });
                 const data = await response.json();
                 if (data.hits.length > 0) {
@@ -201,7 +201,7 @@ const Sticker = () => {
                 console.error(`Error searching for UPC ${upc}:`, error);
             }
         }
-        
+
         setExcelData(prev => {
             const newData = [...prev, ...foundProducts];
             saveToLocalStorage(newData, userEdits);
@@ -222,7 +222,7 @@ const Sticker = () => {
 
         setLoading(true);
         const originalBackgroundColor = previewArea.style.backgroundColor;
-        previewArea.style.backgroundColor = '#f3f4f6'; // Ensure consistent background for capture
+        previewArea.style.backgroundColor = '#f3f4f6';
 
         const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
         const pages = previewArea.querySelectorAll(`.pageWrapper`);
@@ -235,29 +235,28 @@ const Sticker = () => {
                 useCORS: true,
                 logging: false,
                 width: page.offsetWidth,
-                height: page.offsetHeight,
-                backgroundColor: null, // Transparent background to use wrapper's color
+                height: page.offsetHeight
             });
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             if (i > 0) doc.addPage();
             doc.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
         }
-        
+
         doc.save('stickers.pdf');
         previewArea.style.backgroundColor = originalBackgroundColor;
         setLoading(false);
         setLoadingMessage('');
         setInfoMessage('PDF generated successfully.');
     };
-    
+
     // --- DERIVED STATE & MEMOIZED VALUES ---
     const pages = useMemo(() => {
         const numPages = Math.ceil(excelData.length / STICKERS_PER_PAGE);
-        return Array.from({ length: numPages }, (_, i) => 
+        return Array.from({ length: numPages }, (_, i) =>
             excelData.slice(i * STICKERS_PER_PAGE, (i + 1) * STICKERS_PER_PAGE)
         );
     }, [excelData]);
-    
+
     // --- UI RENDERING ---
     return (
         <div className="p-4 sm:p-6 lg:p-8">
@@ -295,7 +294,7 @@ const Sticker = () => {
 
                             {!isBulkMode ? (
                                 <div className="relative">
-                                    <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by product name or SKU..." className="w-full bg-white border border-gray-300 rounded-md py-2 px-4 pr-10 text-sm shadow-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
+                                    <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by product name or SKU..." className="w-full bg-white border border-gray-300 rounded-md py-2 px-4 pr-10 text-sm shadow-sm focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                                     <div className="absolute right-2 top-2 flex items-center space-x-1">
                                         {searchQuery && <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>}
                                         <Search className="h-5 w-5 text-gray-400" />
@@ -303,26 +302,26 @@ const Sticker = () => {
                                     {showSearchResults && (
                                         <div className="absolute mt-2 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-72 overflow-y-auto z-20">
                                             {loading && !searchResults.length ? <p className="p-3 text-sm text-center text-gray-500">Searching...</p> :
-                                             searchResults.length > 0 ? (
-                                                <ul className="divide-y divide-gray-200">
-                                                    {searchResults.map((product) => (
-                                                        <li key={product.id} onClick={() => { addProduct(product); setShowSearchResults(false); setSearchQuery(''); }} className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3">
-                                                            <img src={product.imageUrl || DEFAULT_PRODUCT_IMAGE} alt={product.productName} className="w-12 h-12 object-contain border rounded-md flex-shrink-0" onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }} />
-                                                            <div className="flex-grow">
-                                                                <p className="font-medium text-gray-800 text-sm">{product.productName}</p>
-                                                                <p className="text-xs text-gray-500">UPC: {product.upc}</p>
-                                                            </div>
-                                                            <span className="text-sky-600 font-semibold text-sm">${Number(product.standardPrice || 0).toFixed(2)}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            ) : <p className="p-3 text-sm text-center text-gray-500">No results found.</p>}
+                                                searchResults.length > 0 ? (
+                                                    <ul className="divide-y divide-gray-200">
+                                                        {searchResults.map((product) => (
+                                                            <li key={product.id} onClick={() => { addProduct(product); setShowSearchResults(false); setSearchQuery(''); }} className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3">
+                                                                <img src={product.imageUrl || DEFAULT_PRODUCT_IMAGE} alt={product.productName} className="w-12 h-12 object-contain border rounded-md flex-shrink-0" onError={(e) => { e.target.src = DEFAULT_PRODUCT_IMAGE; }} />
+                                                                <div className="flex-grow">
+                                                                    <p className="font-medium text-gray-800 text-sm">{product.productName}</p>
+                                                                    <p className="text-xs text-gray-500">UPC: {product.upc}</p>
+                                                                </div>
+                                                                <span className="text-sky-600 font-semibold text-sm">${Number(product.standardPrice || 0).toFixed(2)}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : <p className="p-3 text-sm text-center text-gray-500">No results found.</p>}
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    <textarea value={bulkUpcInput} onChange={(e) => setBulkUpcInput(e.target.value)} placeholder="Enter UPCs separated by commas, spaces, or new lines..." className="w-full border border-gray-300 rounded-md py-2 px-4 text-sm h-28 resize-none focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
+                                    <textarea value={bulkUpcInput} onChange={(e) => setBulkUpcInput(e.target.value)} placeholder="Enter UPCs separated by commas, spaces, or new lines..." className="w-full border border-gray-300 rounded-md py-2 px-4 text-sm h-28 resize-none focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                                     <button onClick={handleBulkSearch} disabled={loading} className="w-full bg-sky-600 text-white text-sm px-4 py-2 rounded-md hover:bg-sky-700 flex items-center justify-center disabled:opacity-50">
                                         {loading ? <Loader className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />} Search & Add
                                     </button>
@@ -338,7 +337,7 @@ const Sticker = () => {
                                     <Printer className="h-5 w-5 mr-2" /> Print All Pages
                                 </button>
                                 <button onClick={clearAll} disabled={excelData.length === 0 || loading} className="w-full bg-red-600 text-white font-semibold py-2.5 px-4 rounded-md hover:bg-red-700 flex items-center justify-center disabled:opacity-50">
-                                   <Trash2 className="h-5 w-5 mr-2" /> Clear All
+                                    <Trash2 className="h-5 w-5 mr-2" /> Clear All
                                 </button>
                             </div>
                         </div>
@@ -355,31 +354,31 @@ const Sticker = () => {
                     </header>
 
                     {(loading || loadingMessage) && (
-                      <div className="text-center my-8 flex items-center justify-center">
-                          <Loader className="animate-spin h-8 w-8 text-sky-600 mr-3" />
-                          <p className="text-gray-600">{loadingMessage || 'Processing...'}</p>
-                      </div>
+                        <div className="text-center my-8 flex items-center justify-center">
+                            <Loader className="animate-spin h-8 w-8 text-sky-600 mr-3" />
+                            <p className="text-gray-600">{loadingMessage || 'Processing...'}</p>
+                        </div>
                     )}
-                    
+
                     <div ref={stickerPreviewAreaRef} className={`previewArea bg-gray-200/50 p-4 rounded-xl border border-gray-200 h-[80vh] overflow-y-auto`}>
                         {pages.map((pageData, pageIndex) => (
-                           <StickerPage key={pageIndex} previewAreaRef={stickerPreviewAreaRef}>
+                            <StickerPage key={pageIndex} previewAreaRef={stickerPreviewAreaRef}>
                                 {pageData.map((item, itemIndex) => {
                                     const globalIndex = pageIndex * STICKERS_PER_PAGE + itemIndex;
-                                    return <StickerItem 
-                                        key={item.upc || globalIndex} 
-                                        item={item} 
-                                        index={globalIndex} 
+                                    return <StickerItem
+                                        key={item.upc || globalIndex}
+                                        item={item}
+                                        index={globalIndex}
                                         edits={userEdits[globalIndex] || {}}
                                         onEdit={handleFieldEdit}
                                         onRemove={removeProduct}
                                     />
                                 })}
-                           </StickerPage>
+                            </StickerPage>
                         ))}
                     </div>
 
-                     {missingProducts.length > 0 && (
+                    {missingProducts.length > 0 && (
                         <div className="mt-4">
                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Missing Products</h3>
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -401,7 +400,7 @@ const Sticker = () => {
 const StickerPage = ({ children, previewAreaRef }) => {
     const [scale, setScale] = useState(1);
     const pageWrapperRef = useRef(null);
-    
+
     const A4_WIDTH_PX = 816;
     const A4_HEIGHT_PX = 1056;
 
@@ -424,7 +423,7 @@ const StickerPage = ({ children, previewAreaRef }) => {
     }
 
     return (
-        <div 
+        <div
             ref={pageWrapperRef}
             className={"pageWrapper"}
             style={{
@@ -461,7 +460,7 @@ const StickerItem = ({ item, index, edits, onEdit, onRemove }) => {
         }
         return { title, description, flavor };
     }, [item.productName]);
-    
+
     const handlePaste = (e) => {
         e.preventDefault();
         const text = e.clipboardData.getData('text/plain');
@@ -473,7 +472,7 @@ const StickerItem = ({ item, index, edits, onEdit, onRemove }) => {
             <button onClick={() => onRemove(index)} className={"removeBtn"}>
                 <X size={16} />
             </button>
-            
+
             <div
                 className={"stickerTitle"}
                 contentEditable
@@ -493,7 +492,7 @@ const StickerItem = ({ item, index, edits, onEdit, onRemove }) => {
             >
                 {edits.description || description}
             </div>
-            
+
             <div
                 className={"stickerFlavor"}
                 contentEditable

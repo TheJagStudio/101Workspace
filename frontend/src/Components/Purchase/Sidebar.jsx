@@ -19,7 +19,7 @@ const Sidebar = () => {
 		"report": "Dashboard",
 		"po-maker": "PoMaker",
 		"po-list": "PoList",
-		"par-level": "Par Level",
+		"par-level": "ParLevel",
 		"summary": "Summary",
 		"hot-product": "Hot Product",
 		"replenishment": "Replenishment",

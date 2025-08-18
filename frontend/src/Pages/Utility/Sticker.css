@@ -21,7 +21,7 @@
 .a4Page {
 	width: 816px;
 	height: 1056px;
-	background: white;
+	background: hsl(0, 0%, 100%);
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 	padding: 80px 38px;
 	transform-origin: top left;
@@ -47,7 +47,7 @@
 	align-items: center;
 	overflow: hidden;
 	border-radius: 6px;
-	background-color: #fff;
+	background-color: hsl(0, 0%, 100%);
 	word-break: break-word;
 	position: relative; /* For remove button positioning */
 }
@@ -64,14 +64,14 @@
 .stickerTitle {
 	font-weight: 700;
 	font-size: 1.5rem;
-	color: #dc2626; /* Red-600 */
+	color: hsl(0, 77%, 53%);
 	transform: translateY(-15px);
 	font-family: "Arial Rounded MT Bold", sans-serif;
 }
 
 .stickerDescription {
 	font-size: 0.8rem;
-	color: #000000;
+	color: hsl(0, 0%, 0%);
 	margin: 4px 0;
 	line-height: 1.3;
 	transform: translateY(-15px);
@@ -79,7 +79,7 @@
 
 .stickerFlavor {
 	font-size: 1.5rem;
-	color: #dc2626; /* Red-600 */
+	color: hsl(0, 77%, 53%);
 	font-weight: 600;
 	line-height: 20px;
 	transform: translateY(-15px);
@@ -89,14 +89,14 @@
 .stickerPrice {
 	font-size: 2.5rem;
 	font-weight: bolder;
-	color: #111827;
+	color: hsl(222, 39%, 10%);
 	line-height: 35px;
 	transform: translateY(-15px);
 }
 
 .stickerUpc {
 	font-size: 1.3rem;
-	color: #111827;
+	color: hsl(222, 39%, 10%);
 	font-weight: 1000;
 	line-height: 20px;
 	transform: translateY(-10px);
@@ -108,34 +108,36 @@
 }
 
 [contenteditable="true"]:hover {
-	border-color: #e5e7eb;
-	background-color: #f9fafb;
-	cursor: text;
+    border-color: hsl(220, 14%, 93%);
+    background-color: hsl(210, 20%, 98%);
+    cursor: text;
 }
+
 
 [contenteditable="true"]:focus {
-	outline: none;
-	border-color: #60a5fa;
-	background-color: #ffffff;
-	box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    outline: none;
+    border-color: hsl(213, 94%, 62%);
+    background-color: hsl(0, 0%, 100%);
+    box-shadow: 0 0 0 2px hsla(213, 94%, 62%, 0.2);
 }
 
+
 .removeBtn {
-	position: absolute;
-	right: 4px;
-	top: 4px;
-	z-index: 10;
-	background-color: #fee2e2;
-	color: #b91c1c;
-	border-radius: 9999px;
-	padding: 4px;
-	opacity: 0;
-	transition: opacity 0.2s ease;
-	cursor: pointer;
-	border: none;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    z-index: 10;
+    background-color: hsl(0, 93%, 94%); /* #fee2e2 */
+    color: hsl(0, 82%, 38%); /* #b91c1c */
+    border-radius: 9999px;
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .sticker:hover .removeBtn {
@@ -143,7 +145,7 @@
 }
 
 .removeBtn:hover {
-	background-color: #fecaca;
+    background-color: hsl(0, 96%, 89%); /* #fecaca */
 }
 @keyframes slideIn {
 	from {

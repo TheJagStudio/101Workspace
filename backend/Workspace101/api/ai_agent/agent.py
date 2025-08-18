@@ -3,28 +3,16 @@ import time
 import uuid
 import requests
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-from api.models import Product, Category, BusinessType,  Vendor, Invoice, InvoiceLineItem,POLocal,POLocalLineItem,ProductHistory,PurchaseHistory,Customer, AIReport, ModulePermissions,SalesgentToken
-from delivery.models import DeliveryDriver, DeliveryTruck, DeliverySheet
-from tracker.models import DailyActivity, Salesman, LocationPoint, AdminSettings,PlannedRoute, RouteStop, SystemNotification
-from django.db import connection, transaction
-from datetime import datetime, date
-import django  # <-- Add this import
+import django
 import sys
 import io
-import ast
-from django.db.models import Sum, Count, Avg, Max, Min, Q, F, Case, When, Value, CharField, BooleanField, IntegerField, ExpressionWrapper
-from django.db.models.functions import Lower, Upper, Length, Substr, Concat, Coalesce, Cast, Greatest, Least, Trunc, Extract, ExtractWeek, ExtractDay, ExtractHour, ExtractMinute, ExtractSecond, Now, TruncDate, TruncHour, TruncMinute, TruncSecond, TruncDay, TruncMonth, TruncYear, Round, Ceil, Floor, Abs, Mod, Power, Ln, Log, Sqrt, Radians, Degrees, Sin, Cos, Tan, ASin, ACos, ATan, ATan2, Exp
 import json
-from datetime import datetime, date, timedelta
 
 # Load environment variables first
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
-
+QUERY_RESULT_LIMIT = 1000
 
 def get_github_copilot_token():
     """Get a GitHub Copilot API token using access token"""
@@ -61,134 +49,7 @@ The output of this tool will be the result of the executed query or an error mes
 
 
 """
-QUERY_RESULT_LIMIT = 1000
-ALLOWED_CALLS = {
-    'all', 'filter', 'get', 'exclude', 'annotate', 'order_by', 'reverse',
-    'distinct', 'values', 'values_list', 'dates', 'datetimes', 'none',
-    'select_related', 'prefetch_related', 'extra', 'defer', 'only', 'using',
-    'select_for_update', 'raw', 'count', 'exists', 'first', 'last', 'latest',
-    'earliest', 'aggregate', 'explain',
-    'Sum', 'Count', 'Avg', 'Max', 'Min',
-    'Q', 'F', 'Case', 'When', 'Value',
-    'ExpressionWrapper', 'CharField', 'BooleanField', 'IntegerField',
-    'datetime', 'date', 'timedelta', 'Now',
-    'Trunc', 'TruncDate', 'TruncHour', 'TruncMinute', 'TruncSecond',
-    'TruncDay', 'TruncMonth', 'TruncYear',
-    'Extract', 'ExtractWeek', 'ExtractDay', 'ExtractHour', 'ExtractMinute', 'ExtractSecond',
-    'Lower', 'Upper', 'Length', 'Substr', 'Concat', 'Coalesce', 'Cast',
-    'Greatest', 'Least', 'Round', 'Ceil', 'Floor', 'Abs', 'Mod', 'Power',
-    'Ln', 'Log', 'Sqrt', 'Radians', 'Degrees',
-    'Sin', 'Cos', 'Tan', 'ASin', 'Acos', 'Atan', 'Atan2', 'Exp',
-    'list', 'tuple', 'dict', 'str', 'int', 'float', 'bool', 'len', 'range', 'set',
-    'abs', 'round', 'min', 'max', 'sum', 'divmod',"random"
-}
-ALLOWED_IMPORT_MODULES = {
-    'django.db',
-    'django.contrib',
-    'datetime',
-    'django.utils',
-    'requests',
-    'sys',
-    'json',
-    'django.db.models',
-    'api.models',
-    'delivery.models',
-    'tracker.models',
-    "random",
-    "string",
-    "math"
-}
-ALLOWED_IMPORTED_NAMES = {
-    'django.db.models': {
-        'Sum', 'Count', 'Avg', 'Max', 'Min', 'Q', 'F', 'Case', 'When', 'Value',
-        'CharField', 'BooleanField', 'IntegerField', 'ExpressionWrapper',
-        'Lower', 'Upper', 'Length', 'Substr', 'Concat', 'Coalesce', 'Cast',
-        'Greatest', 'Least', 'Trunc', 'TruncDate', 'TruncHour', 'TruncMinute',
-        'TruncSecond', 'TruncDay', 'TruncMonth', 'TruncYear', 'Extract',
-        'ExtractWeek', 'ExtractDay', 'ExtractHour', 'ExtractMinute', 'ExtractSecond',
-        'Now', 'Round', 'Ceil', 'Floor', 'Abs', 'Mod', 'Power', 'Ln', 'Log',
-        'Sqrt', 'Radians', 'Degrees', 'Sin', 'Cos', 'Tan', 'Asin', 'Acos', 'Atan', 'Atan2', 'Exp'
-    },
-    'api.models': {
-        'Product', 'Category', 'BusinessType', 'Vendor', 'Customer', 'Invoice', 'ProductHistory',
-        'InvoiceLineItem', 'PurchaseHistory', 'SalesgentToken', 'AIReport', 'POLocal',
-        'POLocalLineItem', 'ModulePermissions',
-    },
-    'delivery.models': {
-        'DeliveryDriver', 'DeliveryTruck', 'DeliverySheet'
-    },
-    'tracker.models': {
-        'Salesman', 'LocationPoint', 'DailyActivity', 'AdminSettings', 'PlannedRoute', 'RouteStop', 'SystemNotification'
-    },
-    'random': {
-        'random'
-    },
-    'string': {
-        'ascii_letters', 'ascii_lowercase', 'ascii_uppercase', 'digits', 'hexdigits', 'octdigits', 'punctuation', 'printable', 'whitespace', 'capwords'
-    },
-    'math': {
-        'ceil', 'comb', 'copysign', 'cos', 'dist', 'exp', 'fabs', 'factorial', 'floor', 'fmod', 'frexp', 'fsum', 'gcd', 'hypot', 'isclose', 'isfinite', 'isinf', 'isnan', 'ldexp', 'lcm', 'log', 'log10', 'log1p', 'log2', 'modf', 'perm', 'pow', 'prod', 'sin', 'sqrt', 'tan', 'tau', 'trunc'
-    },
-}
 
-class CodeValidator(ast.NodeVisitor):
-    def visit(self, node):
-        disallowed_nodes = (
-            ast.Assign, ast.AugAssign, ast.AnnAssign,
-            ast.Delete, ast.Del,
-            ast.With, ast.AsyncWith,
-            ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef,
-            ast.Global, ast.Nonlocal,
-            ast.Exec,
-            ast.Try, ast.Raise, ast.Assert,
-        )
-        if isinstance(node, disallowed_nodes):
-            raise PermissionError(f"Operation of type '{type(node).__name__}' is not allowed.")
-        super().visit(node)
-
-    def visit_ImportFrom(self, node):
-        module_name = node.module
-        if module_name not in ALLOWED_IMPORT_MODULES:
-            raise PermissionError(f"Import from module '{module_name}' is not allowed.")
-
-        for alias in node.names:
-            imported_name = alias.name
-            if alias.asname:
-                imported_name_as = alias.asname
-                if imported_name_as.startswith('__'):
-                    raise PermissionError("Importing with dunder alias is not allowed.")
-
-            if imported_name == '*':
-                raise PermissionError(f"Wildcard import 'from {module_name} import *' is not allowed.")
-            if imported_name not in ALLOWED_IMPORTED_NAMES.get(module_name, set()):
-                raise PermissionError(f"Import of name '{imported_name}' from '{module_name}' is not allowed.")
-
-        self.generic_visit(node)
-
-    def visit_Call(self, node):
-        func_name = None
-        if isinstance(node.func, ast.Attribute):
-            func_name = node.func.attr
-        elif isinstance(node.func, ast.Name):
-            func_name = node.func.id
-
-        if func_name and func_name not in ALLOWED_CALLS:
-            if func_name.startswith('__') and func_name.endswith('__'):
-                raise PermissionError("Calling dunder methods is not allowed.")
-            raise PermissionError(f"Function call '{func_name}()' is not allowed.")
-
-        if func_name in ['values', 'values_list', 'annotate', 'order_by', 'filter', 'exclude', 'aggregate']:
-            for arg in node.args:
-                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    pass
-                else:
-                    self.generic_visit(arg)
-            
-            for kwarg in node.keywords:
-                self.generic_visit(kwarg.value)
-            return
-
-        self.generic_visit(node)
 
 def ExecuteOrmQuery(python_code: str) -> str:
     if not python_code:
@@ -204,44 +65,14 @@ def ExecuteOrmQuery(python_code: str) -> str:
     if "DROP TABLE" in python_code.upper() or "DELETE FROM" in python_code.upper() or "UPDATE " in python_code.upper() or "INSERT INTO" in python_code.upper():
         return "Error: Detected potential malicious database operation. Operation blocked."
 
-    safe_builtins = {
-        name: globals()[name] for name in ALLOWED_CALLS if hasattr(globals().get(name), '__call__') or name in ['list', 'dict', 'str', 'int', 'float', 'bool', 'None', 'tuple', 'set']
-    }
-    safe_builtins['print'] = print
-
-    safe_globals = {
-        "__builtins__": safe_builtins,
-        "Product": Product, "Category": Category, "BusinessType": BusinessType,
-        "Vendor": Vendor, "Invoice": Invoice, "InvoiceLineItem": InvoiceLineItem,
-        "ProductHistory": ProductHistory, "PurchaseHistory": PurchaseHistory,
-        "Customer": Customer, "SalesgentToken": SalesgentToken, "AIReport": AIReport,
-        "POLocal": POLocal, "POLocalLineItem": POLocalLineItem, "ModulePermissions": ModulePermissions,
-        "Salesman": Salesman, "LocationPoint": LocationPoint, "DailyActivity": DailyActivity,
-        "AdminSettings": AdminSettings, "PlannedRoute": PlannedRoute, "RouteStop": RouteStop,
-        "SystemNotification": SystemNotification,
-        "DeliveryDriver": DeliveryDriver, "DeliveryTruck": DeliveryTruck, "DeliverySheet": DeliverySheet,
-        "Sum": Sum, "Count": Count, "Avg": Avg, "Max": Max, "Min": Min,
-        "Q": Q, "F": F, "Case": Case, "When": When, "Value": Value,
-        "ExpressionWrapper": ExpressionWrapper, "CharField": CharField, "BooleanField": BooleanField, "IntegerField": IntegerField,
-        "Lower": Lower, "Upper": Upper, "Length": Length, "Substr": Substr, "Concat": Concat, "Coalesce": Coalesce, "Cast": Cast,
-        "Greatest": Greatest, "Least": Least,
-        "Trunc": Trunc, "TruncDate": TruncDate, "TruncHour": TruncHour, "TruncMinute": TruncMinute, "TruncSecond": TruncSecond,
-        "TruncDay": TruncDay, "TruncMonth": TruncMonth, "TruncYear": TruncYear,
-        "Extract": Extract, "ExtractWeek": ExtractWeek, "ExtractDay": ExtractDay, "ExtractHour": ExtractHour, "ExtractMinute": ExtractMinute, "ExtractSecond": ExtractSecond,
-        "Now": Now,
-        "Round": Round, "Ceil": Ceil, "Floor": Floor, "Abs": Abs, "Mod": Mod, "Power": Power,
-        "Ln": Ln, "Log": Log, "Sqrt": Sqrt, "Radians": Radians, "Degrees": Degrees,
-        "Sin": Sin, "Cos": Cos, "Tan": Tan, "ASin": ASin, "ACos": ACos, "ATan": ATan, "ATan2": ATan2, "Exp": Exp,
-        "datetime": datetime, "date": date, "timedelta": timedelta,
-    }
-
+    
     _locals = {}
     try:
         old_stdout = sys.stdout
         sys.stdout = mystdout = io.StringIO()
         
         try:
-            exec(python_code, safe_globals, _locals)
+            exec(python_code, None, _locals)
         finally:
             sys.stdout = old_stdout
         
@@ -281,19 +112,11 @@ class DjangoAIAgent:
         self.use_copilot = use_copilot
         self.temperature = temperature
         
-        if use_copilot:
-            # GitHub Copilot configuration
-            self.model_name = "gpt-4.1"
-            self.endpoint = "https://api.individual.githubcopilot.com"
-            self.vision = False
-            self.copilot_token = None
-        else:
-            # Gemini configuration
-            # self.model_name = model_name
-            self.model_name = "gemini-2.5-flash-preview-04-17"
-            # self.model_name = "gemini-2.5-flash-preview-05-20"
-            self.client = genai.Client(api_key=GEMINI_API_KEY)
-            self.cache = None
+        # GitHub Copilot configuration
+        self.model_name = "gpt-4.1"
+        self.endpoint = "https://api.individual.githubcopilot.com"
+        self.vision = False
+        self.copilot_token = None
 
     def _get_copilot_headers(self):
         """Get headers for GitHub Copilot API requests"""
@@ -370,10 +193,8 @@ class DjangoAIAgent:
             print(f"Attempt {retry_count + 1} of {max_retries + 1} for query: {current_query[:100]}...")
             
             # Execute the query
-            if self.use_copilot:
-                result = self._query_database_with_copilot(current_query, final_system_prompt, current_chat_history, retry_count)
-            else:
-                result = self._query_database_with_gemini(current_query, final_system_prompt, current_chat_history, retry_count)
+            result = self._query_database_with_copilot(current_query, final_system_prompt, current_chat_history, retry_count)
+            
             
             # Add attempt information for tracking
             result["retry_count"] = retry_count
@@ -652,7 +473,7 @@ This JSON string should adhere to the following structure:
             
             if response and 'choices' in response and len(response['choices']) > 0:
                 llm_response = response['choices'][0]['message']['content']
-                print(f"GitHub Copilot Response: {llm_response}")
+                # print(f"GitHub Copilot Response: {llm_response}")
                 
                 try:
                     # Clean and parse JSON response
@@ -664,7 +485,7 @@ This JSON string should adhere to the following structure:
                     if parsed_response.get("python_code"):
                         orm_result_str = ExecuteOrmQuery(parsed_response["python_code"])
                         if "Error:" not in orm_result_str:
-                            print(f"ORM Result: {orm_result_str}")
+                            # print(f"ORM Result: {orm_result_str}")
                             final_data_for_frontend["results"] = orm_result_str
                         
                             # Update visualization data if needed
@@ -689,217 +510,5 @@ This JSON string should adhere to the following structure:
             lineNumber = e.__traceback__.tb_lineno
             print(f"Error in GitHub Copilot query (line {lineNumber}): {e}")
             final_data_for_frontend["natural_language_response"] = f"An error occurred while processing your request: {e}"
-
-        return final_data_for_frontend
-
-    def _query_database_with_gemini(self, natural_language_query: str, final_system_prompt: str, chat_history: list, retry_count: int = 0):
-        """Query database using Gemini API (original implementation)"""
-        SYSTEM_PROMPT = (
-            """
-You are an AI assistant designed to interact with a Django database.
-Your primary function is to translate natural language queries into executable Django ORM code.
-You have access to the following Django models and their schema:
-
-"""
-            + final_system_prompt
-            + """
-
-When a user asks a question, follow these steps:
-1.  **Analyze the user's request:** Understand the intent, desired data, and any filtering/aggregation requirements.
-2.  **Determine the relevant Django models and fields:** Use the provided schema context to identify which models and fields are needed.
-3.  **Construct a Django ORM query:** Write Python code that uses Django's ORM to retrieve the requested data.
-    * **Prioritize Django ORM:** Always try to use the ORM for safety and clarity.
-    * **Relationships:** If multiple models are involved, use Django's related field lookups (e.g., `product__productName`).
-    * **Aggregations:** Use `annotate` and `aggregate` for `SUM`, `COUNT`, `AVG`, `MAX`, `MIN`.
-    * **Filtering:** Use `filter()` with appropriate lookups (e.g., `__icontains`, `__gte`, `__lte`, `__startswith`, `__endswith`).
-    * **Ordering:** Use `order_by()`.
-    * **Select specific fields:** Use `values()` or `values_list()` for efficiency if only a few fields are needed.
-    * **Limit results:** Always include `.first()`, `[:N]`, or `[offset:limit]` for pagination or single results, unless the user explicitly asks for all.
-    * **Security:** DO NOT use raw SQL unless absolutely necessary and ensure all inputs are parameterized.
-    * **Error Handling:** Include basic try-except blocks for robust execution.
-4.  **Execute the ORM query using the 'run_django_orm_query' tool.**
-5.  **Interpret the results:** Understand the data returned by the ORM query.
-6.  **Formulate a concise and clear natural language response:** Present the answer to the user in an easy-to-understand format. If the results are extensive, summarize them or state how many records were found.
-
-If the query is ambiguous or requires more information, ask clarifying questions.
-If you cannot fulfill the request with the available models, state that clearly.
-If the request is not related to database queries, inform the user you are a database interaction agent.
-
-Example ORM snippets for common operations:
-- `Product.objects.filter(productName__icontains='laptop').values('productName', 'standardPrice')`
-- `Invoice.objects.filter(status='completed').count()`
-- `InvoiceLineItem.objects.values('product__productName').annotate(total_sold=Sum('quantity')).order_by('-total_sold')[:5]`
-- `Salesman.objects.get(user__username='JohnDoe')`
-
-Do not hallucinate model names, field names, or data. Only use information provided in the schema context.
-
-Your final response after processing the user's query and potentially using tools MUST be a JSON string.
-This JSON string should adhere to the following structure:
-
-{
-  "natural_language_response": "A human-readable summary of the answer. This should always be present.",
-  "python_code": "The Python ORM code that was generated and executed (if any). Null if no code was run.",
-  "results": "The raw JSON string result from the ExecuteOrmQuery tool (if any). Null otherwise. This is the direct output of the database query.",
-  "visualization": {
-    "type": "string (e.g., 'table', 'bar_chart', 'line_chart', 'pie_chart', 'scatter_plot', 'diagram', 'none'). 'none' or omitting visualization means no specific visual is suggested beyond the natural language response.",
-    "title": "string (Optional title for the chart/diagram, e.g., 'Sales Trend Q1')",
-    "data": "array of objects (for charts, structured for Recharts, e.g., [{name: 'X', value: 10}, ...]) OR string (for diagrams, e.g., Mermaid syntax) OR null. This data should be derived from results or generated by you.",
-    "options": {
-        "x_axis_key": "string (The key in 'data' objects to be used for the X-axis, e.g., 'categoryName')",
-        "y_axis_keys": ["string", ...] (Array of keys in 'data' objects for the Y-axis, e.g., ['totalSales', 'averagePrice'])
-    }
-  }
-}
-
-**Instructions for Visualization:**
-
-1.  **Analyze Request**: When the user asks for data, consider if it's best represented by a table, a specific chart, or a diagram.
-2.  **Choose Type**:
-    * For trends over time: suggest 'line_chart'.
-    * For comparisons between categories: suggest 'bar_chart'.
-    * For proportions of a whole: suggest 'pie_chart'.
-    * For relationships or processes: suggest 'diagram' and generate Mermaid.js syntax.
-    * If data is tabular and no other chart is suitable: suggest 'table'.
-    * If the answer is purely textual or a specific visualization isn't obvious: set 'visualization.type' to 'none'.
-3.  **Data for Charts**:
-    * When you generate the `python_code` for `ExecuteOrmQuery`, aim for results that can be easily used.
-    * The `visualization.data` should be an array of objects. For example, if querying sales by product:
-        `"data": [{"productName": "Laptop", "sales": 5000}, {"productName": "Mouse", "revenue": 300}]`
-    * Specify `visualization.options.x_axis_key` (e.g., "productName") and `visualization.options.y_axis_keys` (e.g., ["sales"]).
-4.  **Data for Diagrams**:
-    * For `visualization.type = 'diagram'`, the `visualization.data` field should contain a string of Mermaid.js syntax. Example: `graph TD; A[Start]-->B(Process); B-->C{Decision}; C-->D[End]; C-->E[Alternative];`
-5.  **Tool Usage**:
-    * If you use the `ExecuteOrmQuery` tool, generate the `python_code`.
-    * Your textual response (the JSON structure above) should reflect this. `python_code` will be the code you generated. `results` will be populated by the system after the tool runs. You should structure `visualization.data` based on the *expected* data from the query.
-
-**Example User Query:** "Show me the total sales for each product category as a bar chart."
-
-**Expected LLM Textual Output (JSON String):**
-```json
-{
-  "natural_language_response": "Here are the total sales for each product category, displayed as a bar chart.",
-  "python_code": "from api.models import Product, InvoiceLineItem\nfrom django.db.models import Sum\nresults = list(Product.objects.values('category__categoryName').annotate(total_sales=Sum('invoicelineitem__totalPrice')).order_by('-total_sales'))",
-  "results": null, // System will fill this after tool execution
-  "visualization": {
-    "type": "bar_chart",
-    "title": "Total Sales by Product Category",
-    "data": null, // System can fill this from results if structured appropriately by the query or LLM explains how to derive it
-    "options": {
-        "x_axis_key": "category__categoryName",
-        "y_axis_keys": ["total_sales"]
-    }
-  }
-}
-"""
-        )
-        
-        # Build the user prompt with chat history if this is a retry
-        chat_context = ""
-        if chat_history:
-            chat_context = "\n\nPrevious conversation context:\n"
-            for i, msg in enumerate(chat_history):
-                role = msg.get("role", "unknown")
-                content = msg.get("content", "")
-                chat_context += f"{role.title()}: {content}\n"
-            chat_context += "\nBased on the above context and any errors, please provide a corrected response.\n"
-        
-        USER_PROMPT = f"User Query: {natural_language_query}{chat_context}\n\nAgent, provide your response as a JSON object following the specified schema, including any Django ORM code for tool execution if necessary.\n\n Use below given system prompt as context for your response.\n\n{SYSTEM_PROMPT}"
-
-        tools = [
-            types.Tool(
-                function_declarations=[
-                    types.FunctionDeclaration(
-                        name="ExecuteOrmQuery",
-                        description=TOOL_DESCRIPTION,
-                        parameters=genai.types.Schema(
-                            type=genai.types.Type.OBJECT,
-                            properties={
-                                "python_code": genai.types.Schema(
-                                    type=genai.types.Type.STRING,
-                                ),
-                            },
-                        ),
-                    ),
-                ]
-            )
-        ]
-
-        # Prepare Gemini API request
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_text(text=USER_PROMPT),
-                ],
-            ),
-        ]
-        generate_content_config = types.GenerateContentConfig(
-            tools=tools,
-            response_mime_type="text/plain",
-            # system_instruction=[
-            #     types.Part.from_text(text=SYSTEM_PROMPT),
-            # ],
-        )
-
-        print("Total Prompt Length:", len(SYSTEM_PROMPT) + len(USER_PROMPT))
-
-        llm_json_response_str = ""
-        generated_python_code = None
-        final_data_for_frontend = {"natural_language_response": "Error: Could not get a valid response from AI.", "python_code": None, "results": None, "visualization": {"type": "none", "data": None, "options": {}, "title": None}, "query": natural_language_query, "retry_count": retry_count, "retry_attempts": []}
-
-        try:
-            response_chunks = self.client.models.generate_content_stream(
-                model=self.model_name,
-                contents=contents,
-                config=generate_content_config,
-            )
-
-            for chunk in response_chunks:
-                if chunk.text:
-                    llm_json_response_str += chunk.text
-
-                if hasattr(chunk, "candidates"):
-                    for candidate in chunk.candidates:
-                        for part in getattr(candidate.content, "parts", []):
-                            function_call = getattr(part, "function_call", None)
-                            if function_call and function_call.name == "ExecuteOrmQuery" and "python_code" in function_call.args:
-                                generated_python_code = function_call.args["python_code"]
-                                print(f"Generated Python Code: {generated_python_code}")
-            print(f"LLM Response: {llm_json_response_str}")
-            if llm_json_response_str:
-                try:
-                    llm_json_response_str = llm_json_response_str.replace("```json", "").replace("```", "")
-                    parsed_llm_json = json.loads(llm_json_response_str)
-                    final_data_for_frontend.update(parsed_llm_json)
-                except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON from LLM: {e}")
-                    final_data_for_frontend["natural_language_response"] = f"AI Warning: Could not parse LLM's JSON output. Raw text: {llm_json_response_str}"
-                    if not final_data_for_frontend.get("natural_language_response") and llm_json_response_str:
-                        final_data_for_frontend["natural_language_response"] = llm_json_response_str
-
-            if generated_python_code or parsed_llm_json.get("python_code"):
-                finalCode = parsed_llm_json.get("python_code", generated_python_code)
-                final_data_for_frontend["python_code"] = finalCode
-                orm_result_str = ExecuteOrmQuery(finalCode)
-                # print(f"ORM Result: {orm_result_str}")
-                final_data_for_frontend["results"] = orm_result_str
-
-                vis_info = final_data_for_frontend.get("visualization", {})
-                if vis_info.get("type") not in ["none", "diagram"] and vis_info.get("data") is None:
-                    try:
-                        vis_info["data"] = json.loads(orm_result_str)
-                    except json.JSONDecodeError:
-                        vis_info["data"] = orm_result_str
-                        final_data_for_frontend["natural_language_response"] = vis_info
-                        print(f"Warning: results ('{orm_result_str}') could not be parsed as JSON for visualization.data.")
-                final_data_for_frontend["visualization"] = vis_info
-
-            if not final_data_for_frontend.get("natural_language_response") and not generated_python_code:
-                final_data_for_frontend["natural_language_response"] = "No specific action was taken or information retrieved. Please try rephrasing your query."
-
-        except Exception as e:
-            print(f"Error in query_database: {e}")
-            final_data_for_frontend["natural_language_response"] = f"An error occurred while processing your request: {e}"
-            final_data_for_frontend["visualization"]["type"] = "none"
 
         return final_data_for_frontend

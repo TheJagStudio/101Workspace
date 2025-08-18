@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
+// import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -8,7 +8,7 @@ import path from "path";
 export default defineConfig({
 	plugins: [
 		react(),
-		tailwindcss(),
+		// tailwindcss(),
 		VitePWA({
 			registerType: "autoUpdate",
 			devOptions: {

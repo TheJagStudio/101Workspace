@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState,useMemo, use } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import TableGrid from "./TableGrid";
@@ -82,7 +82,7 @@ const Chatbot = () => {
 
 		if (!data || !Array.isArray(data) || data.length === 0) {
 			return (
-				<div className="w-full h-64 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg">
+				<div className="w-fit px-4 h-10 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg rounded-bl-none">
 					<p className="text-gray-500">No data available for visualization</p>
 				</div>
 			);
@@ -222,6 +222,8 @@ const Chatbot = () => {
 			</div>
 		);
 	};
+	const MemoizedDiagramComponent = useMemo(() => DiagramComponent, []);
+	const MemoizedChartComponent = useMemo(() => ChartComponent, []);
 
 	useEffect(() => {
 		mermaid.initialize({ startOnLoad: false, theme: 'light' });
@@ -302,9 +304,9 @@ const Chatbot = () => {
 													{(isLoaded || hasDiagramVisualization) && visualization && (
 														<div className="w-full">
 															{visualization?.type === 'diagram' ? (
-																<DiagramComponent mermaidSyntax={visualization?.data} />
+																<MemoizedDiagramComponent mermaidSyntax={visualization?.data} />
 															) : visualization?.type && visualization?.type !== 'none' && visualization?.type !== 'table' ? (
-																<ChartComponent
+																<MemoizedChartComponent
 																	type={visualization?.type}
 																	data={visualization?.data || queryResult}
 																	options={visualization?.options || {}}
