@@ -568,6 +568,7 @@ class DustyInventoryView(APIView):
         sort_by = request.GET.get("_sort_by", "last_sale")
         reverse_sort = request.GET.get("_reverse_sort", "true").lower() == "true"
         start_date = request.GET.get("_start_date", None)
+        dataType = request.GET.get("_dataType", "child")
 
         headers = {
             "Content-Type": "application/json",
@@ -595,18 +596,32 @@ class DustyInventoryView(APIView):
             "_report_type": report_type,
             "_start_date": start_date,
         }
-        try:
-            response = requests.post(settings.SUPABASE_URL + "/rest/v1/rpc/get_dusty_inventory", headers=headers, json=json_data)
-            data = response.json()
+        if dataType == "total":
             try:
-                response2 = requests.post(settings.SUPABASE_URL + "/rest/v1/rpc/get_dusty_inventory_count", headers=headers, json=json_data_count)
-                total_records = response2.text
+                response = requests.post(settings.SUPABASE_URL + "/rest/v1/rpc/get_dusty_inventory", headers=headers, json=json_data)
+                data = response.json()
+                try:
+                    response2 = requests.post(settings.SUPABASE_URL + "/rest/v1/rpc/get_dusty_inventory_count", headers=headers, json=json_data_count)
+                    total_records = response2.text
+                except requests.RequestException as e:
+                    total_records = 0
+                    return JsonResponse({"error": str(e) + " : Count API error"}, status=500)
+                return JsonResponse({"data": data, "totalPages": total_records}, status=200, safe=False)
             except requests.RequestException as e:
-                total_records = 0
-                return JsonResponse({"error": str(e) + " : Count API error"}, status=500)
-            return JsonResponse({"data": data, "totalPages": total_records}, status=200, safe=False)
-        except requests.RequestException as e:
-            return JsonResponse({"error": str(e) + " : List API error"}, status=500)
+                return JsonResponse({"error": str(e) + " : List API error"}, status=500)
+        else:
+            try:
+                response = requests.post(settings.SUPABASE_URL + "/rest/v1/rpc/get_dusty_inventory", headers=headers, json=json_data)
+                data = response.json()
+                try:
+                    response2 = requests.post(settings.SUPABASE_URL + "/rest/v1/rpc/get_dusty_inventory_count", headers=headers, json=json_data_count)
+                    total_records = response2.text
+                except requests.RequestException as e:
+                    total_records = 0
+                    return JsonResponse({"error": str(e) + " : Count API error"}, status=500)
+                return JsonResponse({"data": data, "totalPages": total_records}, status=200, safe=False)
+            except requests.RequestException as e:
+                return JsonResponse({"error": str(e) + " : List API error"}, status=500)
 
 
 class ProductHistoryView(APIView):
@@ -1124,9 +1139,7 @@ class ClearanceLossReportView(APIView):
             retail_price = float(entry.retailPrice)
 
             transaction_loss = round(entry.quantity * (retail_price - original_cost), 2)
-            if "21435" == product_id_str:
-                print(entry.quantity, retail_price, original_cost, transaction_loss)
-
+           
             if transaction_loss < 0:
                 product_id = entry.productId.productId
 
@@ -1150,110 +1163,13 @@ class ClearanceLossReportView(APIView):
 
         return JsonResponse({"message": "Monthly Clearance Loss Report", "overallTotalLoss": overall_total_loss, "monthlyBreakdown": monthly_breakdown}, status=200)
 
-    # def get(self, request):
-    #     # 1. Get and validate date parameters
-    #     try:
-    #         # Ensure startDate is provided, or handle the error
-    #         startDate = request.GET.get("startDate")
-    #         if not startDate:
-    #             return JsonResponse({"error": "startDate parameter is required."}, status=400)
-
-    #         # Use today's date if endDate is not provided
-    #         endDate = request.GET.get("endDate") or timezone.now()
-    #     except Exception as e:
-    #         return JsonResponse({"error": f"Invalid date format: {e}"}, status=400)
-
-    #     # 2. Load the original cost data
-    #     try:
-    #         with open("./data/clearance_loss.json", "r") as f:
-    #             original_costs = json.load(f)
-    #     except FileNotFoundError:
-    #         return JsonResponse({"error": "Original cost data file not found."}, status=500)
-    #     except json.JSONDecodeError:
-    #         return JsonResponse({"error": "Error decoding original cost data file."}, status=500)
-
-    #     # 3. Fetch data from the database efficiently
-    #     clearance_products = Product.objects.filter(isClearanceProduct=True).exclude(childProductList=[])
-    #     product_map = {p.productId: p for p in clearance_products}
-
-    #     # Fetch relevant product history records
-    #     product_history = ProductHistory.objects.filter(
-    #         productId__in=clearance_products.values_list('productId', flat=True),
-    #         date__range=[startDate, endDate]
-    #     ).select_related('productId').order_by('date')
-
-    #     # 4. Process data and calculate losses in a single pass
-    #     monthly_breakdown = defaultdict(lambda: {
-    #         'totalLoss': 0.0,
-    #         'products': defaultdict(lambda: {
-    #             'totalLoss': 0.0,
-    #             'totalQuantity': 0
-    #         })
-    #     })
-
-    #     overall_total_loss = 0.0
-
-    #     for entry in product_history:
-    #         # Ensure required data exists to avoid errors
-    #         if not entry.quantity or not entry.retailPrice:
-    #             continue
-
-    #         product_id_str = str(entry.productId.productId)
-    #         original_cost = float(original_costs.get(product_id_str, entry.productId.standardPrice or entry.productId.costPrice or 0))
-    #         retail_price = float(entry.retailPrice)
-
-    #         # Calculate loss for this specific transaction
-    #         transaction_loss = entry.quantity * (retail_price - original_cost)
-
-    #         # Only account for transactions that resulted in a loss
-    #         if transaction_loss < 0:
-    #             month_key = entry.date.strftime('%Y-%m')
-    #             product_id = entry.productId.productId
-
-    #             # Update monthly totals
-    #             monthly_breakdown[month_key]['totalLoss'] += transaction_loss
-    #             overall_total_loss += transaction_loss
-
-    #             # Update product-specific details for that month
-    #             product_details = monthly_breakdown[month_key]['products'][product_id]
-    #             product_details['totalLoss'] += transaction_loss
-    #             product_details['totalQuantity'] += entry.quantity
-
-    #     # 5. Format the final report for the JSON response
-    #     final_report = {}
-    #     for month_key, data in sorted(monthly_breakdown.items()):
-    #         product_loss_list = []
-    #         for product_id, loss_data in data['products'].items():
-    #             product_obj = product_map.get(product_id)
-    #             product_loss_list.append({
-    #                 "productId": product_id,
-    #                 "name": product_obj.productName if product_obj else "Unknown",
-    #                 "imageUrl": product_obj.imageUrl if product_obj and product_obj.imageUrl else None,
-    #                 "loss": loss_data['totalLoss'],
-    #                 "quantitySoldAtLoss": loss_data['totalQuantity'],
-    #                 "originalCost": float(original_costs.get(str(product_id), 0)),
-    #                 "currentCost": float(product_obj.standardPrice) if product_obj and product_obj.standardPrice else None,
-    #             })
-
-    #         final_report[month_key] = {
-    #             'totalLoss': data['totalLoss'],
-    #             # Sort products by the most loss first
-    #             'productLoss': sorted(product_loss_list, key=lambda x: x['loss'])
-    #         }
-
-    #     return JsonResponse({
-    #         "message": "Monthly Clearance Loss Report",
-    #         "overallTotalLoss": overall_total_loss,
-    #         "monthlyBreakdown": final_report
-    #     }, status=200)
-
 
 class ParLevelView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         dataType = request.query_params.get("dataType", "category")
-
+        
         if dataType == "category":
             par_levels = Category.objects.values("categoryId", "name", "parValueDays", "parentId")
         else:
@@ -1261,20 +1177,91 @@ class ParLevelView(APIView):
 
         return JsonResponse({"message": "Success", "data": list(par_levels)}, status=200)
 
+    def _get_period_days(self, period_str):
+        """Helper function to convert period string to days."""
+        periods = {
+            "week": 7,
+            "month": 30,
+            "3month": 90,
+            "6month": 180,
+            "year": 365,
+        }
+        return periods.get(period_str, 90)
+
+    @transaction.atomic
+    def _handle_product_update(self, changes):
+        """Optimized handler for updating individual product par levels."""
+        products_to_update = []
+        for change in changes:
+            product_id = change.get("productId")
+            par_level = change.get("parLevel")
+            if product_id is not None and par_level is not None:
+                product = Product(productId=product_id, parLevel=par_level)
+                products_to_update.append(product)
+        
+        if products_to_update:
+            Product.objects.bulk_update(products_to_update, ["parLevel"])
+
+    @transaction.atomic
+    def _handle_category_update(self, changes, period_days):
+        """Optimized handler for updating category par levels and related product minQuantities."""
+        if not changes:
+            return
+
+        categories_to_update = []
+        category_par_map = {}
+        for change in changes:
+            category_id = change.get("categoryId")
+            par_days = change.get("parValueDays")
+            if category_id is not None and par_days is not None:
+                categories_to_update.append(Category(categoryId=category_id, parValueDays=par_days))
+                category_par_map[category_id] = par_days
+        
+        if categories_to_update:
+            Category.objects.bulk_update(categories_to_update, ["parValueDays"])
+
+        category_ids = list(category_par_map.keys())
+        start_date = timezone.now() - datetime.timedelta(days=period_days)
+        end_date = timezone.now()
+
+        sales_data = ProductHistory.objects.filter(
+            productId__categories__categoryId__in=category_ids,
+            date__range=[start_date, end_date]
+        ).values('productId').annotate(total_quantity=Sum('quantity'))
+
+        sales_map = {item['productId']: item['total_quantity'] for item in sales_data}
+
+        products_to_update = Product.objects.filter(
+            categories__categoryId__in=category_ids
+        ).prefetch_related('categories').distinct()
+        
+        products_for_bulk_update = []
+        for product in products_to_update:
+            total_quantity = sales_map.get(product.productId, 0)
+            minQuantity_per_day = total_quantity / period_days if period_days > 0 else 0
+
+            par_days = 10
+            for cat in product.categories.all():
+                if cat.categoryId in category_par_map:
+                    par_days = category_par_map[cat.categoryId]
+                    break
+
+            product.minQuantity = int(minQuantity_per_day * par_days)
+            products_for_bulk_update.append(product)
+            print(f"Preparing update for {product.productId}: new minQuantity is {product.minQuantity}")
+
+        if products_for_bulk_update:
+            Product.objects.bulk_update(products_for_bulk_update, ["minQuantity"])
+
     def post(self, request):
-        data = request.data.get("changes", [])
+        changes = request.data.get("changes", [])
         dataType = request.query_params.get("dataType", "category")
+        period = request.query_params.get("period", "3month")
+        period_days = self._get_period_days(period)
 
         if dataType == "category":
-            # Bulk update category parValueDays
-            update_objs = []
-            for change in data:
-                update_objs.append(Category(categoryId=change.get("categoryId"), parValueDays=change.get("parValueDays")))
-            if update_objs:
-                Category.objects.bulk_update(update_objs, ["parValueDays"])
+            self._handle_category_update(changes, period_days)
         else:
-            # Update product par levels
-            for change in data:
-                Product.objects.filter(productId=change.get("productId")).update(parLevel=change.get("parLevel"))
+            self._handle_product_update(changes)
 
-        return JsonResponse({"message": "Changes submitted successfully"}, status=200)
+        return JsonResponse({"message": "Parlevel and Minimum Quantity updated successfully"}, status=200)

@@ -126,7 +126,7 @@ const DustyInventory = () => {
 	// 	async function totalData() {
 	// 		setLoadingTotal(true);
 	// 		try {
-	// 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/dusty-inventory/?report_type=${reportType}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=total`);
+	// 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/dusty-inventory/?_report_type=${reportType}&_start_date=${startDate}&_end_date=${endDate}&_sort_by=${sortBy}&_page=${page}&_page_size=${pageSize}&_dataType=total`);
 	// 			setTotalClosingInventory(data["totalClosingInventory"])
 	// 			setTotalInventoryCost(data["totalInventoryCost"])
 	// 			setTotalRetailValue(data["totalRetailValue"])
@@ -269,7 +269,7 @@ const DustyInventory = () => {
 								<td className="text-center py-2 px-2 shadow-border-l">{loadingTotal ? <Loader /> : formatCurrency(totalRetailValue)}</td>
 								<td className="text-center py-2 px-2 shadow-border-l"></td>
 								<td className="text-center py-2 px-2"></td>
-							</tr> */}
+							</tr>  */}
 						</thead>
 						<PhotoProvider>
 							<tbody className="h-64 overflow-y-auto">

@@ -22,6 +22,28 @@ const Sidebar = () => {
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(true);
     const [activeItem, setActiveItem] = useState("");
+    const [loadingTruckInfo, setLoadingTruckInfo] = useState(false);
+    const [trucks, setTrucks] = useState([]);
+    const [drivers, setDrivers] = useState([]);
+    const [error, setError] = useState(null);
+
+    const fetchTruckInfo = async () => {
+        setLoadingTruckInfo(true)
+        try {
+            const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/delivery/truck-info/`)
+            const data = await response.json()
+            setTrucks(data.trucks || [])
+            setDrivers(data.drivers || [])
+        } catch (err) {
+            setError(`Failed to load truck/driver info: ${err.message}`)
+        } finally {
+            setLoadingTruckInfo(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchTruckInfo()
+    }, [])
 
     useEffect(() => {
         const path = location.pathname.split("/")[1];
@@ -48,34 +70,16 @@ const Sidebar = () => {
             section: "GENERAL",
         },
         {
-            icon:<Truck size={20} />,
+            icon: <Truck size={20} />,
             text: "Trucks",
             to: "/delivery/trucks",
             section: "ADMIN",
-        },{
+        }, {
             icon: <UserIcon size={20} />,
             text: "Drivers",
             to: "/delivery/drivers",
             section: "ADMIN",
         }
-        // {
-        //     icon: <Users size={20} />,
-        //     text: "Customers",
-        //     to: "/delivery/customers",
-        //     section: "SUPPORT",
-        // },
-        // {
-        //     icon: <BarChart size={20} />,
-        //     text: "Reports",
-        //     to: "/delivery/reports",
-        //     section: "SUPPORT",
-        // },
-        // {
-        //     icon: <Settings size={20} />,
-        //     text: "Settings",
-        //     to: "/delivery/settings",
-        //     section: "SUPPORT",
-        // },
     ];
 
     const driverItems = [
@@ -84,13 +88,7 @@ const Sidebar = () => {
             text: "Dashboard",
             to: "/delivery",
             section: "GENERAL",
-        },
-        // {
-        //     icon: <Settings size={20} />,
-        //     text: "Settings",
-        //     to: "/delivery/settings",
-        //     section: "SUPPORT",
-        // },
+        }
     ];
 
     const items = user?.permissions?.delivery_admin ? managerItems : driverItems;
@@ -135,7 +133,7 @@ const Sidebar = () => {
                 {sections.map((section) => (
                     <div
                         key={section}
-                        className={`py-4 ${section !== sections[sections.length - 1] ? "border-b border-gray-200" : ""}`}
+                        className={`py-4 border-b border-gray-200`}
                     >
                         <div
                             className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"
@@ -175,6 +173,43 @@ const Sidebar = () => {
                         </ul>
                     </div>
                 ))}
+                <div className="py-4 block md:hidden">
+                    <div
+                        className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"
+                            } mb-2`}
+                    >
+                        TRUCKS
+                    </div>
+                    <ul>
+                        {trucks.slice()
+                            .sort((a, b) => (a.truckName || "").localeCompare(b.truckName || "")).map((item, index) => (
+                                <li className="mb-1" key={index}>
+                                    <button
+                                        className={`flex items-center ${collapsed ? "justify-center" : ""
+                                            } px-4 py-2 transition-colors w-full text-left ${location.pathname === item?.to
+                                                ? "bg-green-100 text-green-700 font-bold"
+                                                : "text-gray-800 hover:bg-gray-100"
+                                            }`}
+                                        onClick={() => {
+                                            setCollapsed(!collapsed);
+                                            navigate("/delivery/scan?truckId=" + item?.truckNo);
+                                        }}
+                                    >
+                                        <span
+                                            className={`w-10 h-10 mr-3 flex items-center relative justify-center ${location.pathname === "/delivery/scan?truckId=" + item?.truckNo
+                                                ? "text-green-600"
+                                                : "text-gray-500"
+                                                }`}
+                                        >
+                                            <span className="absolute left-2 top-1.5">{index + 1}</span>
+                                            <Truck className="h-20 w-20" strokeWidth={1} />
+                                        </span>
+                                        {!collapsed && item?.truckName}
+                                    </button>
+                                </li>
+                            ))}
+                    </ul>
+                </div>
             </div>
             <div className={`p-2 border-t border-gray-200 ${collapsed ? "hidden sm:block" : ""}`}>
                 <div className={`flex items-center p-2 bg-white border border-gray-200 rounded-md hover:border-gray-200 transition-all ${collapsed ? "justify-center" : ""}`}>

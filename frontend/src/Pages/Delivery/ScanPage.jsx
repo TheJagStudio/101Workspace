@@ -4,6 +4,8 @@ import { ArrowLeft, Lightbulb, LightbulbOff, Package, Trash2, Upload } from 'luc
 import Scanner from '../../Components/Delivery/Scanner'
 import { apiRequest } from '../../utils/api'
 import CustomDropdown from '../../Components/utils/CustomDropdown'
+import { useLocation } from 'react-router-dom'
+import { set } from 'lodash'
 
 const Button = ({ children, onClick, icon, variant, isLoading, disabled, className, showChildren }) => {
     const base =
@@ -23,20 +25,24 @@ const Button = ({ children, onClick, icon, variant, isLoading, disabled, classNa
             disabled={isLoading || disabled}
             className={`${base} ${className || variants[variant || 'solid']} ${(isLoading || disabled) ? disabledClass : ''} px-2 py-2 text-base`}
         >
-                <span >{icon}</span>
-                <span className={!showChildren ? 'hidden sm:block' : ''}>{isLoading ? 'Loading...' : children}</span>
+            <span >{icon}</span>
+            <span className={!showChildren ? 'hidden sm:block' : ''}>{isLoading ? 'Loading...' : children}</span>
         </button>
     );
 }
 
 const ScanPage = () => {
     const navigate = useNavigate()
+    const location = useLocation();
     const [scanResult, setScanResult] = useState(null)
     const [caseCount, setCaseCount] = useState(1)
     const [addingInvoice, setAddingInvoice] = useState(false)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
-    const [selectedTruck, setSelectedTruck] = useState('')
+    // Get truckId from URL param if present, else default to ""
+    const urlParams = new URLSearchParams(location.search)
+    const initialTruckId = urlParams.get('truckId') || null
+    const [selectedTruck, setSelectedTruck] = useState(initialTruckId)
     const [selectedDriver, setSelectedDriver] = useState('')
     const [invoiceEntries, setInvoiceEntries] = useState([])
     const [scanningInvoice, setScanningInvoice] = useState(false)
@@ -60,8 +66,8 @@ const ScanPage = () => {
             }
         }
 
-        if (savedTruck) setSelectedTruck(savedTruck)
-        if (savedDriver) setSelectedDriver(savedDriver)
+        if (savedTruck && !initialTruckId) setSelectedTruck(savedTruck)
+        if (savedDriver && !initialTruckId) setSelectedDriver(savedDriver)
     }, [])
 
     // Save to localStorage whenever invoiceEntries changes
@@ -73,12 +79,19 @@ const ScanPage = () => {
     useEffect(() => {
         if (selectedTruck) {
             localStorage.setItem('selectedTruck', selectedTruck)
+            if (selectedDriver) {
+                setSelectedDriver(JSON.parse(localStorage.getItem('truckDriverMap'))[selectedTruck] || '')
+            }
         }
     }, [selectedTruck])
 
     useEffect(() => {
         if (selectedDriver) {
             localStorage.setItem('selectedDriver', selectedDriver)
+            if (selectedDriver) {
+                let init = JSON.parse(localStorage.getItem('truckDriverMap')) || {}
+                localStorage.setItem('truckDriverMap', JSON.stringify({ ...init, [selectedTruck]: selectedDriver }))
+            }
         }
     }, [selectedDriver])
 
@@ -89,6 +102,12 @@ const ScanPage = () => {
             const data = await response.json()
             setTrucks(data.trucks || [])
             setDrivers(data.drivers || [])
+            if (initialTruckId) {
+                setSelectedTruck(initialTruckId)
+                const driverMap = JSON.parse(localStorage.getItem('truckDriverMap')) || {}
+                console.log('Initial Driver ID:', driverMap)
+                setSelectedDriver(driverMap[initialTruckId] || null)
+            }
         } catch (err) {
             setError(`Failed to load truck/driver info: ${err.message}`)
         } finally {
@@ -98,7 +117,7 @@ const ScanPage = () => {
 
     useEffect(() => {
         fetchTruckInfo()
-    }, [])
+    }, [location.search])
 
     const handleScanComplete = async (result) => {
         setScanningInvoice(true)
@@ -371,16 +390,16 @@ const ScanPage = () => {
                                         />
                                     </div>
 
-                                {error && (
-                                    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
-                                        {error}
-                                    </div>
-                                )}
-                                {success && (
-                                    <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md">
-                                        {success}
-                                    </div>
-                                )}
+                                    {error && (
+                                        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
+                                            {error}
+                                        </div>
+                                    )}
+                                    {success && (
+                                        <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md">
+                                            {success}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="px-6 pb-6 pt-0 flex justify-start space-x-3">

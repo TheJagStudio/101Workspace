@@ -3,6 +3,7 @@ import CustomDropdown from "../../../Components/utils/CustomDropdown"
 import { apiRequest } from "../../../utils/api"
 import { useAtom } from "jotai"
 import { successAtom } from '../../../Variables'
+import { Loader, Loader2 } from 'lucide-react'
 
 const typeOptions = [
     { value: "category", label: "Category" },
@@ -52,7 +53,8 @@ const CategoryParLevelTree = ({
     parValues,
     onParValueChange,
     collapsedMap,
-    setCollapsedMap
+    setCollapsedMap,
+    loadingSubmit
 }) => {
     const handleCollapseToggle = (categoryId) => {
         setCollapsedMap(prev => ({
@@ -89,6 +91,7 @@ const CategoryParLevelTree = ({
                             min={0}
                             className="border border-gray-300 bg-white px-2 py-1 rounded w-20 ml-auto focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             onChange={e => onParValueChange(node.categoryId, e.target.value, node)}
+                            disabled={loadingSubmit}
                         />
                     </div>
                     {node.children && node.children.length > 0 && !collapsedMap[node.categoryId] && renderTree(node.children, level + 1)}
@@ -104,9 +107,9 @@ const ChangedEntriesTable = ({ changedEntries }) => (
     <div className="bg-white rounded-lg shadow-md p-4">
         <p className="font-semibold text-lg mb-2">Changed Categories</p>
         <div className='max-h-96 overflow-y-auto relative'>
-              <table className="w-full border border-gray-300 rounded-lg shadow-inner overflow-hidden ">
-                  <thead className="bg-gray-100 sticky top-0">
-                      <tr>
+            <table className="w-full border border-gray-300 rounded-lg shadow-inner overflow-hidden ">
+                <thead className="bg-gray-100 sticky top-0">
+                    <tr>
                         <th className="text-left px-2 py-2">Category ID</th>
                         <th className="text-left px-2 py-2">Name</th>
                         <th className="text-center px-2 py-2">Par Value (Days)</th>
@@ -132,17 +135,20 @@ const ChangedEntriesTable = ({ changedEntries }) => (
 
 const ParLevel = () => {
     const [type, setType] = useState("category");
-    const [period, setPeriod] = useState("month");
+    const [period, setPeriod] = useState("3month");
     const [categoryData, setCategoryData] = useState([]);
     const [parValues, setParValues] = useState({});
     const [collapsedMap, setCollapsedMap] = useState({});
     const [changedEntries, setChangedEntries] = useState([]);
     const [successMessage, setSuccessMessage] = useAtom(successAtom);
+    const [loadingTree, setLoadingTree] = useState(false);
+    const [loadingSubmit, setLoadingSubmit] = useState(false);
 
     // Fetch category par levels
     useEffect(() => {
         if (type === "category") {
-            apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/par-level/?dataType=category`)
+            setLoadingTree(true);
+            apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/par-level/?dataType=${type}&period=${period}`)
                 .then(res => {
                     setCategoryData(res.data || []);
                     // Initialize parValues state
@@ -158,7 +164,8 @@ const ParLevel = () => {
                     });
                     setCollapsedMap(collapsedInitial);
                     setChangedEntries([]);
-                });
+                })
+                .finally(() => setLoadingTree(false));
         }
     }, [type]);
 
@@ -224,9 +231,12 @@ const ParLevel = () => {
 
     // Submit handler
     const handleSubmit = async () => {
-        let response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/par-level/`, { method: 'POST', body: JSON.stringify({ changes: changedEntries,dataType:"category" }) })
+        setLoadingSubmit(true);
+        let response = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/par-level/`, { method: 'POST', body: JSON.stringify({ changes: changedEntries, dataType: "category" }) })
         setChangedEntries([]);
-        setSuccessMessage([...successMessage,{"id": Date.now(),"message": response?.message || "Changes saved successfully.","status": response?.status || "success"}]);
+        setSuccessMessage([...successMessage, { "id": Date.now(), "message": response?.message || "Changes saved successfully.", "status": response?.status || "success" }]);
+        setLoadingSubmit(false);
+        setType("category")
     };
 
     return (
@@ -256,21 +266,29 @@ const ParLevel = () => {
             {type === "category" && (
                 <div className="mt-6 flex flex-row gap-8 items-start">
                     <div className="flex-1 max-w-[50%]">
-                        <CategoryParLevelTree
-                            categories={categoryTree}
-                            parValues={parValues}
-                            onParValueChange={handleParValueChange}
-                            collapsedMap={collapsedMap}
-                            setCollapsedMap={setCollapsedMap}
-                        />
+                        {loadingTree ? (
+                            <div className="flex items-center justify-center h-40">
+                                <span className="text-gray-500">Loading tree...</span>
+                            </div>
+                        ) : (
+                            <CategoryParLevelTree
+                                categories={categoryTree}
+                                parValues={parValues}
+                                onParValueChange={handleParValueChange}
+                                collapsedMap={collapsedMap}
+                                setCollapsedMap={setCollapsedMap}
+                                loadingSubmit={loadingSubmit}
+                            />
+                        )}
                     </div>
                     <div className="flex-1 max-w-[50%]">
                         <ChangedEntriesTable changedEntries={changedEntries} />
                         <button
-                            className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700"
+                            className="mt-4 px-4 mx-auto w-fit bg-indigo-600 flex flex-nowrap gap-2 items-center justify-center text-white py-2 rounded-md hover:bg-indigo-700"
                             onClick={handleSubmit}
-                            disabled={changedEntries.length === 0}
+                            disabled={changedEntries.length === 0 || loadingSubmit}
                         >
+                            {loadingSubmit && <Loader2 className=' animate-spin' />}
                             Submit Changes
                         </button>
                     </div>

@@ -13,7 +13,7 @@ const DeliveryOutlet = () => {
             <div className="flex-1">
                 <Header />
                 <div className="bg-[#f3f4f6] relative">
-                    <div className="p-5 md:py-10 md:px-12 h-[calc(100vh-4rem)] overflow-y-auto">
+                    <div className="p-2 md:py-10 md:px-12 h-[calc(100vh-4rem)] overflow-y-auto">
                         <Outlet />
                     </div>
                 </div>
