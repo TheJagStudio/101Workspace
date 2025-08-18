@@ -236,7 +236,7 @@ const DustyInventory = () => {
 						<Loader height={60} width={60} />
 					</div>
 				)}
-				<div className="h-full overflow-y-auto">
+				<div className="h-full overflow-y-auto border-t border-gray-300">
 					<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")}>
 						<thead className="sticky top-0 bg-white z-10 shadow-border-b">
 							<tr className="shadow-border-b bg-gray-100">

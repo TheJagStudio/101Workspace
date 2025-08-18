@@ -40,7 +40,7 @@ const PurchaseOutlet = ({ logout }) => {
 		fetchActiveProductHistory();
 	}, [activeProduct]);
 	return (
-		<div className="flex">
+		<div className="flex ">
 			<Sidebar />
 			<div className="flex-1">
 				<Header logout={logout} />

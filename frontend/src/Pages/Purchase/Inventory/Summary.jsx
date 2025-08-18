@@ -7,6 +7,8 @@ import { apiRequest } from "../../../utils/api";
 import { glossaryAtom, isSidebarOpenAtom, searchAtom } from "../../../Variables";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
+import * as XLSX from 'xlsx';
+import { Loader2, Sheet } from "lucide-react";
 
 const dropdownOptions = {
 	reportType: [
@@ -94,6 +96,7 @@ const Summary = () => {
 	const [totalPages, setTotalPages] = useState(0);
 	const [openGlossary, setOpenGlossary] = useAtom(glossaryAtom);
 	const [search, setSearch] = useAtom(searchAtom);
+	const [loadingExport, setLoadingExport] = useState(false);
 
 	async function getData() {
 		setLoading(true);
@@ -147,9 +150,42 @@ const Summary = () => {
 		});
 	}, []);
 
+	async function handleExportExcel() {
+		setLoadingExport(true);
+		try {
+			const allPageSize = totalPages * pageSize || 1000;
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=1&page_size=${allPageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
+			const exportData = data["data"] || [];
+			const worksheet = XLSX.utils.json_to_sheet(exportData);
+			const workbook = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+			XLSX.writeFile(workbook, `InventorySummary_${Date.now()}.xlsx`);
+		} catch (error) {
+			console.error("Export failed:", error);
+		}
+		setLoadingExport(false);
+	}
+
 	return (
 		<div className="px-5">
-			<p className="text-3xl font-semibold text-gray-700"> Inventory Summary</p>
+			<div className="flex flex-row items-center justify-between">
+				<p className="text-3xl font-semibold text-gray-700"> Inventory Summary</p>
+				<div className="ml-auto flex flex-col items-end">
+					<button
+						onClick={handleExportExcel}
+						disabled={loadingExport}
+						className="bg-green-600 text-white px-4 py-1.5 rounded-md hover:bg-green-700 flex items-center gap-2"
+						title="Export all data to Excel"
+					>
+						{loadingExport ? (
+							<Loader2 className="animate-spin" />
+						) : (
+							<Sheet />
+						)}
+						Export to Excel
+					</button>
+				</div>
+			</div>
 			<div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1 " + (loading ? "opacity-50 pointer-events-none" : "")}>
 				<div className="flex flex-col">
 					<label className="text-sm text-gray-600 mb-1">Report type</label>
@@ -285,7 +321,7 @@ const Summary = () => {
 						<Loader height={60} width={60} />
 					</div>
 				)}
-				<div className="h-full overflow-y-auto">
+				<div className="h-full overflow-y-auto border-t border-gray-300">
 					<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")} borderWidth={2}>
 						<thead className="sticky top-0 bg-white z-10 shadow-border-b">
 							<tr className="shadow-border-b bg-gray-100">

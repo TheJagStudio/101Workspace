@@ -6,7 +6,7 @@ import 'react-photo-view/dist/react-photo-view.css';
 import { useAtom } from 'jotai';
 import { searchAtom } from "../../../Variables";
 import * as XLSX from "xlsx";
-import { Trash, Trash2, Upload, Search, X, XIcon } from 'lucide-react';
+import { Trash, Trash2, Upload, Search, X, XIcon, Sheet, Loader2 } from 'lucide-react';
 
 const CustomToast = ({ message, type, onClose }) => (
 	<div className={`fixed top-5 right-5 z-[9999] px-4 py-2 rounded shadow-lg text-white transition-all duration-300
@@ -51,6 +51,9 @@ const HotProduct = () => {
 	// Bulk remove state
 	const [bulkRemoveMode, setBulkRemoveMode] = useState(false);
 	const [selectedUPCs, setSelectedUPCs] = useState([]);
+
+	// Loading state for export
+	const [loadingExport, setLoadingExport] = useState(false);
 
 	useEffect(() => {
 		const fetchCategories = async () => {
@@ -346,14 +349,94 @@ const HotProduct = () => {
 		}
 	};
 
+	// Export to Excel handler
+	const handleExportExcel = async () => {
+		setLoadingExport(true);
+		try {
+			const categoryId = currentSubCategory || currentCategory || currentMasterCategory;
+			const allPageSize = totalPages * pageSize || 1000;
+			const response = await apiRequest(
+				`${import.meta.env.VITE_SERVER_URL}/api/purchase/hot-product/?categoryId=${categoryId ? categoryId : ''}&page=1&page_size=${allPageSize}`,
+				{
+					method: "GET",
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				}
+			);
+			const exportData = response.products || [];
+			const worksheet = XLSX.utils.json_to_sheet(exportData);
+			const workbook = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(workbook, worksheet, "HotProducts");
+			XLSX.writeFile(workbook, `HotProducts_${Date.now()}.xlsx`);
+		} catch (error) {
+			console.error("Export failed:", error);
+		}
+		setLoadingExport(false);
+	};
+
 	return (
 		<div>
 			{/* Custom Toast */}
 			{toast.show && (
 				<CustomToast message={toast.message} type={toast.type} onClose={() => setToast({ show: false, message: "", type: toast.type })} />
 			)}
+			<div className='flex flex-row items-center justify-between'>
 
-			<p className="text-3xl font-semibold text-gray-700">Hot Products</p>
+				<p className="text-3xl font-semibold text-gray-700">Hot Products</p>
+				<div className='flex flex-row gap-2'>
+					{/* Add Hot Products Button */}
+					<div className="flex flex-col items-end">
+						<button
+							onClick={handleExportExcel}
+							disabled={loadingExport}
+							className="bg-green-600 text-white px-4 py-1.5 rounded-md hover:bg-green-700 flex items-center gap-2"
+							title="Export all data to Excel"
+						>
+							{loadingExport ? (
+								<Loader2 className="animate-spin" />
+							) : (
+								<Sheet />
+							)}
+							Export to Excel
+						</button>
+					</div>
+					<button
+						onClick={() => setShowAddModal(true)}
+						className="bg-green-600 text-white px-4 py-1.5 rounded-md hover:bg-green-700 cursor-pointer"
+					>
+						+ Add Products
+					</button>
+
+					{bulkRemoveMode ? (
+						<button
+							onClick={() => { setBulkRemoveMode(false); setSelectedUPCs([]); }}
+							className="bg-gray-400 text-white px-3 py-1.5 rounded-md hover:bg-gray-500 cursor-pointer"
+						>
+							<XIcon className="w-4 h-4 inline-block mr-1" />
+							Clear Selection
+						</button>
+					) : (<button
+						onClick={() => { setBulkRemoveMode(true); setSelectedUPCs([]); }}
+						className="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 cursor-pointer"
+						disabled={bulkRemoveMode}
+					>
+						<Trash2 className="w-4 h-4 inline-block mr-1" />
+						Remove  Products
+					</button>)}
+					{/* Bulk Delete Button */}
+					{bulkRemoveMode && selectedUPCs.length > 0 && (
+						<button
+							className="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 font-semibold"
+							onClick={handleBulkRemoveHotProducts}
+							disabled={loading}
+						>
+							<Trash2 className="w-4 h-4 inline-block mr-1" />
+							Delete Selected Products ({selectedUPCs.length})
+						</button>
+					)}
+				</div>
+			</div>
 
 			<div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1" + (loading ? " opacity-50 pointer-events-none" : "")}>
 				<div className="flex flex-col">
@@ -409,43 +492,7 @@ const HotProduct = () => {
 				>
 					Search
 				</button>
-				{/* Add Hot Products Button */}
-				<button
-					onClick={() => setShowAddModal(true)}
-					className="bg-green-600 text-white px-4 py-1.5 rounded-md hover:bg-green-700 cursor-pointer ml-auto"
-				>
-					+ Add Hot Products
-				</button>
 
-				{bulkRemoveMode ? (
-					<button
-						onClick={() => { setBulkRemoveMode(false); setSelectedUPCs([]); }}
-						className="bg-gray-400 text-white px-3 py-1.5 rounded-md hover:bg-gray-500 cursor-pointer"
-						style={{ marginLeft: '8px' }}
-					>
-						<XIcon className="w-4 h-4 inline-block mr-1" />
-						Clear Selection
-					</button>
-				) : (<button
-					onClick={() => { setBulkRemoveMode(true); setSelectedUPCs([]); }}
-					className="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 cursor-pointer"
-					style={{ marginLeft: '8px' }}
-					disabled={bulkRemoveMode}
-				>
-					<Trash2 className="w-4 h-4 inline-block mr-1" />
-					Remove Hot Products
-				</button>)}
-				{/* Bulk Delete Button */}
-				{bulkRemoveMode && selectedUPCs.length > 0 && (
-					<button
-						className="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 font-semibold"
-						onClick={handleBulkRemoveHotProducts}
-						disabled={loading}
-					>
-						<Trash2 className="w-4 h-4 inline-block mr-1" />
-						Delete Selected Products ({selectedUPCs.length})
-					</button>
-				)}
 			</div>
 
 			{/* Add Hot Products Modal */}

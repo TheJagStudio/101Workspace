@@ -2,8 +2,10 @@ import React, { use, useEffect, useState } from "react";
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from "../../../utils/api";
 import { useAtom } from "jotai";
-import { isSidebarOpenAtom, glossaryAtom,searchAtom } from "../../../Variables";
+import { isSidebarOpenAtom, glossaryAtom, searchAtom } from "../../../Variables";
 import Calendar from "../../../Components/utils/Calendar";
+import * as XLSX from 'xlsx';
+import { Loader2, Sheet } from "lucide-react";
 
 const dropdownOptions = {
 	reportType: [
@@ -19,10 +21,7 @@ const dropdownOptions = {
 	],
 	sort: [
 		{ value: "closing_inventory", label: "Closing inventory" },
-		{ value: "items_sold_per_day", label: "Items Sold Per Day" },
 		{ value: "items_sold", label: "Items Sold" },
-		{ value: "days_cover", label: "Days Cover" },
-		{ value: "average_cost", label: "Average Cost" },
 		{ value: "inbound_inventory", label: "Inbound Inventory" },
 	],
 };
@@ -65,7 +64,7 @@ const tabData = {
 };
 
 const Loader = () => (
-	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={16} height={16} className="mx-auto animate-spin">
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={48} height={48} className="mx-auto animate-spin">
 		<g data-idx={1}>
 			<circle strokeDasharray="197.92033717615698 67.97344572538566" r={42} strokeWidth={13} stroke="#615fff" fill="none" cy={50} cx={50} data-idx={2} transform="rotate(-72 50 50)" />
 			<g data-idx={4} />
@@ -73,27 +72,36 @@ const Loader = () => (
 	</svg>
 );
 
+// Helper to get date string in yyyy-MM-dd format
+function getDateString(date) {
+	const d = new Date(date);
+	return d.toISOString().slice(0, 10);
+}
+
+// Default dates: 3 months ago and today
+const today = new Date();
+const threeMonthsAgo = new Date();
+threeMonthsAgo.setMonth(today.getMonth() - 3);
+
 const Replenishment = () => {
 	const [reportType, setReportType] = useState("product");
 	const [measure, setMeasure] = useState("all");
 	const [sortBy, setSortBy] = useState("closing_inventory");
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
+	const [startDate, setStartDate] = useState(getDateString(threeMonthsAgo));
+	const [endDate, setEndDate] = useState(getDateString(today));
 	const [tableData, setTableData] = useState([]);
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [collapsed, setCollapsed] = useAtom(isSidebarOpenAtom);
-	const [totalClosingInventory, setTotalClosingInventory] = useState(0);
-	const [totalRevenue, setTotalRevenue] = useState(0);
-	const [totalGrossMargin, setTotalGrossMargin] = useState(0);
-	const [totalInventoryCost, setTotalInventoryCost] = useState(0);
-	const [loadingTotal, setLoadingTotal] = useState(false);
 	const [reverseSort, setReverseSort] = useState(true);
 	const [totalPages, setTotalPages] = useState(0);
 	const [openGlossary, setOpenGlossary] = useAtom(glossaryAtom);
 	const [searchTerm, setSearchTerm] = useAtom(searchAtom);
+	const [loadingExport, setLoadingExport] = useState(false);
+	const [loading, setLoading] = useState(true);
 
 	async function getData() {
+		setLoading(true);
 		try {
 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}`);
 			setTableData(data["data"]);
@@ -102,6 +110,7 @@ const Replenishment = () => {
 			setTableData([]);
 			console.error("Error fetching inventory summary data:", error);
 		}
+		setLoading(false);
 	}
 
 	function formatCurrency(value) {
@@ -115,7 +124,7 @@ const Replenishment = () => {
 
 	useEffect(() => {
 		getData();
-	}, [page, pageSize, reverseSort, sortBy, measure]);
+	}, [page, pageSize, reverseSort, sortBy, measure, startDate, endDate]);
 
 	useEffect(() => {
 		setOpenGlossary({
@@ -123,10 +132,45 @@ const Replenishment = () => {
 			tabData: tabData,
 		});
 	}, []);
+
+	async function handleExportExcel() {
+		setLoadingExport(true);
+		try {
+			// Fetch all data by setting pageSize to totalPages * pageSize
+			const allPageSize = totalPages * pageSize || 1000;
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-replenishment/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=1&page_size=${allPageSize}&dataType=child&reverse_sort=${reverseSort}`);
+			const exportData = data["data"] || [];
+			const worksheet = XLSX.utils.json_to_sheet(exportData);
+			const workbook = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+			XLSX.writeFile(workbook, `InventoryReplenishment_${Date.now()}.xlsx`);
+		} catch (error) {
+			console.error("Export failed:", error);
+		}
+		setLoadingExport(false);
+	}
+
 	return (
 		<div className="px-5 relative">
-			<p className="text-3xl font-semibold text-gray-700">Inventory Replenishment</p>
-			<div className="bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1">
+			<div className="flex flex-row items-center justify-between">
+				<p className="text-3xl font-semibold text-gray-700">Inventory Replenishment</p>
+				<div className="ml-auto flex flex-col items-end">
+					<button
+						onClick={handleExportExcel}
+						disabled={loadingExport}
+						className="bg-green-600 text-white px-4 py-1.5 rounded-md hover:bg-green-700 flex items-center gap-2"
+						title="Export all data to Excel"
+					>
+						{loadingExport ? (
+							<Loader2 className="animate-spin" />
+						) : (
+							<Sheet />
+						)}
+						Export to Excel
+					</button>
+				</div>
+			</div>
+			<div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1 " + (loading ? "opacity-50 pointer-events-none" : "")}>
 				<div className="flex flex-col">
 					<label className="text-sm text-gray-600 mb-1">Report type</label>
 					<CustomDropdown options={dropdownOptions.reportType} value={reportType} onChange={setReportType} placeholder="report type" />
@@ -159,7 +203,13 @@ const Replenishment = () => {
 				</svg>
 				<div className="flex flex-col">
 					<label className="text-sm text-gray-600 mb-1">Analysis Period</label>
-					<Calendar startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} dateFormat="yyyy-MM-dd" />
+					<Calendar
+						startDate={startDate}
+						endDate={endDate}
+						setStartDate={setStartDate}
+						setEndDate={setEndDate}
+						dateFormat="yyyy-MM-dd"
+					/>
 				</div>
 
 				<button
@@ -188,10 +238,16 @@ const Replenishment = () => {
 					<path fill="#fff" d="M22 22h4v11h-4z" />
 					<circle fill="#fff" cx={24} cy={16.5} r={2.5} />
 				</svg>
+
 			</div>
 
-			<div className={"mt-5 bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-y-scroll text-gray-700 transition-all duration-500 " + (collapsed ? "max-w-[calc(100vw-10rem)]" : "max-w-[calc(100vw-18rem)]")}>
-				<table className="w-full " borderWidth={2}>
+			<div className={"mt-5 bg-white border-t border-gray-300 w-full h-[calc(100vh-23rem)] rounded-lg shadow-md overflow-y-scroll text-gray-700 transition-all duration-500 relative " + (collapsed ? "max-w-[100vw] md:max-w-[calc(100vw-10rem)]" : "max-w-[100vw] md:max-w-[calc(100vw-18rem)]")}>
+				{loading && (
+					<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/25 backdrop-blur-md z-20">
+						<Loader />
+					</div>
+				)}
+				<table className={"w-full " + (loading ? "opacity-50 pointer-events-none" : "")} borderWidth={2}>
 					<thead className="sticky top-0 bg-white z-10 border-b border-gray-300">
 						<tr className="border-b border-gray-300 bg-gray-100">
 							<th className="w-fit"></th>
@@ -220,7 +276,7 @@ const Replenishment = () => {
 						{tableData?.map((item, index) => (
 							<tr className={"hover:bg-indigo-50 border-b border-gray-300 group " + (index % 2 === 1 ? "" : "bg-gray-100")} key={index}>
 								<td className="py-2 px-1 w-fit text-center">
-									<p className="text-sm text-gray-600">{item?.index}</p>
+									<p className="text-sm text-gray-600">{(index + 1) + ((page - 1) * pageSize)}</p>
 								</td>
 								<td className="py-2 px-2 w-[50%] border-l border-gray-300">
 									<div className="flex items-center">
@@ -242,7 +298,7 @@ const Replenishment = () => {
 					</tbody>
 				</table>
 			</div>
-			<div className="flex items-center justify-between mt-5 gap-5">
+			<div className={"flex items-center justify-between mt-5 gap-5" + (loading ? " opacity-50 pointer-events-none" : "")}>
 				<div className="bg-white w-fit h-fit rounded-lg shadow-lg ml-auto">
 					{/* add the pagination UI */}
 					<div className="flex items-center justify-between p-2">

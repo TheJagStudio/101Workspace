@@ -137,19 +137,19 @@ function App() {
 				<Route path="/login" element={user?.is_active ? <Navigate to="/" replace /> : <Login />} />
 				{/* <Route path="/signup" element={<Signup />} /> */}
 				<Route path="/purchase" element={user?.is_active ? <PurchaseOutlet logout={logout} /> : <Navigate to="/login" replace />}>
-					<Route path="" element={<AIReport />} />
+					{user?.permissions?.purchase_PO && (<Route path="" element={<AIReport />} />)}
 					<Route path="search" element={<SearchProduct />} />
 					{user?.permissions?.purchase_PO && (<Route path="po-maker" element={<POMaker />} />)}
 					{user?.permissions?.purchase_PO && (<Route path="po-list" element={<POList />} />)}
 					{user?.permissions?.purchase_PO && (<Route path="par-level" element={<ParLevel />} />)}
-					<Route path="report" element={<AIReport />} />
-					<Route path="summary" element={<Summary />} />
-					<Route path="hot-product" element={<HotProduct />} />
-					<Route path="clearance-loss" element={<ClearanceLoss />} />
-					<Route path="performance" element={<PerformanceDash />} />
-					<Route path="replenishment" element={<Replenishment />} />
+					{user?.permissions?.purchase_Inventory && (<Route path="report" element={<AIReport />} />)}
+					{user?.permissions?.purchase_Inventory && (<Route path="summary" element={<Summary />} />)}
+					{user?.permissions?.purchase_Inventory && (<Route path="hot-product" element={<HotProduct />} />)}
+					{user?.permissions?.purchase_Inventory && (<Route path="clearance-loss" element={<ClearanceLoss />} />)}
+					{user?.permissions?.purchase_Inventory && (<Route path="performance" element={<PerformanceDash />} />)}
+					{user?.permissions?.purchase_Inventory && (<Route path="replenishment" element={<Replenishment />} />)}
+					{user?.permissions?.purchase_Inventory && (<Route path="dusty-inventory" element={<DustyInventory />} />)}
 					{user?.permissions?.purchase_Settings && (<Route path="setting" element={<Setting />} />)}
-					<Route path="dusty-inventory" element={<DustyInventory />} />
 				</Route>
 				<Route path="/tracker" element={user?.is_active ? <TrackerOutlet logout={logout} /> : <Navigate to="/login" replace />}>
 					{user?.permissions?.tracker_Salesmen_List && (<Route path="admin/" element={<TrackerDashboard />} />)}

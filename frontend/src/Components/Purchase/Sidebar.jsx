@@ -117,7 +117,7 @@ const Sidebar = () => {
 								{!collapsed && "Generated POs"}
 							</Link>
 						</li>)}
-						<li className="mb-1">
+						{user?.permissions?.purchase_PO && (<li className="mb-1">
 							<Link to="/purchase/par-level" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "ParLevel" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("ParLevel")}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" className={`w-5 h-5 mr-3 ${activeItem === "ParLevel" ? "text-indigo-500" : "text-gray-500"}`}>
 									<path fill="currentColor" d="M43 23.1h5c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-5c-.6 0-.9-.5-.8-1 0 0 .3-1 .3-2s-.3-2.1-.3-2.1c-.1-.6.3-1 .8-.9M10.8 41H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h6.8c1 1.8 3 3 5.2 3 3.3 0 6-2.7 6-6s-2.7-6-6-6c-2.2 0-4.2 1.2-5.2 3m15.4 1s.3 1.1.3 2.1-.3 2-.3 2c-.1.5.2 1 .8 1h21c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H27c-.6-.1-.9.3-.8.9m4-36s.3 1.1.3 2.1-.3 2-.3 2c-.1.5.2 1 .8 1h17c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H31c-.5-.1-.9.3-.8.9M14.8 5H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h10.8c1 1.8 3 3 5.2 3 3.3 0 6-2.7 6-6s-2.7-6-6-6c-2.2 0-4.2 1.2-5.2 3m12 18H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h22.8c1 1.8 3 3 5.2 3 3.3 0 6-2.7 6-6s-2.7-6-6-6c-2.2 0-4.2 1.2-5.2 3" />
@@ -128,12 +128,12 @@ const Sidebar = () => {
 									</>
 								)}
 							</Link>
-						</li>
+						</li>)}
 					</ul>
 				</div>
 
 				{user?.permissions?.purchase_Inventory && (<div className="py-4 border-b border-gray-200">
-					<div className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"} mb-2`}>INVENTORY</div>
+					<div className={`text-xs text-gray-400 ${collapsed ? "px-2" : "px-4"} mb-2`}>REPORT</div>
 					<ul>
 						<li className="mb-1">
 							<Link to="/purchase/summary" className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors ${activeItem === "Summary" ? "bg-indigo-50 text-indigo-500 font-bold" : "text-gray-800 hover:bg-gray-100"}`} onClick={() => handleItemClick("Summary")}>
