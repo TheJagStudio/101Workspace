@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Calendar from "../../../Components/utils/Calendar";
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from "../../../utils/api";
-import { glossaryAtom, isSidebarOpenAtom } from "../../../Variables";
+import { glossaryAtom, isSidebarOpenAtom, searchAtom } from "../../../Variables";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 
@@ -93,6 +93,7 @@ const Summary = () => {
 	const [loading, setLoading] = useState(true);
 	const [totalPages, setTotalPages] = useState(0);
 	const [openGlossary, setOpenGlossary] = useAtom(glossaryAtom);
+	const [search, setSearch] = useAtom(searchAtom);
 
 	async function getData() {
 		setLoading(true);
@@ -331,7 +332,7 @@ const Summary = () => {
 													<PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}>
 														<img
 															src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}
-															alt={item?.productName}
+															alt={item?.name}
 															className="w-8 h-8 mr-2"
 
 														/>
@@ -340,7 +341,9 @@ const Summary = () => {
 												<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
 													({item?.id})
 												</a>
-												<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
+												<p onClick={() => {
+													setSearch(item?.name);
+												}} className="truncate whitespace-break-spaces h-6 group-hover:h-fit cursor-pointer">{item?.name}</p>
 											</div>
 										</td>
 										<td className="text-center py-2 px-2 shadow-border-l">{formatNumber(item?.closingInventory)}</td>

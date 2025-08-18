@@ -645,7 +645,7 @@ const POMaker = () => {
 											</td>
 											<td className={"py-2 px-2 w-[40%] border-l " + (selectedVendors[index] !== 0 ? "border-red-200" : "border-gray-300")}>
 												<div className="flex items-center">
-													{pageSize <= 50 && <PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}><img src={item?.imageUrl || "/static/images/default.png"} alt={item?.productName} className="w-8 h-8 mr-2 mix-blend-multiply" /></PhotoView>}
+													{pageSize <= 50 && <PhotoView src={item?.imageUrl ? item.imageUrl : '/static/images/default.png'}><img src={item?.imageUrl || "/static/images/default.png"} alt={item?.productName} className="w-8 h-8 mr-2" /></PhotoView>}
 													<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
 														({item?.id})
 													</a>

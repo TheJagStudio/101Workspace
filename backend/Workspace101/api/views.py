@@ -1,3 +1,4 @@
+from collections import defaultdict
 from django.http import JsonResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
@@ -19,6 +20,9 @@ from django.utils import timezone
 import concurrent.futures
 from datetime import timedelta
 import os
+import pandas as pd
+from io import BytesIO
+from django.http import HttpResponse
 
 client = typesense.Client(
     {
@@ -269,60 +273,77 @@ class SyncSalesgentTokenView(APIView):
 #             "failed_products": failed_products
 #         })
 
+def get_all_descendant_pks(start_pk, category_map):
+    # (function code from above)
+    pks_to_process = [start_pk]
+    all_descendants = {start_pk}
+    while pks_to_process:
+        parent_pk = pks_to_process.pop()
+        children = category_map.get(parent_pk, [])
+        for child_pk in children:
+            if child_pk not in all_descendants:
+                all_descendants.add(child_pk)
+                pks_to_process.append(child_pk)
+    return list(all_descendants)
+
 class dataMaker(APIView):
     def get(self, request):
-        finalData = {}
-        products = Product.objects.filter(isClearanceProduct=True)
-        for product in products:
-            # check for file
-            if not os.path.exists(f"./dataClear/{product.productId}_audit.json"):
-                headers = {
-                    'Accept': 'application/json, text/plain',
-                    'Accept-Language': 'en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6',
-                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkaGF2YWwucEAxMDFkaXN0cmlidXRvcnNnYS5jb20iLCJ1c2VyVHlwZSI6IkVtcGxveWVlIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwic3RvcmVJZCI6MSwiZXhwIjoxNzU1NDg0NjQxLCJ1c2VySWQiOjIwLCJpYXQiOjE3NTUzNjQ2NDEsInJlc2V0UGFzc3dvcmRSZXF1aXJlZCI6ZmFsc2V9.MmTgazlT6U1IEcxrG1k0uhjLsa4_6OmKgldGyqsHrjg',
-                    'Cache-Control': 'no-cache',
-                    'Connection': 'keep-alive',
-                    'Pragma': 'no-cache',
-                    'Referer': 'https://erp.101distributorsga.com/product/'+str(product.productId)+'/edit',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-origin',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-                    'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-                    'sec-ch-ua-mobile': '?0',
-                    'sec-ch-ua-platform': '"Windows"',
-                }
+        # --- Optimization: Fetch all category relationships at once ---
+        all_categories_relations = Category.objects.values('categoryId', 'parentId')
+        category_parent_map = defaultdict(list)
+        for cat in all_categories_relations:
+            if cat['parentId']:
+                category_parent_map[cat['parentId']].append(cat['categoryId'])
 
-                response = requests.get(
-                    'https://erp.101distributorsga.com/api/audit?recordId='+str(product.productId)+'&moduleId=1&storeIds=1,2',
-                    headers=headers,
+        # Get top-level categories to iterate through
+        top_level_categories = Category.objects.filter(parentId__isnull=True)
+        
+        excel_buffer = BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+            for category in top_level_categories:
+                # --- Correction: Get ALL descendant categories, not just direct children ---
+                category_and_all_subcategory_pks = get_all_descendant_pks(
+                    category.categoryId, category_parent_map
                 )
-                with open("./dataClear/"+str(product.productId)+"_audit.json", "w") as f:
-                    f.write(json.dumps(response.json()["result"]))
-                    
-            try:
-                with open("./dataClear/"+str(product.productId)+"_audit.json", "r") as f:
-                    data = json.load(f)
-                mainPrice = {}
-                for entry in data:
-                    if "data" in entry:
-                        for item in entry['data']:
-                            if "updatedValues" in item:
-                                for values in item["updatedValues"]:
-                                    if values["updatedFieldName"] == "std_price":
-                                        if float(values["newValue"]) > float(values["oldValue"]):
-                                            mainPrice[entry["date"]] = max(mainPrice.get(entry["date"], float("-inf")), float(values["newValue"]))
-                                        else:
-                                            mainPrice[entry["date"]] = max(mainPrice.get(entry["date"], float("-inf")), float(values["oldValue"]))
-                finalData[product.productId] = mainPrice
-            except Exception as e:
-                pass
-            print("Processed Product ID:", product.productId)
-        with open("./data/clearance_loss.json", "w") as f:
-            json.dump(finalData, f)
-        return JsonResponse({
-            "status": "Completed"
-        })
+
+                products = Product.objects.filter(
+                    categories__in=category_and_all_subcategory_pks, 
+                    active=True
+                ).values(
+                    "productId", "upc", "productName", "masterProductId", "masterProductName",
+                    "standardPrice", "tierPrice", "costPrice", "TotalSaleAmount",
+                    "TotalGrossMargin", "TotalRevenue"
+                )
+                
+                if not products.exists():
+                    print(f"No active products found for category '{category.name}' and its subcategories.")
+                    continue # Skip creating an empty sheet
+
+                df = pd.DataFrame(list(products))
+                
+                # Convert all datetime columns to timezone-unaware if any exist
+                for col in df.select_dtypes(include=['datetimetz']).columns:
+                    df[col] = df[col].dt.tz_localize(None)
+
+                # Sanitize sheet name
+                invalid_chars = r'[]:*?/\\'
+                safe_name = ''.join(c for c in (category.name or f"Category_{category.pk}") if c not in invalid_chars)
+                sheet_name = safe_name[:31] # Excel sheet names must be <= 31 chars
+                
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                print(f"Processed category: {category.name} with {len(df)} products")
+
+        excel_buffer.seek(0)
+        response = HttpResponse(
+            excel_buffer,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="products_by_category.xlsx"'
+        return response
+            
+        # return JsonResponse({
+        #     "status": "Completed"
+        # })
 
 class vacuum_sqlite_database(APIView):
     permission_classes = []

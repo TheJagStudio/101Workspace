@@ -18,7 +18,7 @@ const DateInputGroup = ({ startDate, endDate, onFocus, setStartDate, setEndDate,
                 onChange={(e) => {
                     setStartDate(e.target.value);
                 }}
-                className={`p-1 w-26 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-l`}
+                className={`p-1 w-24 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-l`}
                 placeholder="Start Date"
             />
             <span className="px-1 text-gray-500">{">>"}</span>
@@ -29,7 +29,7 @@ const DateInputGroup = ({ startDate, endDate, onFocus, setStartDate, setEndDate,
                 onChange={(e) => {
                     setEndDate(e.target.value);
                 }}
-                className={`p-1 w-26 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-r`}
+                className={`p-1 w-24 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-r`}
                 placeholder="End Date"
             />
             <div className="p-2 text-gray-500">

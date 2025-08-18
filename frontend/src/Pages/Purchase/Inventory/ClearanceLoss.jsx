@@ -133,7 +133,7 @@ const ClearanceLoss = () => {
                                 <Button
                                     variant="outline"
                                     id="date"
-                                    className="w-44 justify-between font-normal hover:bg-white hover:ring-2 hover:ring-indigo-500 cursor-pointer"
+                                    className="w-44 justify-between font-normal hover:!bg-white hover:ring-2 hover:ring-indigo-500 cursor-pointer "
                                 >
                                     {new Date(selectedDate).toLocaleDateString()}
                                     <ChevronDownIcon />
@@ -241,7 +241,7 @@ const ClearanceLoss = () => {
                                                                         <img
                                                                             src={prod.imageUrl || '/static/images/default.png'}
                                                                             alt={prod.name}
-                                                                            className="w-8 h-8 rounded shadow inline-block mix-blend-multiply"
+                                                                            className="w-8 h-8 rounded shadow inline-block"
                                                                         />
                                                                     </PhotoView>
                                                                 </td>

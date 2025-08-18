@@ -167,7 +167,7 @@ def syncProducts(token):
 
                 # Bulk create the many-to-many relationships
                 if category_relations:
-                    Product.categories.through.objects.bulk_create(category_relations, ignore_conflicts=True)
+                    Product.categories.through.objects.bulk_create(category_relations, ignore_conflicts=False)
         yield 30 + (i * 70) / totalProducts
 
 

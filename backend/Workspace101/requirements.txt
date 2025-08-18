@@ -12,3 +12,5 @@ ollama
 summa
 requests
 uuid
+xlsxwriter
+pandas

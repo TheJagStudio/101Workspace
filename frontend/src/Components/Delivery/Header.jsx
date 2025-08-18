@@ -51,13 +51,13 @@ const Header = () => {
         <div className="h-16 bg-white border-b border-gray-200 shadow-lg flex items-center justify-between px-6 z-50">
             {/* Logo and Search Bar */}
             <div className="flex items-center w-full sm:w-86 ml-5">
-                <div className="relative w-full">
+                <div className="relative w-fit">
                     <input
                         type="text"
                         ref={searchInputRef}
                         placeholder="Search Deliveries"
                         onChange={handleSearchChange}
-                        className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-500 text-sm"
+                        className="pl-10 pr-20 py-2 peer max-w-96 rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-500 text-sm"
                     />
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-green-500">
                         {/* Search Icon */}

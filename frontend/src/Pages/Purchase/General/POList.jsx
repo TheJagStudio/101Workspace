@@ -140,13 +140,13 @@ const POList = () => {
 			<p className="text-3xl font-semibold text-gray-700">Generated PO List</p>
 			<div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1"}>
 				{/* Search Input */}
-				<div className="relative flex-1 max-w-md">
+				<div className="relative w-fit">
 					<input
 						type="text"
 						value={searchTerm}
 						onChange={e => setSearchTerm(e.target.value)}
 						placeholder="Search PO, vendor, etc..."
-						className="w-full pl-10 pr-4 py-2 border border-gray-200 peer rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/75 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
+						className="w-64 pl-10 pr-4 py-2 border border-gray-200 peer rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/75 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
 					/>
 					<svg className="w-6 h-6 text-gray-300 absolute top-2 left-2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />

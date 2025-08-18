@@ -2,7 +2,7 @@ import React, { use, useEffect, useState } from "react";
 import CustomDropdown from "../../../Components/utils/CustomDropdown";
 import { apiRequest } from "../../../utils/api";
 import { useAtom } from "jotai";
-import { isSidebarOpenAtom, glossaryAtom } from "../../../Variables";
+import { isSidebarOpenAtom, glossaryAtom,searchAtom } from "../../../Variables";
 import Calendar from "../../../Components/utils/Calendar";
 
 const dropdownOptions = {
@@ -91,6 +91,7 @@ const Replenishment = () => {
 	const [reverseSort, setReverseSort] = useState(true);
 	const [totalPages, setTotalPages] = useState(0);
 	const [openGlossary, setOpenGlossary] = useAtom(glossaryAtom);
+	const [searchTerm, setSearchTerm] = useAtom(searchAtom);
 
 	async function getData() {
 		try {
@@ -227,7 +228,7 @@ const Replenishment = () => {
 										<a target="_blank" href={"https://erp.101distributorsga.com/product/" + item?.id + "/edit"} className="text-blue-600 px-2 whitespace-nowrap hover:italic hover:underline cursor-pointer">
 											({item?.id})
 										</a>
-										<p className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
+										<p onClick={() => setSearchTerm(item?.name)} className="truncate whitespace-break-spaces h-6 group-hover:h-fit">{item?.name}</p>
 									</div>
 								</td>
 								<td className="text-center py-2 px-2 border-l border-gray-300">{formatNumber(item?.closingInventory)}</td>

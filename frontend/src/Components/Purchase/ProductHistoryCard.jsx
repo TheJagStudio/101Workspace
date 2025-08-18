@@ -11,7 +11,7 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 	}
 	let totalSub = 0;
 
-	const chartData = activeProduct.history.map((item) => {
+	const chartData = activeProduct?.history.map((item) => {
 		totalSub += item.quantity || 0;
 		return {
 			timestamp: new Date(item.timestamp).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }), // MM/DD/YYYY format
@@ -22,7 +22,7 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 		};
 	});
 
-	const purchaseChartData = activeProduct.purchaseHistory.map((item) => {
+	const purchaseChartData = activeProduct?.purchaseHistory.map((item) => {
 		return {
 			costPrice: item.costPrice ? parseFloat(item.costPrice) : 0,
 			purchasedQuantity: item.purchasedQuantity || 0,
@@ -73,7 +73,7 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 		const purchaseHistorySheet = XLSX.utils.json_to_sheet(purchaseHistoryData);
 		XLSX.utils.book_append_sheet(wb, purchaseHistorySheet, "PurchaseHistory");
 
-		XLSX.writeFile(wb, `${activeProduct.productName}_AllHistory_${Date.now()}.xlsx`);
+		XLSX.writeFile(wb, `${activeProduct?.productName}_AllHistory_${Date.now()}.xlsx`);
 		setLoadingExport(false);
 	};
 
@@ -86,20 +86,20 @@ const ProductCardPopup = ({ activeProduct, onClose }) => {
 
 			{/* Product Details */}
 			<div className="text-center mb-6 flex flex-row items-center justify-start gap-4">
-				<img src={activeProduct.imageUrl || "/static/images/default.png"} alt={activeProduct.productName} className="w-36 h-36 object-contain mx-auto mb-4" />
+				<img src={activeProduct?.imageUrl || "/static/images/default.png"} alt={activeProduct?.productName} className="w-36 h-36 object-contain mx-auto mb-4" />
 				<div className="flex flex-col items-start text-left w-full">
-					<h2 className="text-2xl font-bold text-gray-800 pr-5">{activeProduct.productName}</h2>
+					<h2 className="text-2xl font-bold text-gray-800 pr-5">{activeProduct?.productName}</h2>
 					<p className="text-gray-600 text-sm">
-						<b>SKU:</b> {activeProduct.sku}
+						<b>SKU:</b> {activeProduct?.sku}
 					</p>
 					<p className="text-gray-600 text-sm">
-						<b>UPC:</b> {activeProduct.upc}
+						<b>UPC:</b> {activeProduct?.upc}
 					</p>
 					<p className="text-gray-600 text-sm">
-						<b>Product ID:</b> {activeProduct.id}
+						<b>Product ID:</b> {activeProduct?.id}
 					</p>
 					<p className="text-gray-600 text-sm">
-						<b>Current Available Quantity:</b> {activeProduct.history[activeProduct.history.length - 1].availableQuantity}
+						<b>Current Available Quantity:</b> {activeProduct?.history[activeProduct?.history.length - 1]?.availableQuantity}
 					</p>
 				</div>
 			</div>

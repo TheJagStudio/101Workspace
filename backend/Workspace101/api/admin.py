@@ -3,10 +3,13 @@ from .models import Product, Category, BusinessType, Vendor, Invoice, InvoiceLin
 from .models import PurchaseHistory
 from .models import SalesgentToken
 from .models import POLocal, POLocalLineItem
-
+from .signals import _calculate_and_update_product_metrics
 # import export
 from import_export.admin import ImportExportModelAdmin
 from django.contrib.admin import SimpleListFilter
+from django.db.models import Sum, F, DecimalField, Value, Case, When
+from django.db.models.functions import Abs
+from decimal import Decimal
 
 
 class InventoryStatusFilter(admin.SimpleListFilter):
@@ -93,8 +96,53 @@ class IsParentProductFilter(SimpleListFilter):
             return queryset.filter(childProductList=[])
         return queryset
 
+@admin.action(description='Recalculate metrics for selected products')
+def recalculate_metrics(modeladmin, request, queryset):
+    product_ids = list(queryset.values_list('productId', flat=True))
+    # Aggregate ProductHistory data for all selected products
+    agg_data = (
+        ProductHistory.objects
+        .filter(productId_id__in=product_ids)
+        .values('productId_id')
+        .annotate(
+            calculated_revenue=Sum(F("quantity") * F("retailPrice"), output_field=DecimalField()),
+            calculated_gross_margin=Sum(
+                Abs(F("quantity") * (F("retailPrice") - F("costPrice"))),
+                output_field=DecimalField()
+            ),
+            calculated_total_sales_amount=Sum(
+                F("quantity"),
+                output_field=DecimalField()
+            ),
+            calculated_gross_margin_percentage=Case(
+                When(calculated_total_sales_amount=0, then=Value(0)),
+                default=F("calculated_gross_margin") * 100 / F("calculated_total_sales_amount"),
+                output_field=DecimalField()
+            )
+        )
+    )
+    # Map productId to aggregated values
+    metrics_map = {
+        item['productId_id']: {
+            'TotalRevenue': item['calculated_revenue'] or Decimal('0.00'),
+            'TotalGrossMargin': item['calculated_gross_margin'] or Decimal('0.00'),
+            "TotalGrossMarginPercentage": item['calculated_gross_margin_percentage'] or Decimal('0.00'),
+            "TotalSaleAmount": item['calculated_total_sales_amount'] or Decimal('0.00')
+        }
+        for item in agg_data
+    }
+    products_to_update = []
+    for product in queryset:
+        metrics = metrics_map.get(product.productId, {'TotalRevenue': Decimal('0.00'), 'TotalGrossMargin': Decimal('0.00')})
+        product.TotalRevenue = metrics['TotalRevenue']
+        product.TotalGrossMargin = metrics['TotalGrossMargin']
+        products_to_update.append(product)
+    # Bulk update only the required fields
+    if products_to_update:
+        queryset.model.objects.bulk_update(products_to_update, ['TotalRevenue', 'TotalGrossMargin'], batch_size=5000)
 
 class ProductAdmin(ImportExportModelAdmin):
+    actions = [recalculate_metrics]
     autocomplete_fields = ["categories"]
     list_display = ("productId", "sku", "upc", "productName", "availableQuantity", "standardPrice", "active","lastSyncTimestamp")
     search_fields = ("productName", "sku", "upc", "productId")
