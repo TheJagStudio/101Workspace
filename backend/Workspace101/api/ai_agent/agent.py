@@ -199,7 +199,7 @@ class DjangoAIAgent:
             # Add attempt information for tracking
             result["retry_count"] = retry_count
             result["retry_attempts"] = retry_attempts.copy()
-            
+            print(result)
             # Check if we got a successful result (no ORM errors)
             if not self._should_retry_query(result, retry_count, max_retries):
                 # If python_code is None, it means we have a direct natural language response
@@ -207,7 +207,12 @@ class DjangoAIAgent:
                     return result
                 
                 if not self._is_orm_error(result):
-                    result["results"] = result.get("results", "No results found.")
+                    # Try to JSON load results; if successful, send as loaded, else forward original
+                    results_value = result.get("results", "No results found.")
+                    try:
+                        result["results"] = json.loads(results_value)
+                    except Exception:
+                        result["results"] = results_value
                     result["retry_count"] = retry_count
                     result["retry_attempts"] = retry_attempts.copy()
                     return result
@@ -269,11 +274,14 @@ class DjangoAIAgent:
         results = result.get("results", "")
         if isinstance(results, str):
             error_indicators = [
+                "NameError",
                 "FieldError",
                 "Field does not exist", 
                 "Database Programming Error",
                 "Django ORM Error",
-                "Error executing Django ORM query"
+                "Error executing Django ORM query",
+                "Error",
+                "error"
             ]
             return any(indicator in results for indicator in error_indicators)
         return False

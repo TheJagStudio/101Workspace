@@ -249,7 +249,7 @@ const Chatbot = () => {
 							&times;
 						</button>
 
-						<h1 className="text-3xl font-bold text-left leading-0 text-indigo-600 mb-6 mt-4">101 AI Assistant</h1>
+						<h1 className="text-3xl font-bold text-left leading-0 text-indigo-600 mb-4">101 AI Assistant</h1>
 
 						{/* Chat Messages Display Area */}
 						<div ref={chatContainerRef} className="flex-1 overflow-y-auto border border-gray-300 rounded-lg p-4 mb-4 bg-white scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
@@ -316,7 +316,7 @@ const Chatbot = () => {
 													)}
 
 													{/* Table Section */}
-													{isLoaded && (!visualization || visualization?.type === 'table' || visualization?.type === 'none') && Array.isArray(queryResult) &&  queryResult.length > 0  (
+													{isLoaded && (!visualization || visualization?.type === 'table' || visualization?.type === 'none') && Array.isArray(queryResult) &&  queryResult.length > 0  && (
 														<div className="w-full text-wrap wrap-break-word ">
 															<TableGrid data={queryResult} />
 														</div>

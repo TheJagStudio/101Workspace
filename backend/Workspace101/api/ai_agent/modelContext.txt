@@ -1,476 +1,385 @@
 My Django app database schema:
---- Model: LogEntry ---
-Description: Log entry
-
-Columns:
-  - id (PK): 'id' (AutoField)
-  - action_time: 'action_time' (DateTimeField)
-  - user_id (FK): 'user_id' (ForeignKey)
-  - content_type_id (FK): 'content_type_id' (ForeignKey)
-  - object_id: 'object_id' (TextField)
-  - object_repr: 'object_repr' (CharField)
-  - action_flag: 'action_flag' (PositiveSmallIntegerField)
-  - change_message: 'change_message' (TextField)
-
-Sample Data:
-  {'id': '281630', 'action_time': '2025-08-15 08:03:15.665324+00:00', 'user_id': '1', 'content_type_id': '7', 'object_id': '30649', 'action_flag': '2', 'change_message': '[{"changed": {"fields": ["IsClearanceProduct"]}}]'}
-  {'id': '281629', 'action_time': '2025-08-15 08:03:08.360775+00:00', 'user_id': '1', 'content_type_id': '7', 'object_id': '30649', 'action_flag': '2', 'change_message': '[]'}
-  {'id': '281628', 'action_time': '2025-08-15 08:02:55.396554+00:00', 'user_id': '1', 'content_type_id': '7', 'object_id': '30650', 'action_flag': '2'}
-
-
---- Model: Permission ---
-Description: Permission
-
-Columns:
-  - id (PK): 'id' (AutoField)
-  - name: 'name' (CharField)
-  - content_type_id (FK): 'content_type_id' (ForeignKey)
-  - codename: 'codename' (CharField)
-
-Sample Data:
-  {'id': '1', 'name': 'Can add log entry', 'content_type_id': '1', 'codename': 'add_logentry'}
-  {'id': '2', 'name': 'Can change log entry', 'content_type_id': '1', 'codename': 'change_logentry'}
-  {'id': '3', 'name': 'Can delete log entry', 'content_type_id': '1', 'codename': 'delete_logentry'}
-
-
 --- Model: Group ---
 Description: Group
 
 Columns:
-  - id (PK): 'id' (AutoField)
-  - name: 'name' (CharField)
-  - permissions: Many-to-many relationship with Permission instances.
+- id (PK): 'id' (AutoField)
+- name: 'name' (CharField)
+- permissions: Many-to-many relationship with Permission instances.
 
 Sample Data:
   {'id': '1', 'name': 'Salesman'}
-  {'id': '2', 'name': 'Truck Driver'}
-
 
 --- Model: User ---
 Description: User
 
 Columns:
-  - id (PK): 'id' (AutoField)
-  - password: 'password' (CharField)
-  - last_login: 'last_login' (DateTimeField)
-  - is_superuser: 'is_superuser' (BooleanField) - Superuser status: Designates that this user has all permissions without explicitly assigning them.
-  - username: 'username' (CharField): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
-  - first_name: 'first_name' (CharField)
-  - last_name: 'last_name' (CharField)
-  - email: 'email' (CharField) - Email address
-  - is_staff: 'is_staff' (BooleanField) - Staff status: Designates whether the user can log into this admin site.
-  - is_active: 'is_active' (BooleanField) - Active: Designates whether this user should be treated as active. Unselect this instead of deleting accounts.
-  - date_joined: 'date_joined' (DateTimeField)
-  - groups: Many-to-many relationship with Group instances.
-  - user_permissions: Many-to-many relationship with Permission instances.
+- id (PK): 'id' (AutoField)
+- password: 'password' (CharField)
+- last_login: 'last_login' (DateTimeField)
+- is_superuser: 'is_superuser' (BooleanField) - Superuser status: Designates that this user has all permissions without explicitly assigning them.
+- username: 'username' (CharField): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+- first_name: 'first_name' (CharField)
+- last_name: 'last_name' (CharField)
+- email: 'email' (CharField) - Email address
+- is_staff: 'is_staff' (BooleanField) - Staff status: Designates whether the user can log into this admin site.
+- is_active: 'is_active' (BooleanField) - Active: Designates whether this user should be treated as active. Unselect this instead of deleting accounts.
+- date_joined: 'date_joined' (DateTimeField)
+- groups: Many-to-many relationship with Group instances.
+- user_permissions: Many-to-many relationship with Permission instances.
 
 Sample Data:
   {'id': '24', 'last_login': 'None', 'is_superuser': 'False', 'username': 'chirag.p@101distributorsga.com', 'first_name': 'Chirag', 'last_name': 'Patel', 'email': 'chirag.p@101distributorsga.com', 'is_staff': 'False', 'is_active': 'True', 'date_joined': '2025-07-30 01:53:48+00:00'}
-  {'id': '21', 'last_login': 'None', 'is_superuser': 'False', 'username': 'tejas.s@101distributorsga.com', 'first_name': 'TEJAS', 'last_name': 'SUTHAR', 'email': 'tejas.s@101distributorsga.com', 'is_staff': 'False', 'is_active': 'True', 'date_joined': '2025-07-19 16:47:14+00:00'}
-  {'id': '9', 'last_login': 'None', 'is_superuser': 'False', 'username': 'smit@101distributorsga.com', 'first_name': 'SMIT', 'last_name': 'UPADHYAY', 'email': 'smit@101distributorsga.com', 'is_staff': 'False', 'is_active': 'True', 'date_joined': '2025-07-19 15:54:30+00:00'}
-
-
---- Model: ContentType ---
-Description: Content type
-
-Columns:
-  - id (PK): 'id' (AutoField)
-  - app_label: 'app_label' (CharField)
-  - model: 'model' (CharField) - Python model class name
-
-Sample Data:
-  {'id': '1', 'app_label': 'admin', 'model': 'logentry'}
-  {'id': '2', 'app_label': 'auth', 'model': 'permission'}
-  {'id': '3', 'app_label': 'auth', 'model': 'group'}
-
-
---- Model: Session ---
-Description: Session
-
-Columns:
-  - session_key (PK): 'session_key' (CharField)
-  - session_data: 'session_data' (TextField)
-  - expire_date: 'expire_date' (DateTimeField)
-
-Sample Data:
-  {'session_key': 'd5ssgblrapd2bv2km0mrp8h3s64xtk99', 'expire_date': '2025-06-12 00:21:00.047000+00:00'}
-  {'session_key': 'll1hymcy279v7eepl5c07md4kfet24m8', 'expire_date': '2025-06-12 00:28:35.309000+00:00'}
-  {'session_key': 't5vtp7z6y1tr0vd9k5agtxnjjsbm134f', 'expire_date': '2025-06-12 00:42:48.928000+00:00'}
 
 
 --- Model: Product ---
 Description: Product
 
 Columns:
-  - productId (PK): 'productId' (IntegerField)
-  - sku: 'sku' (CharField)
-  - upc: 'upc' (CharField)
-  - productName: 'productName' (CharField)
-  - availableQuantity: 'availableQuantity' (IntegerField)
-  - imageUrl: 'imageUrl' (CharField)
-  - masterProductId: 'masterProductId' (IntegerField)
-  - masterProductName: 'masterProductName' (CharField)
-  - standardPrice: 'standardPrice' (DecimalField)
-  - tierPrice: 'tierPrice' (DecimalField)
-  - costPrice: 'costPrice' (DecimalField)
-  - ecommerce: 'ecommerce' (BooleanField)
-  - active: 'active' (BooleanField)
-  - compositeProduct: 'compositeProduct' (BooleanField)
-  - stateRestricted: 'stateRestricted' (BooleanField)
-  - customerGroupRestricted: 'customerGroupRestricted' (BooleanField)
-  - trackInventory: 'trackInventory' (BooleanField)
-  - trackInventoryByImei: 'trackInventoryByImei' (BooleanField)
-  - size: 'size' (IntegerField)
-  - returnable: 'returnable' (BooleanField)
-  - minimumSellingPrice: 'minimumSellingPrice' (DecimalField)
-  - TotalSaleAmount: 'TotalSaleAmount' (DecimalField)
-  - TotalGrossMargin: 'TotalGrossMargin' (DecimalField)
-  - TotalGrossMarginPrecentage: 'TotalGrossMarginPrecentage' (DecimalField)
-  - TotalRevenue: 'TotalRevenue' (DecimalField)
-  - urlAlias: 'urlAlias' (CharField)
-  - shortDescription: 'shortDescription' (TextField)
-  - fullDescription: 'fullDescription' (TextField)
-  - avgCostPrice: 'avgCostPrice' (DecimalField)
-  - latestCostPrice: 'latestCostPrice' (DecimalField)
-  - stdPrice: 'stdPrice' (DecimalField)
-  - tier1Price: 'tier1Price' (DecimalField)
-  - tier2Price: 'tier2Price' (DecimalField)
-  - tier3Price: 'tier3Price' (DecimalField)
-  - tier4Price: 'tier4Price' (DecimalField)
-  - tier5Price: 'tier5Price' (DecimalField)
-  - upc1: 'upc1' (CharField)
-  - upc2: 'upc2' (CharField)
-  - singleUpc: 'singleUpc' (CharField)
-  - vendorUpc: 'vendorUpc' (CharField)
-  - metaKeyword: 'metaKeyword' (CharField)
-  - childProductList: 'childProductList' (JSONField)
-  - quantity: 'quantity' (IntegerField)
-  - reorderQuantity: 'reorderQuantity' (IntegerField)
-  - minQuantity: 'minQuantity' (IntegerField)
-  - caseQuantity: 'caseQuantity' (IntegerField)
-  - boxQuantity: 'boxQuantity' (IntegerField)
-  - isHotProduct: 'isHotProduct' (BooleanField)
-  - isClearanceProduct: 'isClearanceProduct' (BooleanField)
-  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
-  - categories: Many-to-many relationship with Category instances.
+- productId (PK): 'productId' (IntegerField)
+- sku: 'sku' (CharField)
+- upc: 'upc' (CharField)
+- productName: 'productName' (CharField)
+- availableQuantity: 'availableQuantity' (IntegerField)
+- imageUrl: 'imageUrl' (CharField)
+- masterProductId: 'masterProductId' (IntegerField)
+- masterProductName: 'masterProductName' (CharField)
+- standardPrice: 'standardPrice' (DecimalField)
+- tierPrice: 'tierPrice' (DecimalField)
+- costPrice: 'costPrice' (DecimalField)
+- ecommerce: 'ecommerce' (BooleanField)
+- active: 'active' (BooleanField)
+- compositeProduct: 'compositeProduct' (BooleanField)
+- stateRestricted: 'stateRestricted' (BooleanField)
+- customerGroupRestricted: 'customerGroupRestricted' (BooleanField)
+- trackInventory: 'trackInventory' (BooleanField)
+- trackInventoryByImei: 'trackInventoryByImei' (BooleanField)
+- size: 'size' (IntegerField)
+- returnable: 'returnable' (BooleanField)
+- minimumSellingPrice: 'minimumSellingPrice' (DecimalField)
+- TotalSaleAmount: 'TotalSaleAmount' (DecimalField)
+- TotalGrossMargin: 'TotalGrossMargin' (DecimalField)
+- TotalGrossMarginPrecentage: 'TotalGrossMarginPrecentage' (DecimalField)
+- TotalRevenue: 'TotalRevenue' (DecimalField)
+- urlAlias: 'urlAlias' (CharField)
+- shortDescription: 'shortDescription' (TextField)
+- fullDescription: 'fullDescription' (TextField)
+- avgCostPrice: 'avgCostPrice' (DecimalField)
+- latestCostPrice: 'latestCostPrice' (DecimalField)
+- stdPrice: 'stdPrice' (DecimalField)
+- tier1Price: 'tier1Price' (DecimalField)
+- tier2Price: 'tier2Price' (DecimalField)
+- tier3Price: 'tier3Price' (DecimalField)
+- tier4Price: 'tier4Price' (DecimalField)
+- tier5Price: 'tier5Price' (DecimalField)
+- upc1: 'upc1' (CharField)
+- upc2: 'upc2' (CharField)
+- singleUpc: 'singleUpc' (CharField)
+- vendorUpc: 'vendorUpc' (CharField)
+- metaKeyword: 'metaKeyword' (CharField)
+- childProductList: 'childProductList' (JSONField)
+- quantity: 'quantity' (IntegerField)
+- reorderQuantity: 'reorderQuantity' (IntegerField)
+- minQuantity: 'minQuantity' (IntegerField)
+- caseQuantity: 'caseQuantity' (IntegerField)
+- boxQuantity: 'boxQuantity' (IntegerField)
+- isHotProduct: 'isHotProduct' (BooleanField)
+- isClearanceProduct: 'isClearanceProduct' (BooleanField)
+- lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+- categories: Many-to-many relationship with Category instances.
 
 Sample Data:
   {'productId': '11407', 'sku': 'GA005684', 'upc': '071610499546', 'availableQuantity': 'None', 'masterProductId': '19755', 'standardPrice': '33.99', 'tierPrice': '33.99', 'costPrice': '31.32', 'ecommerce': 'True', 'active': 'True', 'compositeProduct': 'False', 'stateRestricted': 'False', 'customerGroupRestricted': 'False', 'trackInventory': 'True', 'trackInventoryByImei': 'False', 'size': '60', 'returnable': 'True', 'minimumSellingPrice': '0.00', 'TotalSaleAmount': '6881.81', 'TotalGrossMargin': '1259.19', 'TotalGrossMarginPrecentage': '17.49', 'TotalRevenue': '6910.51', 'urlAlias': 'dutch-masters-tob-lgc-3ct-pk-10pk-bx-2bx-mb-green', 'avgCostPrice': '31.32', 'latestCostPrice': '31.32', 'stdPrice': '33.99', 'tier1Price': '33.99', 'tier2Price': '33.99', 'tier3Price': '33.99', 'tier4Price': '33.99', 'tier5Price': '33.99', 'upc1': 'None', 'upc2': 'None', 'singleUpc': '071610499539', 'vendorUpc': 'None', 'metaKeyword': 'None', 'childProductList': '[]', 'quantity': 'None', 'reorderQuantity': '0', 'minQuantity': '0', 'caseQuantity': '16', 'boxQuantity': '20', 'isHotProduct': 'False', 'isClearanceProduct': 'False', 'lastSyncTimestamp': '2025-08-15 07:24:45.902987+00:00'}
-  {'productId': '20984', 'sku': 'GA013905', 'upc': 'GA013905', 'availableQuantity': 'None', 'masterProductId': 'None', 'masterProductName': 'None', 'standardPrice': '9.75', 'tierPrice': '9.75', 'costPrice': '8.56', 'ecommerce': 'True', 'active': 'True', 'compositeProduct': 'False', 'stateRestricted': 'False', 'customerGroupRestricted': 'False', 'trackInventory': 'True', 'trackInventoryByImei': 'False', 'size': 'None', 'returnable': 'True', 'minimumSellingPrice': '0.00', 'TotalSaleAmount': '0.00', 'TotalGrossMargin': '0.00', 'TotalGrossMarginPrecentage': '0.00', 'TotalRevenue': '0.00', 'urlAlias': 'SANTA-CRUZ-X-G-PEN-GRINDER-SMALL-BLACK', 'avgCostPrice': '0.00', 'latestCostPrice': '8.56', 'stdPrice': '9.75', 'tier1Price': '9.75', 'tier2Price': '9.75', 'tier3Price': '9.49', 'tier4Price': '9.25', 'tier5Price': '8.99', 'upc1': 'None', 'upc2': 'None', 'singleUpc': 'GA013905', 'vendorUpc': 'None', 'childProductList': '[]', 'quantity': 'None', 'reorderQuantity': '0', 'minQuantity': '0', 'caseQuantity': '0', 'boxQuantity': '1', 'isHotProduct': 'False', 'isClearanceProduct': 'False', 'lastSyncTimestamp': '2025-08-15 07:24:45.849439+00:00'}
-  {'productId': '10394', 'sku': 'GA004658', 'upc': '717519000840', 'availableQuantity': 'None', 'masterProductId': '19464', 'masterProductName': 'AL CAPONE - TOB - LTC - 2CT/PK - 60PK/JR', 'standardPrice': '67.99', 'tierPrice': '67.99', 'costPrice': '64.25', 'ecommerce': 'True', 'active': 'True', 'compositeProduct': 'False', 'stateRestricted': 'False', 'customerGroupRestricted': 'False', 'trackInventory': 'True', 'trackInventoryByImei': 'False', 'size': '120', 'returnable': 'True', 'minimumSellingPrice': '0.00', 'TotalSaleAmount': '7665.57', 'TotalGrossMargin': '1044.09', 'TotalGrossMarginPrecentage': '13.11', 'TotalRevenue': '7734.56', 'avgCostPrice': '63.97', 'latestCostPrice': '64.25', 'stdPrice': '67.99', 'tier1Price': '67.99', 'tier2Price': '67.99', 'tier3Price': '67.99', 'tier4Price': '67.99', 'tier5Price': '67.99', 'upc1': 'None', 'upc2': 'None', 'singleUpc': '717519011013', 'vendorUpc': 'None', 'metaKeyword': 'None', 'childProductList': '[]', 'quantity': 'None', 'reorderQuantity': '0', 'minQuantity': '0', 'caseQuantity': '0', 'boxQuantity': '60', 'isHotProduct': 'False', 'isClearanceProduct': 'False', 'lastSyncTimestamp': '2025-08-15 07:24:45.825353+00:00'}
 
 
 --- Model: Category ---
 Description: Category
 
 Columns:
-  - categoryId (PK): 'categoryId' (IntegerField)
-  - name: 'name' (CharField)
-  - alias: 'alias' (CharField)
-  - parentId: 'parentId' (IntegerField)
-  - parentIdStr: 'parentIdStr' (CharField)
-  - imageUrl: 'imageUrl' (CharField)
-  - description: 'description' (TextField)
-  - ecommerce: 'ecommerce' (BooleanField)
-  - customerSpecific: 'customerSpecific' (BooleanField)
-  - loginRequired: 'loginRequired' (BooleanField)
-  - repairCategory: 'repairCategory' (BooleanField)
-  - businessTypeId: 'businessTypeId' (IntegerField)
-  - businessTypeName: 'businessTypeName' (CharField)
-  - sequenceNumber: 'sequenceNumber' (IntegerField)
-  - metaTitle: 'metaTitle' (CharField)
-  - metaData: 'metaData' (TextField)
-  - metaDescription: 'metaDescription' (TextField)
-  - deleted: 'deleted' (BooleanField)
-  - taxPaid: 'taxPaid' (BooleanField)
-  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
-  - parValueDays: 'parValueDays' (IntegerField)
-  - businessTypeList: Many-to-many relationship with BusinessType instances.
+- categoryId (PK): 'categoryId' (IntegerField)
+- name: 'name' (CharField)
+- alias: 'alias' (CharField)
+- parentId: 'parentId' (IntegerField)
+- parentIdStr: 'parentIdStr' (CharField)
+- imageUrl: 'imageUrl' (CharField)
+- description: 'description' (TextField)
+- ecommerce: 'ecommerce' (BooleanField)
+- customerSpecific: 'customerSpecific' (BooleanField)
+- loginRequired: 'loginRequired' (BooleanField)
+- repairCategory: 'repairCategory' (BooleanField)
+- businessTypeId: 'businessTypeId' (IntegerField)
+- businessTypeName: 'businessTypeName' (CharField)
+- sequenceNumber: 'sequenceNumber' (IntegerField)
+- metaTitle: 'metaTitle' (CharField)
+- metaData: 'metaData' (TextField)
+- metaDescription: 'metaDescription' (TextField)
+- deleted: 'deleted' (BooleanField)
+- taxPaid: 'taxPaid' (BooleanField)
+- lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+- parValueDays: 'parValueDays' (IntegerField)
+- businessTypeList: Many-to-many relationship with BusinessType instances.
 
 Sample Data:
   {'categoryId': '0', 'name': 'GREEN HARVEST', 'alias': 'green-harvest', 'parentId': '87', 'parentIdStr': 'None', 'imageUrl': 'None', 'description': 'None', 'ecommerce': 'True', 'customerSpecific': 'False', 'loginRequired': 'False', 'repairCategory': 'False', 'businessTypeId': 'None', 'businessTypeName': 'None', 'sequenceNumber': '102', 'metaTitle': 'None', 'metaData': 'None', 'metaDescription': 'None', 'deleted': 'False', 'taxPaid': 'False', 'lastSyncTimestamp': '2025-05-29 13:10:57.305000+00:00', 'parValueDays': 'None'}
-  {'categoryId': '80', 'name': 'ACCESSORIES', 'alias': 'ACCESSORIES-80', 'parentId': '37', 'parentIdStr': 'None', 'imageUrl': 'None', 'description': '', 'ecommerce': 'True', 'customerSpecific': 'False', 'loginRequired': 'False', 'repairCategory': 'False', 'businessTypeId': 'None', 'businessTypeName': 'None', 'sequenceNumber': '4', 'metaTitle': 'None', 'metaData': 'None', 'metaDescription': 'None', 'deleted': 'False', 'taxPaid': 'False', 'lastSyncTimestamp': '2025-08-15 06:47:17.209033+00:00', 'parValueDays': 'None'}
-  {'categoryId': '64', 'name': 'TANK', 'alias': 'tank', 'parentId': '135', 'parentIdStr': 'None', 'imageUrl': 'None', 'description': '', 'ecommerce': 'True', 'customerSpecific': 'False', 'loginRequired': 'False', 'repairCategory': 'False', 'businessTypeId': 'None', 'businessTypeName': 'None', 'sequenceNumber': '5', 'metaTitle': 'None', 'metaData': 'None', 'metaDescription': 'None', 'deleted': 'False', 'taxPaid': 'False', 'lastSyncTimestamp': '2025-08-15 06:29:35.906052+00:00', 'parValueDays': 'None'}
-
 
 --- Model: BusinessType ---
 Description: Business type
 
 Columns:
-  - name (PK): 'name' (CharField)
-  - imageUrl: 'imageUrl' (CharField)
-  - description: 'description' (TextField)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
-  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+- name (PK): 'name' (CharField)
+- imageUrl: 'imageUrl' (CharField)
+- description: 'description' (TextField)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
 
 Sample Data:
   {'name': 'Smoke & Vape ', 'description': 'Enter Smoke & Vape Shop ', 'insertedTimestamp': '2025-08-15 05:49:08.692400+00:00', 'lastSyncTimestamp': '2025-08-15 05:49:08.805677+00:00'}
-  {'name': 'Gas Station & C-Store', 'description': 'Enter Gas Station & C-Store', 'insertedTimestamp': '2025-08-15 05:49:08.916956+00:00', 'lastSyncTimestamp': '2025-08-15 05:49:09.026162+00:00'}
-  {'name': 'Mobile App', 'imageUrl': 'None', 'description': 'None', 'insertedTimestamp': '2025-08-15 05:49:09.133088+00:00', 'lastSyncTimestamp': '2025-08-15 05:49:09.247924+00:00'}
-
 
 --- Model: Vendor ---
 Description: Vendor
 
 Columns:
-  - id (PK): 'id' (IntegerField)
-  - name: 'name' (CharField)
-  - company: 'company' (CharField)
-  - dbaName: 'dbaName' (CharField)
-  - active: 'active' (BooleanField)
-  - address1: 'address1' (CharField)
-  - address2: 'address2' (CharField)
-  - city: 'city' (CharField)
-  - stateId: 'stateId' (IntegerField)
-  - stateName: 'stateName' (CharField)
-  - zip: 'zip' (CharField)
-  - country: 'country' (CharField)
-  - countryId: 'countryId' (IntegerField)
-  - county: 'county' (CharField)
-  - phone: 'phone' (CharField)
-  - workPhone: 'workPhone' (CharField)
-  - email: 'email' (CharField)
-  - websiteUrl: 'websiteUrl' (CharField)
-  - websiteUsername: 'websiteUsername' (CharField)
-  - websitePassword: 'websitePassword' (CharField)
-  - portalUserName: 'portalUserName' (CharField)
-  - portalPassword: 'portalPassword' (CharField)
-  - taxId: 'taxId' (CharField)
-  - feinNumber: 'feinNumber' (CharField)
-  - description: 'description' (TextField)
-  - dueAmount: 'dueAmount' (DecimalField)
-  - excessAmount: 'excessAmount' (DecimalField)
-  - storeCredit: 'storeCredit' (DecimalField)
-  - insuranceExpiryDate: 'insuranceExpiryDate' (DateField)
-  - manufacturerId: 'manufacturerId' (IntegerField)
-  - manufacturerType: 'manufacturerType' (CharField)
-  - msaTypeId: 'msaTypeId' (IntegerField)
-  - msaTypeName: 'msaTypeName' (CharField)
-  - paymentTermsId: 'paymentTermsId' (IntegerField)
-  - paymentTermsName: 'paymentTermsName' (CharField)
-  - primarySalesRepresentativeId: 'primarySalesRepresentativeId' (IntegerField)
-  - primarySalesRepresentativeName: 'primarySalesRepresentativeName' (CharField)
-  - createdBy: 'createdBy' (IntegerField)
-  - updatedBy: 'updatedBy' (IntegerField)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
-  - updatedTimestamp: 'updatedTimestamp' (DateTimeField)
-  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+- id (PK): 'id' (IntegerField)
+- name: 'name' (CharField)
+- company: 'company' (CharField)
+- dbaName: 'dbaName' (CharField)
+- active: 'active' (BooleanField)
+- address1: 'address1' (CharField)
+- address2: 'address2' (CharField)
+- city: 'city' (CharField)
+- stateId: 'stateId' (IntegerField)
+- stateName: 'stateName' (CharField)
+- zip: 'zip' (CharField)
+- country: 'country' (CharField)
+- countryId: 'countryId' (IntegerField)
+- county: 'county' (CharField)
+- phone: 'phone' (CharField)
+- workPhone: 'workPhone' (CharField)
+- email: 'email' (CharField)
+- websiteUrl: 'websiteUrl' (CharField)
+- websiteUsername: 'websiteUsername' (CharField)
+- websitePassword: 'websitePassword' (CharField)
+- portalUserName: 'portalUserName' (CharField)
+- portalPassword: 'portalPassword' (CharField)
+- taxId: 'taxId' (CharField)
+- feinNumber: 'feinNumber' (CharField)
+- description: 'description' (TextField)
+- dueAmount: 'dueAmount' (DecimalField)
+- excessAmount: 'excessAmount' (DecimalField)
+- storeCredit: 'storeCredit' (DecimalField)
+- insuranceExpiryDate: 'insuranceExpiryDate' (DateField)
+- manufacturerId: 'manufacturerId' (IntegerField)
+- manufacturerType: 'manufacturerType' (CharField)
+- msaTypeId: 'msaTypeId' (IntegerField)
+- msaTypeName: 'msaTypeName' (CharField)
+- paymentTermsId: 'paymentTermsId' (IntegerField)
+- paymentTermsName: 'paymentTermsName' (CharField)
+- primarySalesRepresentativeId: 'primarySalesRepresentativeId' (IntegerField)
+- primarySalesRepresentativeName: 'primarySalesRepresentativeName' (CharField)
+- createdBy: 'createdBy' (IntegerField)
+- updatedBy: 'updatedBy' (IntegerField)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- updatedTimestamp: 'updatedTimestamp' (DateTimeField)
+- lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
 
 Sample Data:
   {'id': '70', 'name': 'ASIAN COLLECTION INC', 'company': 'ASIAN COLLECTION INC', 'dbaName': 'None', 'active': 'True', 'address1': 'None', 'address2': 'None', 'city': 'None', 'stateId': '0', 'stateName': 'None', 'zip': 'None', 'country': 'None', 'countryId': '0', 'county': 'None', 'phone': '', 'workPhone': 'None', 'email': 'None', 'websiteUrl': 'None', 'websiteUsername': 'None', 'websitePassword': 'None', 'portalUserName': 'None', 'portalPassword': 'None', 'taxId': 'None', 'feinNumber': 'None', 'description': 'None', 'dueAmount': '0.00', 'excessAmount': '0.00', 'storeCredit': '0.00', 'insuranceExpiryDate': 'None', 'manufacturerId': 'None', 'manufacturerType': 'None', 'msaTypeId': 'None', 'msaTypeName': 'None', 'paymentTermsId': 'None', 'paymentTermsName': 'None', 'primarySalesRepresentativeId': 'None', 'primarySalesRepresentativeName': 'None', 'createdBy': 'None', 'updatedBy': 'None', 'insertedTimestamp': 'None', 'updatedTimestamp': 'None', 'lastSyncTimestamp': '2025-08-15 05:51:50.984157+00:00'}
-  {'id': '68', 'name': 'BENEXT GENERATION', 'company': 'BENEXT GENERATION', 'dbaName': 'None', 'active': 'True', 'address1': 'None', 'address2': 'None', 'city': 'None', 'stateId': '0', 'stateName': 'None', 'zip': 'None', 'country': 'None', 'countryId': '0', 'county': 'None', 'phone': '', 'workPhone': 'None', 'email': 'benextgeneration@gmail.com', 'websiteUrl': 'None', 'websiteUsername': 'None', 'websitePassword': 'None', 'portalUserName': 'None', 'portalPassword': 'None', 'taxId': 'None', 'feinNumber': 'None', 'description': 'None', 'dueAmount': '0.00', 'excessAmount': '0.00', 'storeCredit': '0.00', 'insuranceExpiryDate': 'None', 'manufacturerId': 'None', 'manufacturerType': 'None', 'msaTypeId': 'None', 'msaTypeName': 'None', 'paymentTermsId': 'None', 'paymentTermsName': 'None', 'primarySalesRepresentativeId': 'None', 'primarySalesRepresentativeName': 'None', 'createdBy': 'None', 'updatedBy': 'None', 'insertedTimestamp': 'None', 'updatedTimestamp': 'None', 'lastSyncTimestamp': '2025-08-15 05:51:51.214371+00:00'}
-  {'id': '67', 'name': 'HENGBO ARTS AND CRAFTS CO. LIMITED', 'company': 'HENGBO ARTS AND CRAFTS CO. LIMITED', 'dbaName': 'None', 'active': 'True', 'address1': 'None', 'address2': 'None', 'city': 'None', 'stateId': '0', 'stateName': 'None', 'zip': 'None', 'country': 'None', 'countryId': '0', 'county': 'None', 'phone': '0', 'workPhone': 'None', 'email': 'None', 'websiteUrl': 'None', 'websiteUsername': 'None', 'websitePassword': 'None', 'portalUserName': 'None', 'portalPassword': 'None', 'taxId': 'None', 'feinNumber': 'None', 'description': 'None', 'dueAmount': '0.00', 'excessAmount': '0.00', 'storeCredit': '0.00', 'insuranceExpiryDate': 'None', 'manufacturerId': 'None', 'manufacturerType': 'None', 'msaTypeId': 'None', 'msaTypeName': 'None', 'paymentTermsId': 'None', 'paymentTermsName': 'None', 'primarySalesRepresentativeId': 'None', 'primarySalesRepresentativeName': 'None', 'createdBy': 'None', 'updatedBy': 'None', 'insertedTimestamp': 'None', 'updatedTimestamp': 'None', 'lastSyncTimestamp': '2025-08-15 05:51:51.435877+00:00'}
 
 
 --- Model: Customer ---
 Description: Customer
 
 Columns:
-  - id (PK): 'id' (AutoField)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
-  - name: 'name' (CharField)
-  - company: 'company' (CharField)
-  - storeId: 'storeId' (IntegerField)
-  - email: 'email' (CharField)
-  - phone: 'phone' (CharField)
-  - tier: 'tier' (CharField)
-  - notes: 'notes' (TextField)
-  - storeCredit: 'storeCredit' (DecimalField)
-  - loyaltyPoints: 'loyaltyPoints' (DecimalField)
-  - dueAmount: 'dueAmount' (DecimalField)
-  - excessAmount: 'excessAmount' (DecimalField)
-  - active: 'active' (BooleanField)
-  - verified: 'verified' (BooleanField)
-  - viewSpecificCategory: 'viewSpecificCategory' (BooleanField)
-  - viewSpecificProduct: 'viewSpecificProduct' (BooleanField)
-  - salesRepresentativeName: 'salesRepresentativeName' (CharField)
-  - taxable: 'taxable' (BooleanField)
-  - communicateViaPhone: 'communicateViaPhone' (BooleanField)
-  - communicateViaText: 'communicateViaText' (BooleanField)
-  - dbaName: 'dbaName' (CharField)
-  - address1: 'address1' (CharField)
-  - stateId: 'stateId' (IntegerField)
-  - billingStateId: 'billingStateId' (IntegerField)
-  - sendDuePaymentReminder: 'sendDuePaymentReminder' (BooleanField)
-  - rewardable: 'rewardable' (BooleanField)
-  - saveProductPrice: 'saveProductPrice' (BooleanField)
+- id (PK): 'id' (AutoField)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- name: 'name' (CharField)
+- company: 'company' (CharField)
+- storeId: 'storeId' (IntegerField)
+- email: 'email' (CharField)
+- phone: 'phone' (CharField)
+- tier: 'tier' (CharField)
+- notes: 'notes' (TextField)
+- storeCredit: 'storeCredit' (DecimalField)
+- loyaltyPoints: 'loyaltyPoints' (DecimalField)
+- dueAmount: 'dueAmount' (DecimalField)
+- excessAmount: 'excessAmount' (DecimalField)
+- active: 'active' (BooleanField)
+- verified: 'verified' (BooleanField)
+- viewSpecificCategory: 'viewSpecificCategory' (BooleanField)
+- viewSpecificProduct: 'viewSpecificProduct' (BooleanField)
+- salesRepresentativeName: 'salesRepresentativeName' (CharField)
+- taxable: 'taxable' (BooleanField)
+- communicateViaPhone: 'communicateViaPhone' (BooleanField)
+- communicateViaText: 'communicateViaText' (BooleanField)
+- dbaName: 'dbaName' (CharField)
+- address1: 'address1' (CharField)
+- stateId: 'stateId' (IntegerField)
+- billingStateId: 'billingStateId' (IntegerField)
+- sendDuePaymentReminder: 'sendDuePaymentReminder' (BooleanField)
+- rewardable: 'rewardable' (BooleanField)
+- saveProductPrice: 'saveProductPrice' (BooleanField)
 
 Sample Data:
   {'id': '5065', 'insertedTimestamp': '2025-03-12 22:35:13+00:00', 'name': '101 Distributors', 'company': '101Distributors', 'storeId': '0', 'email': '101app@gmail.com', 'phone': '5675675657', 'tier': '1', 'storeCredit': '10.00', 'loyaltyPoints': '0.00', 'dueAmount': '0.00', 'excessAmount': '0.00', 'active': 'True', 'verified': 'True', 'viewSpecificCategory': 'False', 'viewSpecificProduct': 'False', 'salesRepresentativeName': 'NO REP', 'taxable': 'False', 'communicateViaPhone': 'False', 'communicateViaText': 'False', 'dbaName': '101Distributors', 'address1': '4721 Lewis Rd', 'stateId': '0', 'billingStateId': '0', 'sendDuePaymentReminder': 'False', 'rewardable': 'False', 'saveProductPrice': 'False'}
-  {'id': '5908', 'insertedTimestamp': '2025-07-08 20:18:10+00:00', 'name': '101  DISTRIBUTORS', 'company': '101 DISTRIBUTORS - TEMP RC', 'storeId': '0', 'email': 'NULL@101DISTRI.COM', 'phone': '4236543163', 'tier': '1', 'notes': 'NO TOBACCO PRODUCTS', 'storeCredit': '0.00', 'loyaltyPoints': '0.00', 'dueAmount': '0.00', 'excessAmount': '0.00', 'active': 'True', 'verified': 'False', 'viewSpecificCategory': 'False', 'viewSpecificProduct': 'False', 'salesRepresentativeName': 'CASH & CARRY', 'taxable': 'False', 'communicateViaPhone': 'False', 'communicateViaText': 'False', 'dbaName': '101 DISTRIBUTORS - TEMP RC', 'address1': '3305 CAPITAL CIRCLE', 'stateId': '0', 'billingStateId': '0', 'sendDuePaymentReminder': 'False', 'rewardable': 'False', 'saveProductPrice': 'False'}
-  {'id': '1235', 'insertedTimestamp': '2023-03-31 22:57:47+00:00', 'name': '101 DISTRIBUTORS PA LLC', 'company': '101 DISTRIBUTORS LLC - PENNSYLVANIA', 'storeId': '0', 'email': 'UMANG.P@101DISTRIBUTORSPA.COM', 'phone': '2512280068', 'tier': '1', 'notes': 'None', 'storeCredit': '0.00', 'loyaltyPoints': '0.00', 'dueAmount': '12225.22', 'excessAmount': '0.00', 'active': 'True', 'verified': 'False', 'viewSpecificCategory': 'False', 'viewSpecificProduct': 'False', 'salesRepresentativeName': 'MANISH PATEL', 'taxable': 'False', 'communicateViaPhone': 'False', 'communicateViaText': 'False', 'dbaName': '101 DISTRIBUTORS LLC', 'address1': '2771 PAXTON ST ', 'stateId': '0', 'billingStateId': '0', 'sendDuePaymentReminder': 'False', 'rewardable': 'False', 'saveProductPrice': 'False'}
-
 
 --- Model: Invoice ---
 Description: Invoice
 
 Columns:
-  - id (PK): 'id' (IntegerField)
-  - totalQuantity: 'totalQuantity' (IntegerField)
-  - discount: 'discount' (DecimalField)
-  - totalAmount: 'totalAmount' (DecimalField)
-  - status: 'status' (CharField)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
-  - customerId (FK): 'customerId' (ForeignKey)
-  - customerName: 'customerName' (CharField)
-  - companyName: 'companyName' (CharField)
-  - email: 'email' (CharField)
-  - storeName: 'storeName' (CharField)
-  - orderTags: 'orderTags' (TextField)
-  - dueAmount: 'dueAmount' (DecimalField)
-  - dueDate: 'dueDate' (DateTimeField)
-  - orderNotes: 'orderNotes' (TextField)
-  - salesRepId: 'salesRepId' (IntegerField)
-  - salesRepName: 'salesRepName' (CharField)
-  - pickerId: 'pickerId' (IntegerField)
-  - pickerName: 'pickerName' (CharField)
-  - trackingUrl: 'trackingUrl' (CharField)
-  - trackingNumber: 'trackingNumber' (CharField)
-  - salesOrderId: 'salesOrderId' (IntegerField)
-  - quotationId: 'quotationId' (IntegerField)
-  - shippingStatusId: 'shippingStatusId' (IntegerField)
-  - shippingStatusName: 'shippingStatusName' (CharField)
-  - stateId: 'stateId' (IntegerField)
-  - state: 'state' (CharField)
-  - city: 'city' (CharField)
-  - county: 'county' (CharField)
-  - dbaName: 'dbaName' (CharField)
-  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+- id (PK): 'id' (IntegerField)
+- totalQuantity: 'totalQuantity' (IntegerField)
+- discount: 'discount' (DecimalField)
+- totalAmount: 'totalAmount' (DecimalField)
+- status: 'status' (CharField)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- customerId (FK): 'customerId' (ForeignKey)
+- customerName: 'customerName' (CharField)
+- companyName: 'companyName' (CharField)
+- email: 'email' (CharField)
+- storeName: 'storeName' (CharField)
+- orderTags: 'orderTags' (TextField)
+- dueAmount: 'dueAmount' (DecimalField)
+- dueDate: 'dueDate' (DateTimeField)
+- orderNotes: 'orderNotes' (TextField)
+- salesRepId: 'salesRepId' (IntegerField)
+- salesRepName: 'salesRepName' (CharField)
+- pickerId: 'pickerId' (IntegerField)
+- pickerName: 'pickerName' (CharField)
+- trackingUrl: 'trackingUrl' (CharField)
+- trackingNumber: 'trackingNumber' (CharField)
+- salesOrderId: 'salesOrderId' (IntegerField)
+- quotationId: 'quotationId' (IntegerField)
+- shippingStatusId: 'shippingStatusId' (IntegerField)
+- shippingStatusName: 'shippingStatusName' (CharField)
+- stateId: 'stateId' (IntegerField)
+- state: 'state' (CharField)
+- city: 'city' (CharField)
+- county: 'county' (CharField)
+- dbaName: 'dbaName' (CharField)
+- lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
 
 Sample Data:
   {'id': '72784', 'totalQuantity': '0', 'discount': '0.00', 'totalAmount': '1674.06', 'status': 'Completed', 'insertedTimestamp': '2024-09-24 17:52:00+00:00', 'customerId_id': '2592', 'customerName': 'PARESH  PATEL', 'companyName': 'JIPA 2 INC', 'email': 'Jipa2inc@gmail.com', 'storeName': 'ECOMMERCE', 'dueAmount': '0.00', 'dueDate': '2024-09-24 17:52:00+00:00', 'salesRepId': '109', 'salesRepName': 'KINNAR SHAH', 'pickerId': 'None', 'pickerName': 'None', 'trackingUrl': 'None', 'trackingNumber': 'None', 'salesOrderId': 'None', 'quotationId': 'None', 'shippingStatusId': '665', 'shippingStatusName': 'Shipped', 'stateId': '18', 'state': 'Kentucky', 'city': 'OWENSBORO', 'county': 'None', 'dbaName': 'JIPA 2 INC', 'lastSyncTimestamp': '2025-08-15 00:40:54.151059+00:00'}
-  {'id': '72785', 'totalQuantity': '0', 'discount': '0.00', 'totalAmount': '627.09', 'status': 'Completed', 'insertedTimestamp': '2024-09-24 18:05:00+00:00', 'customerId_id': '3360', 'customerName': 'BHARATBHAI PATEL', 'companyName': 'YOGI KESHAV INC', 'email': 'granny31792@gmail.com', 'storeName': 'CASH & CARRY', 'dueAmount': '0.00', 'dueDate': '2024-09-24 18:05:00+00:00', 'salesRepId': '180', 'salesRepName': 'AARJAVI PATEL', 'pickerId': 'None', 'pickerName': 'None', 'trackingUrl': 'None', 'trackingNumber': 'None', 'salesOrderId': 'None', 'quotationId': 'None', 'shippingStatusId': '665', 'shippingStatusName': 'Shipped', 'stateId': '11', 'state': 'Georgia', 'city': 'THOMASVILLE', 'county': 'None', 'dbaName': "GRANNIE'S COUNTRY STORE", 'lastSyncTimestamp': '2025-08-15 00:40:54.150949+00:00'}
-  {'id': '72786', 'totalQuantity': '0', 'discount': '0.00', 'totalAmount': '1319.68', 'status': 'Completed', 'insertedTimestamp': '2024-09-24 18:15:00+00:00', 'customerId_id': '2081', 'customerName': 'PRADIPKUMAR PATEL', 'companyName': 'JAY SHREE KRISHNA INC', 'email': 'jqstop@gmail.com', 'storeName': 'ECOMMERCE', 'dueAmount': '0.00', 'dueDate': '2024-09-24 18:15:00+00:00', 'salesRepId': '177', 'salesRepName': 'CASH & CARRY', 'pickerId': 'None', 'pickerName': 'None', 'trackingUrl': 'None', 'trackingNumber': 'None', 'salesOrderId': 'None', 'quotationId': 'None', 'shippingStatusId': '665', 'shippingStatusName': 'Shipped', 'stateId': '1', 'state': 'Alabama', 'city': 'WADLEY', 'county': 'None', 'dbaName': 'JAY SHREE KRISHNA INC', 'lastSyncTimestamp': '2025-08-15 00:40:54.150850+00:00'}
-
 
 --- Model: ProductHistory ---
 Description: Product history
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - productId (FK): 'productId' (ForeignKey)
-  - quantity: 'quantity' (IntegerField)
-  - costPrice: 'costPrice' (DecimalField)
-  - retailPrice: 'retailPrice' (DecimalField)
-  - date: 'date' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- productId (FK): 'productId' (ForeignKey)
+- quantity: 'quantity' (IntegerField)
+- costPrice: 'costPrice' (DecimalField)
+- retailPrice: 'retailPrice' (DecimalField)
+- date: 'date' (DateTimeField)
 
 Sample Data:
   {'id': '1586448', 'productId_id': '6131', 'quantity': '1', 'costPrice': '7.80', 'retailPrice': '8.99', 'date': '2024-11-19 05:00:00+00:00'}
-  {'id': '1586449', 'productId_id': '50270', 'quantity': '1', 'costPrice': '7.40', 'retailPrice': '19.99', 'date': '2024-09-13 04:00:00+00:00'}
-  {'id': '1586450', 'productId_id': '30790', 'quantity': '1', 'costPrice': '15.75', 'retailPrice': '22.99', 'date': '2024-10-20 04:00:00+00:00'}
-
 
 --- Model: InvoiceLineItem ---
 Description: Invoice line item
 
 Columns:
-  - id (PK): 'id' (IntegerField)
-  - createdBy: 'createdBy' (IntegerField)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
-  - updatedBy: 'updatedBy' (IntegerField)
-  - updatedTimestamp: 'updatedTimestamp' (DateTimeField)
-  - orderId (FK): 'orderId' (ForeignKey)
-  - productId (FK): 'productId' (ForeignKey)
-  - masterProductId: 'masterProductId' (IntegerField)
-  - quantity: 'quantity' (IntegerField)
-  - availableQuantity: 'availableQuantity' (IntegerField)
-  - deleted: 'deleted' (BooleanField)
-  - inStock: 'inStock' (BooleanField)
-  - shippingQuantity: 'shippingQuantity' (IntegerField)
-  - packs: 'packs' (IntegerField)
-  - costPrice: 'costPrice' (DecimalField)
-  - maxCostPrice: 'maxCostPrice' (DecimalField)
-  - retailPrice: 'retailPrice' (DecimalField)
-  - couponDiscount: 'couponDiscount' (DecimalField)
-  - discountValue: 'discountValue' (DecimalField)
-  - discountType: 'discountType' (CharField)
-  - discountAmount: 'discountAmount' (DecimalField)
-  - taxClassId: 'taxClassId' (IntegerField)
-  - taxType: 'taxType' (CharField)
-  - taxPercentage: 'taxPercentage' (DecimalField)
-  - taxPerVolume: 'taxPerVolume' (DecimalField)
-  - taxPerOunce: 'taxPerOunce' (DecimalField)
-  - directTaxPercentage: 'directTaxPercentage' (DecimalField)
-  - taxIncludedInSellingPrice: 'taxIncludedInSellingPrice' (BooleanField)
-  - volume: 'volume' (DecimalField)
-  - size: 'size' (IntegerField)
-  - taxAmount: 'taxAmount' (DecimalField)
-  - totalAmount: 'totalAmount' (DecimalField)
-  - retailAfterDiscount: 'retailAfterDiscount' (DecimalField)
-  - updated: 'updated' (BooleanField)
-  - loyaltyPointPerProduct: 'loyaltyPointPerProduct' (DecimalField)
-  - notes: 'notes' (TextField)
-  - status: 'status' (CharField)
-  - productInventoryId: 'productInventoryId' (IntegerField)
-  - productName: 'productName' (CharField)
-  - sku: 'sku' (CharField)
-  - upc: 'upc' (CharField)
-  - singleUpc: 'singleUpc' (CharField)
-  - discountId: 'discountId' (IntegerField)
-  - boxQuantity: 'boxQuantity' (IntegerField)
-  - serviceProduct: 'serviceProduct' (BooleanField)
-  - trackInventoryByImei: 'trackInventoryByImei' (BooleanField)
-  - trackInventory: 'trackInventory' (BooleanField)
-  - sameCostAndRetail: 'sameCostAndRetail' (BooleanField)
-  - productIMEIList: 'productIMEIList' (TextField)
-  - grossMargin: 'grossMargin' (DecimalField)
-  - grossMarginPercentage: 'grossMarginPercentage' (DecimalField)
-  - isNoteName: 'isNoteName' (BooleanField)
-  - masterCategoryName: 'masterCategoryName' (CharField)
-  - productDefaultLocation: 'productDefaultLocation' (CharField)
-  - urlAlias: 'urlAlias' (CharField)
-  - productImageList: 'productImageList' (TextField)
-  - dropShipment: 'dropShipment' (BooleanField)
-  - primaryVendorId: 'primaryVendorId' (IntegerField)
-  - primaryVendorName: 'primaryVendorName' (CharField)
-  - inventoryValidated: 'inventoryValidated' (BooleanField)
-  - alternativeName: 'alternativeName' (CharField)
-  - salesOrderLineItemId: 'salesOrderLineItemId' (IntegerField)
-  - salesOrderQuantity: 'salesOrderQuantity' (IntegerField)
-  - minimumSellingPrice: 'minimumSellingPrice' (DecimalField)
-  - msrp: 'msrp' (DecimalField)
+- id (PK): 'id' (IntegerField)
+- createdBy: 'createdBy' (IntegerField)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- updatedBy: 'updatedBy' (IntegerField)
+- updatedTimestamp: 'updatedTimestamp' (DateTimeField)
+- orderId (FK): 'orderId' (ForeignKey)
+- productId (FK): 'productId' (ForeignKey)
+- masterProductId: 'masterProductId' (IntegerField)
+- quantity: 'quantity' (IntegerField)
+- availableQuantity: 'availableQuantity' (IntegerField)
+- deleted: 'deleted' (BooleanField)
+- inStock: 'inStock' (BooleanField)
+- shippingQuantity: 'shippingQuantity' (IntegerField)
+- packs: 'packs' (IntegerField)
+- costPrice: 'costPrice' (DecimalField)
+- maxCostPrice: 'maxCostPrice' (DecimalField)
+- retailPrice: 'retailPrice' (DecimalField)
+- couponDiscount: 'couponDiscount' (DecimalField)
+- discountValue: 'discountValue' (DecimalField)
+- discountType: 'discountType' (CharField)
+- discountAmount: 'discountAmount' (DecimalField)
+- taxClassId: 'taxClassId' (IntegerField)
+- taxType: 'taxType' (CharField)
+- taxPercentage: 'taxPercentage' (DecimalField)
+- taxPerVolume: 'taxPerVolume' (DecimalField)
+- taxPerOunce: 'taxPerOunce' (DecimalField)
+- directTaxPercentage: 'directTaxPercentage' (DecimalField)
+- taxIncludedInSellingPrice: 'taxIncludedInSellingPrice' (BooleanField)
+- volume: 'volume' (DecimalField)
+- size: 'size' (IntegerField)
+- taxAmount: 'taxAmount' (DecimalField)
+- totalAmount: 'totalAmount' (DecimalField)
+- retailAfterDiscount: 'retailAfterDiscount' (DecimalField)
+- updated: 'updated' (BooleanField)
+- loyaltyPointPerProduct: 'loyaltyPointPerProduct' (DecimalField)
+- notes: 'notes' (TextField)
+- status: 'status' (CharField)
+- productInventoryId: 'productInventoryId' (IntegerField)
+- productName: 'productName' (CharField)
+- sku: 'sku' (CharField)
+- upc: 'upc' (CharField)
+- singleUpc: 'singleUpc' (CharField)
+- discountId: 'discountId' (IntegerField)
+- boxQuantity: 'boxQuantity' (IntegerField)
+- serviceProduct: 'serviceProduct' (BooleanField)
+- trackInventoryByImei: 'trackInventoryByImei' (BooleanField)
+- trackInventory: 'trackInventory' (BooleanField)
+- sameCostAndRetail: 'sameCostAndRetail' (BooleanField)
+- productIMEIList: 'productIMEIList' (TextField)
+- grossMargin: 'grossMargin' (DecimalField)
+- grossMarginPercentage: 'grossMarginPercentage' (DecimalField)
+- isNoteName: 'isNoteName' (BooleanField)
+- masterCategoryName: 'masterCategoryName' (CharField)
+- productDefaultLocation: 'productDefaultLocation' (CharField)
+- urlAlias: 'urlAlias' (CharField)
+- productImageList: 'productImageList' (TextField)
+- dropShipment: 'dropShipment' (BooleanField)
+- primaryVendorId: 'primaryVendorId' (IntegerField)
+- primaryVendorName: 'primaryVendorName' (CharField)
+- inventoryValidated: 'inventoryValidated' (BooleanField)
+- alternativeName: 'alternativeName' (CharField)
+- salesOrderLineItemId: 'salesOrderLineItemId' (IntegerField)
+- salesOrderQuantity: 'salesOrderQuantity' (IntegerField)
+- minimumSellingPrice: 'minimumSellingPrice' (DecimalField)
+- msrp: 'msrp' (DecimalField)
 
 Sample Data:
   {'id': '1624309', 'createdBy': 'None', 'insertedTimestamp': 'None', 'updatedBy': 'None', 'updatedTimestamp': 'None', 'orderId_id': '63479', 'productId_id': '1025', 'masterProductId': '19820', 'quantity': '6', 'availableQuantity': '559', 'deleted': 'False', 'inStock': 'True', 'shippingQuantity': '0', 'packs': '0', 'costPrice': '38.75', 'maxCostPrice': '0.00', 'retailPrice': '41.99', 'couponDiscount': '0.00', 'discountValue': '0.00', 'discountType': 'dollar', 'discountAmount': '0.00', 'taxClassId': 'None', 'taxType': 'None', 'taxPercentage': '0.00', 'taxPerVolume': '0.00', 'taxPerOunce': '0.00', 'directTaxPercentage': '0.00', 'taxIncludedInSellingPrice': 'False', 'volume': 'None', 'size': '0', 'taxAmount': '0.00', 'totalAmount': '251.94', 'retailAfterDiscount': '41.99', 'updated': 'False', 'loyaltyPointPerProduct': '0.00', 'notes': 'None', 'status': 'Picked', 'productInventoryId': '0', 'sku': 'GA000211', 'upc': '10628504926137', 'singleUpc': '609465000022', 'discountId': 'None', 'boxQuantity': '12', 'serviceProduct': 'False', 'trackInventoryByImei': 'False', 'trackInventory': 'True', 'sameCostAndRetail': 'False', 'productIMEIList': 'None', 'grossMargin': '0.00', 'grossMarginPercentage': '0.00', 'isNoteName': 'False', 'masterCategoryName': 'None', 'productDefaultLocation': 'A14-2-3-1', 'urlAlias': 'viva-zen-kratom-shot-2x-extra-strength-2oz', 'productImageList': 'None', 'dropShipment': 'False', 'primaryVendorId': '0', 'primaryVendorName': 'None', 'inventoryValidated': 'False', 'alternativeName': 'None', 'salesOrderLineItemId': 'None', 'salesOrderQuantity': '0', 'minimumSellingPrice': '0.00', 'msrp': '0.00'}
-  {'id': '1624310', 'createdBy': 'None', 'insertedTimestamp': 'None', 'updatedBy': 'None', 'updatedTimestamp': 'None', 'orderId_id': '63479', 'productId_id': '18886', 'masterProductId': 'None', 'quantity': '0', 'availableQuantity': '27', 'deleted': 'False', 'inStock': 'True', 'shippingQuantity': '0', 'packs': '0', 'costPrice': '10.00', 'maxCostPrice': '0.00', 'retailPrice': '14.99', 'couponDiscount': '0.00', 'discountValue': '0.00', 'discountType': 'dollar', 'discountAmount': '0.00', 'taxClassId': 'None', 'taxType': 'None', 'taxPercentage': '0.00', 'taxPerVolume': '0.00', 'taxPerOunce': '0.00', 'directTaxPercentage': '0.00', 'taxIncludedInSellingPrice': 'False', 'volume': 'None', 'size': '0', 'taxAmount': '0.00', 'totalAmount': '0.00', 'retailAfterDiscount': '14.99', 'updated': 'False', 'loyaltyPointPerProduct': '0.00', 'notes': 'None', 'status': 'Picked', 'productInventoryId': '0', 'sku': 'GA013443', 'upc': '7918750057218', 'singleUpc': '720707766787', 'discountId': 'None', 'boxQuantity': '12', 'serviceProduct': 'False', 'trackInventoryByImei': 'False', 'trackInventory': 'True', 'sameCostAndRetail': 'False', 'productIMEIList': 'None', 'grossMargin': '0.00', 'grossMarginPercentage': '0.00', 'isNoteName': 'False', 'masterCategoryName': 'None', 'productDefaultLocation': '', 'productImageList': 'None', 'dropShipment': 'False', 'primaryVendorId': '0', 'primaryVendorName': 'None', 'inventoryValidated': 'False', 'alternativeName': 'None', 'salesOrderLineItemId': 'None', 'salesOrderQuantity': '0', 'minimumSellingPrice': '0.00', 'msrp': '0.00'}
-  {'id': '1624316', 'createdBy': 'None', 'insertedTimestamp': 'None', 'updatedBy': 'None', 'updatedTimestamp': 'None', 'orderId_id': '63471', 'productId_id': '23951', 'masterProductId': '23949', 'quantity': '3', 'availableQuantity': '243', 'deleted': 'False', 'inStock': 'True', 'shippingQuantity': '0', 'packs': '0', 'costPrice': '8.40', 'maxCostPrice': '0.00', 'retailPrice': '8.99', 'couponDiscount': '0.00', 'discountValue': '0.00', 'discountType': 'dollar', 'discountAmount': '0.00', 'taxClassId': 'None', 'taxType': 'None', 'taxPercentage': '0.00', 'taxPerVolume': '0.00', 'taxPerOunce': '0.00', 'directTaxPercentage': '0.00', 'taxIncludedInSellingPrice': 'False', 'volume': 'None', 'size': 'None', 'taxAmount': '0.00', 'totalAmount': '26.97', 'retailAfterDiscount': '8.99', 'updated': 'False', 'loyaltyPointPerProduct': '0.00', 'notes': 'None', 'status': 'Picked', 'productInventoryId': '0', 'sku': '854040005262', 'upc': '854040005262', 'singleUpc': '854040005255', 'discountId': 'None', 'boxQuantity': '12', 'serviceProduct': 'False', 'trackInventoryByImei': 'False', 'trackInventory': 'True', 'sameCostAndRetail': 'False', 'productIMEIList': 'None', 'grossMargin': '0.00', 'grossMarginPercentage': '0.00', 'isNoteName': 'False', 'masterCategoryName': 'None', 'productDefaultLocation': 'A31-2-3-3', 'productImageList': 'None', 'dropShipment': 'False', 'primaryVendorId': '0', 'primaryVendorName': 'None', 'inventoryValidated': 'False', 'alternativeName': 'None', 'salesOrderLineItemId': 'None', 'salesOrderQuantity': '0', 'minimumSellingPrice': '0.00', 'msrp': '0.00'}
-
 
 --- Model: PurchaseHistory ---
 Description: Purchase history
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - purchaseOrderId: 'purchaseOrderId' (IntegerField)
-  - productId (FK): 'productId' (ForeignKey)
-  - upc: 'upc' (CharField)
-  - sku: 'sku' (CharField)
-  - name: 'name' (CharField)
-  - purchasedQuantity: 'purchasedQuantity' (IntegerField)
-  - passedQuantity: 'passedQuantity' (IntegerField)
-  - failedQuantity: 'failedQuantity' (IntegerField)
-  - costPrice: 'costPrice' (DecimalField)
-  - totalCostPrice: 'totalCostPrice' (DecimalField)
-  - vendorId (FK): 'vendorId' (ForeignKey)
-  - vendorName: 'vendorName' (CharField)
-  - billId: 'billId' (CharField)
-  - purchaseOrderInsertedTimestamp: 'purchaseOrderInsertedTimestamp' (DateTimeField)
-  - billInsertedTimestamp: 'billInsertedTimestamp' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- purchaseOrderId: 'purchaseOrderId' (IntegerField)
+- productId (FK): 'productId' (ForeignKey)
+- upc: 'upc' (CharField)
+- sku: 'sku' (CharField)
+- name: 'name' (CharField)
+- purchasedQuantity: 'purchasedQuantity' (IntegerField)
+- passedQuantity: 'passedQuantity' (IntegerField)
+- failedQuantity: 'failedQuantity' (IntegerField)
+- costPrice: 'costPrice' (DecimalField)
+- totalCostPrice: 'totalCostPrice' (DecimalField)
+- vendorId (FK): 'vendorId' (ForeignKey)
+- vendorName: 'vendorName' (CharField)
+- billId: 'billId' (CharField)
+- purchaseOrderInsertedTimestamp: 'purchaseOrderInsertedTimestamp' (DateTimeField)
+- billInsertedTimestamp: 'billInsertedTimestamp' (DateTimeField)
 
 Sample Data:
   {'id': '219987', 'purchaseOrderId': '368', 'productId_id': '28751', 'upc': 'WP-1698', 'sku': 'WP-1698', 'purchasedQuantity': '30', 'passedQuantity': '30', 'failedQuantity': '0', 'costPrice': '6.71', 'totalCostPrice': '201.18', 'vendorId_id': '16', 'vendorName': 'None', 'billId': 'None', 'purchaseOrderInsertedTimestamp': '2023-03-18 15:54:25+00:00', 'billInsertedTimestamp': 'None'}
-  {'id': '219988', 'purchaseOrderId': '234', 'productId_id': '22372', 'upc': 'WP-0760_Deleted', 'sku': 'WP-0760_Deleted', 'name': "(CH-ASH-004) - 5' WORKED ASH CATCHER W/PERC", 'purchasedQuantity': '12', 'passedQuantity': '12', 'failedQuantity': '0', 'costPrice': '14.76', 'totalCostPrice': '177.15', 'vendorId_id': '306', 'vendorName': 'None', 'billId': 'None', 'purchaseOrderInsertedTimestamp': '2023-02-11 23:36:44+00:00', 'billInsertedTimestamp': 'None'}
-  {'id': '219989', 'purchaseOrderId': '234', 'productId_id': '22371', 'upc': 'WP-0759', 'sku': 'WP-0759', 'name': "(HR-GY-126) - 12' DOUBLE GLYCERIN BUBBLER ", 'purchasedQuantity': '12', 'passedQuantity': '12', 'failedQuantity': '0', 'costPrice': '59.91', 'totalCostPrice': '718.95', 'vendorId_id': '306', 'vendorName': 'None', 'billId': 'None', 'purchaseOrderInsertedTimestamp': '2023-02-11 23:36:44+00:00', 'billInsertedTimestamp': 'None'}
-
 
 --- Model: SalesgentToken ---
 Description: Salesgent token
 
 Columns:
-  - id (PK): 'id' (AutoField)
-  - accessToken: 'accessToken' (TextField)
-  - refreshToken: 'refreshToken' (TextField)
-  - lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
+- id (PK): 'id' (AutoField)
+- accessToken: 'accessToken' (TextField)
+- refreshToken: 'refreshToken' (TextField)
+- lastSyncTimestamp: 'lastSyncTimestamp' (DateTimeField)
 
 Sample Data:
   {'id': '1', 'lastSyncTimestamp': '2025-08-15 08:00:02.425768'}
@@ -480,11 +389,11 @@ Sample Data:
 Description: Ai report
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - reportName: 'reportName' (CharField)
-  - htmlContent: 'htmlContent' (TextField)
-  - createdAt: 'createdAt' (DateTimeField)
-  - updatedAt: 'updatedAt' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- reportName: 'reportName' (CharField)
+- htmlContent: 'htmlContent' (TextField)
+- createdAt: 'createdAt' (DateTimeField)
+- updatedAt: 'updatedAt' (DateTimeField)
 
 Sample Data:
   {'id': '1', 'reportName': 'Purchase Advice', 'createdAt': '2025-06-14 14:23:05.963621+00:00', 'updatedAt': '2025-08-11 19:06:51.164231+00:00'}
@@ -494,67 +403,64 @@ Sample Data:
 Description: Po local
 
 Columns:
-  - id (PK): 'id' (AutoField)
-  - purchaseOrderId: 'purchaseOrderId' (IntegerField)
-  - vendorId (FK): 'vendorId' (ForeignKey)
-  - status: 'status' (CharField)
-  - totalAmount: 'totalAmount' (DecimalField)
-  - totalQuantity: 'totalQuantity' (IntegerField)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- id (PK): 'id' (AutoField)
+- purchaseOrderId: 'purchaseOrderId' (IntegerField)
+- vendorId (FK): 'vendorId' (ForeignKey)
+- status: 'status' (CharField)
+- totalAmount: 'totalAmount' (DecimalField)
+- totalQuantity: 'totalQuantity' (IntegerField)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
 
 
 --- Model: POLocalLineItem ---
 Description: Po local line item
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - po_local_id (FK): 'po_local_id' (ForeignKey)
-  - product_id (FK): 'product_id' (ForeignKey)
-  - quantity: 'quantity' (IntegerField)
-  - unitPrice: 'unitPrice' (DecimalField)
-  - totalPrice: 'totalPrice' (DecimalField)
+- id (PK): 'id' (BigAutoField)
+- po_local_id (FK): 'po_local_id' (ForeignKey)
+- product_id (FK): 'product_id' (ForeignKey)
+- quantity: 'quantity' (IntegerField)
+- unitPrice: 'unitPrice' (DecimalField)
+- totalPrice: 'totalPrice' (DecimalField)
 
 
 --- Model: ModulePermissions ---
 Description: Module permissions
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - user_id (FK): 'user_id' (ForeignKey)
-  - purchase: 'purchase' (BooleanField)
-  - tracker: 'tracker' (BooleanField)
-  - delivery: 'delivery' (BooleanField)
-  - catalog: 'catalog' (BooleanField)
-  - accounts: 'accounts' (BooleanField)
-  - utility: 'utility' (BooleanField)
-  - purchase_PO: 'purchase_PO' (BooleanField)
-  - purchase_Inventory: 'purchase_Inventory' (BooleanField)
-  - purchase_Settings: 'purchase_Settings' (BooleanField)
-  - tracker_Map: 'tracker_Map' (BooleanField)
-  - tracker_History: 'tracker_History' (BooleanField)
-  - tracker_Salesmen_List: 'tracker_Salesmen_List' (BooleanField)
-  - tracker_Global_View: 'tracker_Global_View' (BooleanField)
-  - tracker_config: 'tracker_config' (BooleanField)
-  - tracker_Admin_Profile: 'tracker_Admin_Profile' (BooleanField)
-  - tracker_Profile: 'tracker_Profile' (BooleanField)
-  - utility_sticker: 'utility_sticker' (BooleanField)
-  - utility_product_sync: 'utility_product_sync' (BooleanField)
-  - accounts_invoice: 'accounts_invoice' (BooleanField)
-  - delivery_admin: 'delivery_admin' (BooleanField)
+- id (PK): 'id' (BigAutoField)
+- user_id (FK): 'user_id' (ForeignKey)
+- purchase: 'purchase' (BooleanField)
+- tracker: 'tracker' (BooleanField)
+- delivery: 'delivery' (BooleanField)
+- catalog: 'catalog' (BooleanField)
+- accounts: 'accounts' (BooleanField)
+- utility: 'utility' (BooleanField)
+- purchase_PO: 'purchase_PO' (BooleanField)
+- purchase_Inventory: 'purchase_Inventory' (BooleanField)
+- purchase_Settings: 'purchase_Settings' (BooleanField)
+- tracker_Map: 'tracker_Map' (BooleanField)
+- tracker_History: 'tracker_History' (BooleanField)
+- tracker_Salesmen_List: 'tracker_Salesmen_List' (BooleanField)
+- tracker_Global_View: 'tracker_Global_View' (BooleanField)
+- tracker_config: 'tracker_config' (BooleanField)
+- tracker_Admin_Profile: 'tracker_Admin_Profile' (BooleanField)
+- tracker_Profile: 'tracker_Profile' (BooleanField)
+- utility_sticker: 'utility_sticker' (BooleanField)
+- utility_product_sync: 'utility_product_sync' (BooleanField)
+- accounts_invoice: 'accounts_invoice' (BooleanField)
+- delivery_admin: 'delivery_admin' (BooleanField)
 
 Sample Data:
   {'id': '4', 'user_id': '21', 'purchase': 'False', 'tracker': 'True', 'delivery': 'False', 'catalog': 'False', 'accounts': 'False', 'utility': 'False', 'purchase_PO': 'False', 'purchase_Inventory': 'False', 'purchase_Settings': 'False', 'tracker_Map': 'False', 'tracker_History': 'False', 'tracker_Salesmen_List': 'True', 'tracker_Global_View': 'True', 'tracker_config': 'True', 'tracker_Admin_Profile': 'True', 'tracker_Profile': 'False', 'utility_sticker': 'False', 'utility_product_sync': 'False', 'accounts_invoice': 'False', 'delivery_admin': 'False'}
-  {'id': '5', 'user_id': '22', 'purchase': 'False', 'tracker': 'False', 'delivery': 'False', 'catalog': 'False', 'accounts': 'False', 'utility': 'True', 'purchase_PO': 'False', 'purchase_Inventory': 'False', 'purchase_Settings': 'False', 'tracker_Map': 'False', 'tracker_History': 'False', 'tracker_Salesmen_List': 'False', 'tracker_Global_View': 'False', 'tracker_config': 'False', 'tracker_Admin_Profile': 'False', 'tracker_Profile': 'False', 'utility_sticker': 'True', 'utility_product_sync': 'True', 'accounts_invoice': 'False', 'delivery_admin': 'False'}
-  {'id': '6', 'user_id': '23', 'purchase': 'False', 'tracker': 'False', 'delivery': 'False', 'catalog': 'False', 'accounts': 'False', 'utility': 'True', 'purchase_PO': 'False', 'purchase_Inventory': 'False', 'purchase_Settings': 'False', 'tracker_Map': 'False', 'tracker_History': 'False', 'tracker_Salesmen_List': 'False', 'tracker_Global_View': 'False', 'tracker_config': 'False', 'tracker_Admin_Profile': 'False', 'tracker_Profile': 'False', 'utility_sticker': 'True', 'utility_product_sync': 'False', 'accounts_invoice': 'False', 'delivery_admin': 'False'}
-
 
 --- Model: DeliveryDriver ---
 Description: Delivery driver
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - user_id (FK): 'user_id' (OneToOneField)
-  - driverLicense: 'driverLicense' (CharField)
+- id (PK): 'id' (BigAutoField)
+- user_id (FK): 'user_id' (OneToOneField)
+- driverLicense: 'driverLicense' (CharField)
 
 Sample Data:
   {'id': '6', 'user_id': '27', 'driverLicense': '345'}
@@ -566,104 +472,93 @@ Sample Data:
 Description: Delivery truck
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - truckNo: 'truckNo' (CharField)
-  - truckName: 'truckName' (CharField)
+- id (PK): 'id' (BigAutoField)
+- truckNo: 'truckNo' (CharField)
+- truckName: 'truckName' (CharField)
 
 Sample Data:
   {'id': '5', 'truckNo': '234', 'truckName': 'Truck 2'}
-  {'id': '4', 'truckNo': '123', 'truckName': 'Truck 1'}
-  {'id': '6', 'truckNo': '345', 'truckName': 'Truck 3'}
-
 
 --- Model: DeliverySheet ---
 Description: Delivery sheet
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - invoice_id (FK): 'invoice_id' (ForeignKey)
-  - customer_id (FK): 'customer_id' (ForeignKey)
-  - box: 'box' (IntegerField)
-  - checkAmount: 'checkAmount' (DecimalField)
-  - cashAmount: 'cashAmount' (DecimalField)
-  - payment_status: 'payment_status' (BooleanField)
-  - status: 'status' (BooleanField)
-  - date: 'date' (DateField)
-  - truck_id (FK): 'truck_id' (ForeignKey)
-  - driver_id (FK): 'driver_id' (ForeignKey)
-  - insertedTimestamp: 'insertedTimestamp' (DateTimeField)
-  - deliveryTimestamp: 'deliveryTimestamp' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- invoice_id (FK): 'invoice_id' (ForeignKey)
+- customer_id (FK): 'customer_id' (ForeignKey)
+- box: 'box' (IntegerField)
+- checkAmount: 'checkAmount' (DecimalField)
+- cashAmount: 'cashAmount' (DecimalField)
+- payment_status: 'payment_status' (BooleanField)
+- status: 'status' (BooleanField)
+- date: 'date' (DateField)
+- truck_id (FK): 'truck_id' (ForeignKey)
+- driver_id (FK): 'driver_id' (ForeignKey)
+- insertedTimestamp: 'insertedTimestamp' (DateTimeField)
+- deliveryTimestamp: 'deliveryTimestamp' (DateTimeField)
 
 Sample Data:
   {'id': '38', 'invoice_id': '126379', 'customer_id': '4196', 'box': '120', 'checkAmount': 'None', 'cashAmount': 'None', 'payment_status': 'False', 'status': 'False', 'date': '2025-08-12', 'truck_id': '4', 'driver_id': '4', 'insertedTimestamp': '2025-08-12 21:34:40.837760+00:00', 'deliveryTimestamp': 'None'}
-  {'id': '39', 'invoice_id': '126351', 'customer_id': '797', 'box': '18', 'checkAmount': 'None', 'cashAmount': 'None', 'payment_status': 'False', 'status': 'False', 'date': '2025-08-12', 'truck_id': '4', 'driver_id': '4', 'insertedTimestamp': '2025-08-12 21:34:41.161541+00:00', 'deliveryTimestamp': 'None'}
-  {'id': '40', 'invoice_id': '126365', 'customer_id': '5143', 'box': '1', 'checkAmount': 'None', 'cashAmount': 'None', 'payment_status': 'False', 'status': 'False', 'date': '2025-08-12', 'truck_id': '4', 'driver_id': '4', 'insertedTimestamp': '2025-08-12 21:34:41.495792+00:00', 'deliveryTimestamp': 'None'}
-
 
 --- Model: Salesman ---
 Description: Salesman
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - user_id (FK): 'user_id' (ForeignKey)
-  - user_type: 'user_type' (CharField)
-  - phone_number: 'phone_number' (CharField)
-  - status: 'status' (CharField)
-  - last_seen: 'last_seen' (DateTimeField)
-  - current_location_lat: 'current_location_lat' (FloatField)
-  - current_location_lng: 'current_location_lng' (FloatField)
-  - today_visits: 'today_visits' (IntegerField)
-  - battery: 'battery' (IntegerField)
+- id (PK): 'id' (BigAutoField)
+- user_id (FK): 'user_id' (ForeignKey)
+- user_type: 'user_type' (CharField)
+- phone_number: 'phone_number' (CharField)
+- status: 'status' (CharField)
+- last_seen: 'last_seen' (DateTimeField)
+- current_location_lat: 'current_location_lat' (FloatField)
+- current_location_lng: 'current_location_lng' (FloatField)
+- today_visits: 'today_visits' (IntegerField)
+- battery: 'battery' (IntegerField)
 
 Sample Data:
   {'id': '9', 'user_id': '20', 'user_type': 'salesman', 'phone_number': '8565057748', 'status': 'offline', 'last_seen': '2025-08-06 20:33:00.920154+00:00', 'current_location_lat': '33.8264064', 'current_location_lng': '-84.197376', 'today_visits': '0', 'battery': '100'}
-  {'id': '17', 'user_id': '16', 'user_type': 'salesman', 'phone_number': '4709786055', 'status': 'active', 'last_seen': '2025-07-19 17:44:51.825176+00:00', 'current_location_lat': '33.8264064', 'current_location_lng': '-84.197376', 'today_visits': '0', 'battery': '100'}
-  {'id': '5', 'user_id': '13', 'user_type': 'salesman', 'phone_number': '3214429567', 'status': 'active', 'last_seen': '2025-07-19 17:48:28.595526+00:00', 'current_location_lat': '33.8264064', 'current_location_lng': '-84.197376', 'today_visits': '0', 'battery': '100'}
-
 
 --- Model: LocationPoint ---
 Description: Location point
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - salesman_id (FK): 'salesman_id' (ForeignKey)
-  - latitude: 'latitude' (FloatField)
-  - longitude: 'longitude' (FloatField)
-  - timestamp: 'timestamp' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- salesman_id (FK): 'salesman_id' (ForeignKey)
+- latitude: 'latitude' (FloatField)
+- longitude: 'longitude' (FloatField)
+- timestamp: 'timestamp' (DateTimeField)
 
 
 --- Model: DailyActivity ---
 Description: Daily activity
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - salesman_id (FK): 'salesman_id' (ForeignKey)
-  - date: 'date' (DateField)
-  - checkpoints: 'checkpoints' (IntegerField)
-  - duration: 'duration' (CharField)
-  - distance: 'distance' (FloatField)
-  - start_time: 'start_time' (TimeField)
-  - end_time: 'end_time' (TimeField)
-  - route_coordinates_json: 'route_coordinates_json' (JSONField)
+- id (PK): 'id' (BigAutoField)
+- salesman_id (FK): 'salesman_id' (ForeignKey)
+- date: 'date' (DateField)
+- checkpoints: 'checkpoints' (IntegerField)
+- duration: 'duration' (CharField)
+- distance: 'distance' (FloatField)
+- start_time: 'start_time' (TimeField)
+- end_time: 'end_time' (TimeField)
+- route_coordinates_json: 'route_coordinates_json' (JSONField)
 
 Sample Data:
   {'id': '171', 'salesman_id': '7', 'date': '2025-08-15', 'checkpoints': '0', 'duration': 'None', 'distance': '0.0', 'start_time': 'None', 'end_time': 'None', 'route_coordinates_json': '[]'}
-  {'id': '173', 'salesman_id': '6', 'date': '2025-08-15', 'checkpoints': '0', 'duration': 'None', 'distance': '0.0', 'start_time': 'None', 'end_time': 'None', 'route_coordinates_json': '[]'}
-  {'id': '175', 'salesman_id': '14', 'date': '2025-08-15', 'checkpoints': '0', 'duration': 'None', 'distance': '0.0', 'start_time': 'None', 'end_time': 'None', 'route_coordinates_json': '[]'}
 
 
 --- Model: AdminSettings ---
 Description: Admin setting
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - location_update_interval_minutes: 'location_update_interval_minutes' (IntegerField): Interval in minutes for location updates.
-  - checkpoint_threshold_minutes: 'checkpoint_threshold_minutes' (IntegerField): Time in minutes a salesman must stay at a location to be considered a checkpoint.
-  - proximity_range_meters: 'proximity_range_meters' (IntegerField): Proximity range in meters for location-based events.
-  - notify_salesman_offline: 'notify_salesman_offline' (BooleanField)
-  - notify_low_battery_alerts: 'notify_low_battery_alerts' (BooleanField)
-  - notify_unusual_route_patterns: 'notify_unusual_route_patterns' (BooleanField)
-  - notify_daily_summary_reports: 'notify_daily_summary_reports' (BooleanField)
+- id (PK): 'id' (BigAutoField)
+- location_update_interval_minutes: 'location_update_interval_minutes' (IntegerField): Interval in minutes for location updates.
+- checkpoint_threshold_minutes: 'checkpoint_threshold_minutes' (IntegerField): Time in minutes a salesman must stay at a location to be considered a checkpoint.
+- proximity_range_meters: 'proximity_range_meters' (IntegerField): Proximity range in meters for location-based events.
+- notify_salesman_offline: 'notify_salesman_offline' (BooleanField)
+- notify_low_battery_alerts: 'notify_low_battery_alerts' (BooleanField)
+- notify_unusual_route_patterns: 'notify_unusual_route_patterns' (BooleanField)
+- notify_daily_summary_reports: 'notify_daily_summary_reports' (BooleanField)
 
 Sample Data:
   {'id': '1', 'location_update_interval_minutes': '1', 'checkpoint_threshold_minutes': '15', 'proximity_range_meters': '50', 'notify_salesman_offline': 'True', 'notify_low_battery_alerts': 'True', 'notify_unusual_route_patterns': 'True', 'notify_daily_summary_reports': 'True'}
@@ -673,76 +568,236 @@ Sample Data:
 Description: Planned route
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - salesman_id (FK): 'salesman_id' (ForeignKey)
-  - date: 'date' (DateField)
-  - name: 'name' (CharField): e.g., 'Stone Mountain Gas Stations'
-  - status: 'status' (CharField)
+- id (PK): 'id' (BigAutoField)
+- salesman_id (FK): 'salesman_id' (ForeignKey)
+- date: 'date' (DateField)
+- name: 'name' (CharField): e.g., 'Stone Mountain Gas Stations'
+- status: 'status' (CharField)
 
 Sample Data:
   {'id': '84', 'salesman_id': '22', 'date': '2025-08-14', 'name': 'Route for 2025-08-14', 'status': 'pending'}
-  {'id': '83', 'salesman_id': '4', 'date': '2025-08-14', 'name': 'Route for 2025-08-14', 'status': 'pending'}
-  {'id': '76', 'salesman_id': '22', 'date': '2025-08-13', 'name': 'Route for 2025-08-13', 'status': 'pending'}
 
 
 --- Model: RouteStop ---
 Description: Route stop
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - route_id (FK): 'route_id' (ForeignKey)
-  - location_name: 'location_name' (CharField)
-  - address: 'address' (TextField)
-  - latitude: 'latitude' (FloatField)
-  - longitude: 'longitude' (FloatField)
-  - order: 'order' (PositiveIntegerField)
-  - status: 'status' (CharField)
-  - visited_at: 'visited_at' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- route_id (FK): 'route_id' (ForeignKey)
+- location_name: 'location_name' (CharField)
+- address: 'address' (TextField)
+- latitude: 'latitude' (FloatField)
+- longitude: 'longitude' (FloatField)
+- order: 'order' (PositiveIntegerField)
+- status: 'status' (CharField)
+- visited_at: 'visited_at' (DateTimeField)
 
 Sample Data:
   {'id': '560', 'route_id': '83', 'location_name': 'bp', 'latitude': '34.061184', 'longitude': '-84.289081', 'order': '1', 'status': 'pending', 'visited_at': 'None'}
-  {'id': '567', 'route_id': '83', 'location_name': '2190 Old Milton Pkwy', 'address': '2190 Old Milton Pkwy, Alpharetta, GA 30009, USA', 'latitude': '34.0713542', 'longitude': '-84.2947767', 'order': '2', 'status': 'pending', 'visited_at': 'None'}
-  {'id': '568', 'route_id': '83', 'location_name': '10930 Jones Bridge Rd', 'address': '10930 Jones Bridge Rd, Alpharetta, GA 30022, USA', 'latitude': '34.0473686', 'longitude': '-84.2230017', 'order': '3', 'status': 'pending', 'visited_at': 'None'}
-
 
 --- Model: SystemNotification ---
 Description: System notification
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - salesman_id (FK): 'salesman_id' (ForeignKey)
-  - event_type: 'event_type' (CharField)
-  - message: 'message' (CharField)
-  - timestamp: 'timestamp' (DateTimeField)
-  - is_read: 'is_read' (BooleanField)
+- id (PK): 'id' (BigAutoField)
+- salesman_id (FK): 'salesman_id' (ForeignKey)
+- event_type: 'event_type' (CharField)
+- message: 'message' (CharField)
+- timestamp: 'timestamp' (DateTimeField)
+- is_read: 'is_read' (BooleanField)
 
 
 --- Model: OutstandingToken ---
 Description: Outstanding token
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - user_id (FK): 'user_id' (ForeignKey)
-  - jti: 'jti' (CharField)
-  - token: 'token' (TextField)
-  - created_at: 'created_at' (DateTimeField)
-  - expires_at: 'expires_at' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- user_id (FK): 'user_id' (ForeignKey)
+- jti: 'jti' (CharField)
+- token: 'token' (TextField)
+- created_at: 'created_at' (DateTimeField)
+- expires_at: 'expires_at' (DateTimeField)
 
 Sample Data:
   {'id': '1', 'user_id': '1', 'jti': 'c335b356bc8d4e2e8cbda98ab8a0be93', 'created_at': '2025-06-07 20:13:08.268113+00:00', 'expires_at': '2025-06-08 20:13:08+00:00'}
-  {'id': '2', 'user_id': '1', 'jti': '7f819abb87bf4c91a2cf471b729bcd9c', 'created_at': '2025-06-07 20:18:04.102888+00:00', 'expires_at': '2025-06-08 20:18:04+00:00'}
-  {'id': '3', 'user_id': '1', 'jti': '7789ca9767654a2eb11cb2326efe230a', 'created_at': '2025-06-07 20:19:56.935682+00:00', 'expires_at': '2025-06-08 20:19:56+00:00'}
 
 
 --- Model: BlacklistedToken ---
 Description: Blacklisted token
 
 Columns:
-  - id (PK): 'id' (BigAutoField)
-  - token_id (FK): 'token_id' (OneToOneField)
-  - blacklisted_at: 'blacklisted_at' (DateTimeField)
+- id (PK): 'id' (BigAutoField)
+- token_id (FK): 'token_id' (OneToOneField)
+- blacklisted_at: 'blacklisted_at' (DateTimeField)
 
 Sample Data:
   {'id': '1', 'token_id': '1', 'blacklisted_at': '2025-06-07 20:18:00.593341+00:00'}
-  {'id': '2', 'token_id': '2', 'blacklisted_at': '2025-06-07 20:19:53.955596+00:00'}
-  {'id': '3', 'token_id': '3', 'blacklisted_at': '2025-06-07 20:25:30.799625+00:00'}
+
+--- Model Locations ---
+- api.models : Product
+- api.models : Category
+- api.models : BusinessType
+- api.models : Vendor
+- api.models : Customer
+- api.models : Invoice
+- api.models : ProductHistory
+- api.models : InvoiceLineItem
+- api.models : PurchaseHistory
+- api.models : SalesgentToken
+- api.models : AIReport
+- api.models : POLocal
+- api.models : POLocalLineItem
+- api.models : ModulePermissions
+- delivery.models : DeliveryDriver
+- delivery.models : DeliveryTruck
+- delivery.models : DeliverySheet
+- tracker.models : Salesman
+- tracker.models : LocationPoint
+- tracker.models : DailyActivity
+- tracker.models : AdminSettings
+- tracker.models : PlannedRoute
+- tracker.models : RouteStop
+- tracker.models : SystemNotification
+
+--- Company Details ---
+An In-Depth Analysis of the 101 Enterprise: A Vertically Integrated Wholesale and Retail Tobacco Operation
+Executive Summary
+This report provides a comprehensive analysis of the interconnected business network referred to as the "101 Enterprise," a vertically integrated operation spanning wholesale distribution and retail sales in the tobacco and vape products sector. The enterprise is composed of two primary arms: the wholesale distributor, 101 Distributors GA LLC, and the retail franchise chain, 101 Smoke Shop. The ownership and management structure is centered around the Patel family, with evidence pointing to USA 101 HOLDING LLC acting as a central holding company that directs the various operational entities.
+
+The strategic advantage of this integrated model is evident in its control over the supply chain. 101 Distributors GA LLC manages a vast inventory of over 40,000 products, supported by in-house logistics and a proprietary B2B e-commerce platform, which in turn supplies a captive market of 101 Smoke Shop retail locations. The retail arm, founded in 2008, has expanded to over 50 documented locations across the Southeastern United States and has embarked on an aggressive growth strategy through a franchise model launched in 2023. This report deconstructs the corporate framework, analyzes the operational capabilities of both the wholesale and retail divisions, examines the enterprise's human capital strategy, and provides a detailed directory of its retail footprint. Finally, it offers a strategic outlook, weighing the significant growth potential of the franchise model against identified legal, operational, and regulatory risks.
+
+Section 1: The "101" Corporate and Ownership Nexus
+The 101 enterprise is underpinned by a complex corporate framework involving a network of interconnected limited liability companies (LLCs). This structure appears deliberately designed to facilitate multi-state operations, manage liability, and maintain centralized control under a core group of principals.
+
+1.1 The Patel Family Enterprise: Key Principals and Their Roles
+The enterprise's foundation is a family-run business. The retail brand, 101 Smoke Shop, was founded in 2008 in Tallahassee, Florida, by brothers Ravi and Nilay Patel. Their entrepreneurial journey began after they were compelled to stop selling tobacco products from a gas station, leading them to establish a dedicated retail outlet that has since grown into a significant regional chain.
+
+While Ravi and Nilay Patel are the public faces of the retail brand, corporate filings reveal a broader family involvement across the enterprise. Manish Patel is a key figure in the distribution arm, officially listed as the Registered Agent for the wholesale entity, 101 Distributors GA LLC. Further investigation of Florida corporate records for various related LLCs, such as 
+
+101 GAINES 42 FL LLC and 101 GIFT SHOP # 12 TALLAHASSEE LLC, identifies additional managers, including Jigar Patel, Hepin Patel, and Amit Patel. This pattern of shared management across multiple legal entities underscores the deep and integrated involvement of the Patel family in the enterprise's governance.
+
+1.2 Mapping the Corporate Web: A Network of LLCs
+The operational structure of the 101 enterprise is segmented through a series of distinct LLCs. The primary wholesale and distribution functions are handled by 101 Distributors GA LLC, a Georgia Domestic LLC that was formed on January 5, 2022. Its official North American Industry Classification System (NAICS) code is "Tobacco and Tobacco Product Merchant Wholesalers," clearly defining its role within the supply chain.
+
+The 101 Smoke Shop retail brand operates through numerous separate LLCs, a common practice in franchising to isolate liability at the store or regional level. For instance, Florida state records show entities such as 101 SMOKE SHOP #2, LLC and 101 GIFT SHOP # 11 TALLAHASSEE LLC, the latter of which does business as 101 Smoke Shop.
+
+The most critical entity linking these disparate parts appears to be USA 101 HOLDING LLC. This entity is consistently listed as a "MGRM" (Manager) in the public filings for various retail-side LLCs, alongside individual members of the Patel family. This recurring role strongly suggests that USA 101 HOLDING LLC functions as the parent or central management company, exercising control over the broader network. Florida business records confirm that 
+
+USA 101 HOLDING LLC is an active entity, reinforcing its status as the likely nexus of the enterprise. This evolution from a simple two-person partnership to a more sophisticated holding company structure reflects a strategic response to the complexities and risks associated with rapid, multi-state expansion and franchising.
+
+The geographic addresses listed for the key managers also suggest a strategic distribution of leadership. While the retail operation was founded in Tallahassee, FL, the wholesale arm is based in Stone Mountain, GA, and managers are listed with addresses in Columbus, Dalton, and Midland, Georgia. This geographic dispersion of personnel likely corresponds to regions with a strong retail presence, such as Columbus, GA, which hosts at least seven 101 Smoke Shop locations. This structure may enhance regional market responsiveness but could also present challenges in maintaining uniform corporate standards across the network.
+
+1.3 Legal and Regulatory Standing
+The primary corporate entities appear to be in good standing with their respective state authorities. 101 Distributors GA LLC is listed as "Active/Compliance" with the Georgia Secretary of State. The various Florida-based LLCs show a mix of "Active" and "Inactive" statuses in the state's business registry, which could reflect normal business activities such as the opening and closing of specific locations, or could indicate administrative lapses in annual reporting.
+
+A notable legal issue has been identified that represents a potential business risk. In 2022, a lawsuit was filed by GS HOLISTIC LLC against 101 GIFT SHOP # 11 TALLAHASSEE LLC, as well as Ravi Patel and Nilay Patel personally. While the specific cause of action is not detailed in the available records, the existence of such litigation points to potential commercial disputes or intellectual property conflicts that could carry financial and reputational consequences.
+
+Table 1.1: Key Corporate Entities and Linkages
+Entity Name
+101 Distributors GA LLC
+USA 101 HOLDING LLC
+101 GAINES 42 FL LLC
+101 GIFT SHOP # 12 TALLAHASSEE LLC
+101 SMOKE SHOP #2, LLC
+
+Section 2: The Engine of the Enterprise: 101 Distributors GA LLC Wholesale Operations
+101 Distributors GA LLC serves as the logistical and procurement core of the 101 enterprise. Its operations are designed to supply not only the affiliated 101 Smoke Shop locations but also other independent retailers, leveraging scale, technology, and in-house capabilities to establish a strong market position.
+
+2.1 Business Model and Supply Chain Role
+As a business-to-business (B2B) wholesaler specializing in "Tobacco and Tobacco Product Merchant Wholesalers," 101 Distributors GA LLC's primary role is to procure products in bulk for distribution to retail vendors. The company's scale is substantial, boasting an inventory of over 40,000 distinct products. This vast catalog extends beyond core tobacco and vape items to include ancillary products like snacks and beverages, enabling it to serve as a comprehensive supplier for convenience stores and smoke shops. The company provides a suite of services to its clients, including customer account management, order tracking, and a streamlined registration process for new accounts, positioning itself as a full-service wholesale partner.
+
+2.2 Logistical and Operational Capabilities
+The company's principal office and warehouse is strategically located at 4721 Lewis Rd, Stone Mountain, GA, 30083. This base in the Atlanta metropolitan area serves as an efficient logistics hub for servicing the Southeastern United States, where the majority of 101 Smoke Shop locations are concentrated.
+
+A key operational strength is the company's in-house logistics capacity. 101 Distributors GA LLC is a registered carrier with the U.S. Department of Transportation under USDOT Number 3976064. Its filing indicates that the company operates two power units (trucks) and employs two drivers, who covered an estimated 575,000 miles in 2023. This internal delivery capability reduces reliance on third-party freight services, providing greater control over delivery schedules and costs, which is crucial for reliably stocking a growing network of retail stores.
+
+However, this capability is not without risk. The company's safety record with the Federal Motor Carrier Safety Administration presents a potential vulnerability. The filing shows a driver Out of Service (OOS) percentage of 20%, based on one OOS violation in five inspections. This rate is significantly higher than the national average of 6.67%. A high OOS rate can be an indicator of underlying issues in compliance, training, or maintenance. For a business model that depends on the timely delivery of goods to its retail partners, any disruption to its logistics—such as having drivers or vehicles sidelined during inspections—could lead to stockouts, delayed sales, and damage to its reputation for reliability.
+
+2.3 Digital Integration: The B2B E-commerce Platform
+In a significant investment in technology, 101 Distributors GA LLC has developed and launched a proprietary mobile e-commerce application, "101 Distributors," which is available on both the Apple App Store and Google Play. The app is marketed as being "Designed for store vendors seeking excellence" and aims to create a "seamless procurement experience". Its features are tailored to the needs of its B2B clients, offering a user-friendly interface for browsing the extensive catalog, a streamlined process for placing orders, access to exclusive deals to improve retailer profit margins, and secure transaction processing.
+
+This proprietary platform is a powerful tool for customer retention. By making the procurement process highly efficient and convenient, the app encourages its client base—particularly the captive market of 101 Smoke Shop franchisees—to consolidate their purchasing with 101 Distributors. This vertical integration, fortified by technology, creates a strong competitive advantage by simplifying operations for franchisees while ensuring a consistent revenue stream for the wholesale arm of the enterprise.
+
+Section 3: The Public Face: 101 Smoke Shop Retail and Franchise Operations
+The 101 Smoke Shop brand serves as the consumer-facing arm of the enterprise. It has evolved from a single family-owned store into a rapidly expanding franchise network, leveraging a specific growth strategy and brand positioning to capture market share in the competitive vape and tobacco retail sector.
+
+3.1 From Inception to Expansion: A Growth Narrative
+101 Smoke Shop was established in 2008 in Tallahassee, FL, by brothers Ravi and Nilay Patel. The business has since expanded significantly, growing into what it describes as a "flourishing corporate partnership" with locations across Georgia, Alabama, Tennessee, Texas, South Carolina, and North Carolina. The company's "About Us" page claims the opening of 67 locations with a projection to surpass 101 locations by the end of 2022. However, the store locator on the same website provides a directory of 54 distinct locations, suggesting that the higher number may be an aspirational goal or that the website's data is not fully synchronized.
+
+3.2 The Franchise Growth Strategy
+A pivotal shift in the company's expansion strategy occurred in 2023, when 101 Smoke Shop officially began offering franchise opportunities, with its franchise headquarters listed in Columbus, GA. This move from direct ownership or partnerships to a franchise model is designed to accelerate growth by leveraging the capital of independent owner-operators. The company outlines its "Secrets to Growth" as:
+
+Vision: Guided by experienced franchise leadership.
+
+Convenience: Strategically placing stores in high-traffic areas, such as near college campuses, nightlife districts, and tourist centers.
+
+Drive: Utilizing a business model that is "designed to be ready to open, easy to run, and built for expansion".
+
+Prospective franchisees are vetted based on their financial standing. An online inquiry form requires applicants to declare their net worth, with tiers ranging from "Under $350,000" to "Over 1.5 million," indicating a substantial capital requirement to invest in the brand.
+
+3.3 Product Curation and Brand Portfolio
+101 Smoke Shop positions itself as a "high-end tobacco company that sells high-end tobacco products and smoking accessories". This branding is supported by a stated commitment to quality, asserting that "Everything we sell must meet our strict standards, no exceptions". This reputation for excellence is presented as a key factor in building customer loyalty.
+
+The brand is an authorized seller of numerous popular products in the vape and smoking accessories market. Its portfolio includes well-known brands such as Kangvape, Smok, Fume, Hyde, RAW, Backwoods, and GRAV. The company's online store features a wide array of disposable vape products, from older models priced around $9.99 to new arrivals like KADO BAR and RAZ disposables costing over $26.99. This diverse product mix and tiered pricing strategy allows the stores to cater to a broad spectrum of consumers, from budget-conscious buyers to those seeking the latest products.
+
+This "high-end" branding is a cornerstone of the franchise value proposition, intended to attract both customers and potential investors. However, the product portfolio, which is heavily weighted toward mass-market disposable vapes, may present a conflict with this premium positioning. As the franchise network expands, maintaining stringent quality control and a genuinely "high-end" product curation across dozens of independently operated stores will be a significant operational challenge. A failure to manage this could lead to brand dilution, undermining the very value proposition being sold to new franchisees.
+
+3.4 The Customer Experience and Brand Reputation
+On the whole, customer perception of 101 Smoke Shop is positive. Online reviews and community discussions frequently praise the stores for having knowledgeable and friendly staff, a wide variety of products, and reasonable prices. The cleanliness of the retail environment is another commonly highlighted strength, contributing to a positive shopping experience. The brand has also demonstrated an ability to generate local excitement, such as through a "50% off everything" grand opening sale for its Chattanooga location, a tactic designed to build an immediate customer base.
+
+However, the brand is not without its critics. In some online forums, more discerning vape and tobacco enthusiasts have grouped "Smoke 101" with other large chains that are perceived to "sell crap," suggesting a view that the brand prioritizes scale and mass-market appeal over niche, high-quality products.
+
+Section 4: Human Capital and Organizational Culture
+Due to a lack of publicly available information directly from the company regarding its work culture and employee benefits, this section provides an analysis based on its recruitment practices and the broader context of the smoke and vape shop industry.
+
+4.1 Recruitment and Job Opportunities
+101 Smoke Shop actively recruits for a range of retail positions through a dedicated "Jobs" portal on its corporate website. Open roles include Cashier, Retail Marketing Associate, and Retail Territory Manager, with the listings noting "Multiple State Availability" to support its expanding footprint. The company utilizes a centralized online application process where candidates can upload a resume and participate in a multi-step hiring process that includes shortlisting by a hiring manager and a "technical round" of interviews and practical assessments. A specific online application form is provided for cashier positions.
+
+Notably, the company's public-facing recruitment materials do not provide any specific details regarding employee benefits, compensation packages, or articulated company values. While this is not uncommon in the retail sector, this absence of information makes it difficult to assess the company's formal commitment to employee welfare and development.
+
+4.2 The Inferred Work Environment: An Industry-Context Analysis
+Based on general industry practices and discussions among smoke shop employees, the work environment at a 101 Smoke Shop location likely presents a unique set of challenges and demands. The success of the franchise model is heavily dependent on the capabilities of its frontline retail employees, whose performance directly shapes the customer experience.
+
+Employees are required to develop and maintain extensive knowledge of a large and rapidly evolving product catalog, including the technical specifications of vape hardware, the nuances of e-liquid formulations (such as PG/VG ratios and nicotine strengths), and the features of countless accessories. This expertise is critical, as positive customer reviews for 101 Smoke Shop consistently highlight the value of "knowledgeable staff". Maintaining this standard across a large, decentralized franchise network represents a significant training and management challenge.
+
+The role is intensely customer-facing, requiring strong interpersonal skills. Employees must also navigate potentially contentious situations, such as enforcing store policies on returns for defective products, which vary widely across the industry and can be a source of customer friction. While compensation details for 101 Smoke Shop are not available, a comparable smoke shop advertises a starting wage of $9.25 per hour plus employee discounts, suggesting that entry-level pay is likely aligned with typical retail industry rates.
+
+The lack of a publicly articulated corporate culture or employee value proposition could become a competitive disadvantage. Other distributors and retailers increasingly use their company culture, diversity and inclusion initiatives, and benefits packages as tools to attract and retain high-quality talent. In a competitive labor market, 101 Smoke Shop's silence on this front may hinder the ability of its franchisees to attract the type of skilled and motivated employees needed to uphold the brand's service-oriented reputation.
+
+Section 5: Comprehensive Directory of 101 Smoke Shop Retail Locations
+This section provides a consolidated directory of 101 Smoke Shop retail locations identified from the company's official online store locator and other public sources. The list is organized by state to illustrate the enterprise's current geographic footprint and market concentration.
+
+Table 5.1: 101 Smoke Shop National Locations Directory
+State
+Alabama
+Florida
+Georgia
+North Carolina
+Tennessee
+
+Note: The table above reflects 46 distinct locations compiled from the company's website. Other sources mention totals of 54 or 67, indicating this list may not be exhaustive or that store counts fluctuate. 
+
+Section 6: Strategic Analysis, Outlook, and Identified Risks
+This final section synthesizes the preceding analysis to provide a holistic assessment of the 101 enterprise. It evaluates the core strategic advantages of its business model, identifies key risks that could impede its growth, and offers an outlook on its future trajectory.
+
+6.1 The Power of Vertical Integration: A Symbiotic Model
+The primary strategic strength of the 101 enterprise lies in the symbiotic relationship between its wholesale and retail operations. This vertical integration creates a powerful, self-reinforcing business model. 101 Distributors GA LLC acts as the procurement and logistics engine, leveraging its scale to manage a vast inventory and its in-house delivery fleet to ensure reliable supply. The 101 Smoke Shop franchise network, in turn, provides a captive, guaranteed market for the distributor's products.
+
+This structure allows the enterprise to exert significant control over its value chain, from purchasing to final sale. It can ensure product consistency across its franchised locations, streamline operations for its franchisees, and capture profit margins at both the wholesale and retail levels. The proprietary B2B e-commerce app further cements this relationship, making 101 Distributors the most convenient and deeply integrated supplier for its franchisees, thereby creating a significant barrier to entry for competing distributors.
+
+6.2 Identified Risks and Market Challenges
+Despite its strategic strengths, the enterprise faces several significant risks that could impact its operations and growth.
+
+Legal and Compliance Risks: The vape and tobacco industry operates in a highly scrutinized and litigious environment. The 2022 lawsuit filed by GS HOLISTIC LLC against the founders and one of their key stores highlights the potential for costly legal battles that can divert financial resources and management attention. Furthermore, the industry is subject to frequent raids and enforcement actions from law enforcement, as seen in cases involving other Georgia smoke shops, making regulatory compliance a high-stakes necessity.
+
+Operational and Security Risks: The retail smoke shop model is inherently vulnerable to crime. A news report of a robbery at a 101 Smoke Shop in Smithfield underscores the security challenges and potential for financial loss that the company and its franchisees must manage. On the distribution side, the high driver Out of Service (OOS) rate of 20% is a critical operational risk. Any disruption to its in-house logistics could have cascading effects, causing stock shortages across its entire retail network.
+
+Regulatory Headwinds: The entire industry faces the constant threat of adverse regulatory changes. Potential government actions, such as bans on flavored vape products, new taxes, or stricter marketing regulations, could fundamentally alter the market and negatively impact the company's product portfolio and profitability.
+
+6.3 Future Trajectory and Growth Potential
+The 101 enterprise is positioned for aggressive growth, driven by the scalability of its franchise model launched in 2023. The stated ambition to operate more than 101 locations signals a clear intent to become a dominant national brand in the smoke shop retail space. The vertically integrated model provides a robust foundation to support this expansion.
+
+The ultimate success of this strategy will depend on the enterprise's ability to balance rapid growth with rigorous quality control. The brand's reputation is built on positive customer experiences, which are largely attributed to knowledgeable staff and well-maintained stores. Replicating this level of quality across a large and decentralized network of franchisees will be the primary challenge. Failure to do so could dilute the brand's "high-end" positioning and erode customer trust.
+
+In conclusion, the outlook for the 101 enterprise is one of high growth potential, underpinned by a sound, vertically integrated business model. However, this potential is tempered by significant execution-dependent challenges and considerable industry-specific risks. The ability of its leadership to navigate the complex legal and regulatory landscape, mitigate operational vulnerabilities, and maintain brand standards across its franchise network will determine its long-term success.
+
