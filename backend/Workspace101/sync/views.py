@@ -1,7 +1,18 @@
 import os
 from django.shortcuts import render
 import requests
-from api.models import BusinessType, Category, Product, Vendor, SalesgentToken, Customer, Invoice, InvoiceLineItem, ProductHistory, PurchaseHistory
+from api.models import (
+    BusinessType,
+    Category,
+    Product,
+    Vendor,
+    SalesgentToken,
+    Customer,
+    Invoice,
+    InvoiceLineItem,
+    ProductHistory,
+    PurchaseHistory,
+)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import StreamingHttpResponse
@@ -22,7 +33,11 @@ def notifyMe(message, channel):
             "Content-Type": "application/x-www-form-urlencoded",
         }
         data = message
-        response = requests.post(f"https://thejagstudio-ntfy.hf.space/{channel}", headers=headers, data=data)
+        response = requests.post(
+            f"https://thejagstudio-ntfy.hf.space/{channel}",
+            headers=headers,
+            data=data,
+        )
         print(response.text)
     except Exception as e:
         print(f"Error notifying: {e}")
@@ -32,7 +47,9 @@ def notifyMe(message, channel):
 def syncProducts(token):
     totalPages = 80
     i = 0
-    categoryNameMap = {category.name: category for category in Category.objects.all()}
+    categoryNameMap = {
+        category.name: category for category in Category.objects.all()
+    }
     headers = {
         "Accept": "application/json, text/plain",
         "Accept-Language": "en-US,en;q=0.9",
@@ -52,7 +69,9 @@ def syncProducts(token):
     while i <= totalPages:
         try:
             response = requests.get(
-                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page=" + str(i) + "&size=1000",
+                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page="
+                + str(i)
+                + "&size=1000",
                 headers=headers,
             )
             totalPages = response.json()["result"]["totalPages"]
@@ -69,7 +88,9 @@ def syncProducts(token):
     while i <= totalPages:
         try:
             response = requests.get(
-                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page=" + str(i) + "&size=1000&active=false",
+                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page="
+                + str(i)
+                + "&size=1000&active=false",
                 headers=headers,
             )
             totalPages = response.json()["result"]["totalPages"]
@@ -113,9 +134,13 @@ def syncProducts(token):
                     active=product.get("active", False),
                     compositeProduct=product.get("compositeProduct", False),
                     stateRestricted=product.get("stateRestricted", False),
-                    customerGroupRestricted=product.get("customerGroupRestricted", False),
+                    customerGroupRestricted=product.get(
+                        "customerGroupRestricted", False
+                    ),
                     trackInventory=product.get("trackInventory", False),
-                    trackInventoryByImei=product.get("trackInventoryByImei", False),
+                    trackInventoryByImei=product.get(
+                        "trackInventoryByImei", False
+                    ),
                     size=product.get("size", 0),
                     returnable=product.get("returnable", False),
                     minimumSellingPrice=product.get("minimumSellingPrice", 0),
@@ -124,10 +149,16 @@ def syncProducts(token):
                 if categories:
                     product_categories_map[product["productId"]] = categories
 
-        productExists = Product.objects.filter(productId__in=[p.productId for p in productObjList]).values_list("productId", flat=True)
+        productExists = Product.objects.filter(
+            productId__in=[p.productId for p in productObjList]
+        ).values_list("productId", flat=True)
         # bulk create or update products
-        products_to_update = [p for p in productObjList if p.productId in productExists]
-        products_to_create = [p for p in productObjList if p.productId not in productExists]
+        products_to_update = [
+            p for p in productObjList if p.productId in productExists
+        ]
+        products_to_create = [
+            p for p in productObjList if p.productId not in productExists
+        ]
         if products_to_create:
             # do bulk create
             with transaction.atomic():
@@ -135,11 +166,22 @@ def syncProducts(token):
                     products_to_create,
                     ignore_conflicts=False,
                 )
-                category_relations = [Product.categories.through(product_id=product.productId, category_id=category.categoryId) for product in products_to_update for category in product_categories_map.get(product.productId, [])]
+                category_relations = [
+                    Product.categories.through(
+                        product_id=product.productId,
+                        category_id=category.categoryId,
+                    )
+                    for product in products_to_update
+                    for category in product_categories_map.get(
+                        product.productId, []
+                    )
+                ]
 
                 # Bulk create the many-to-many relationships
                 if category_relations:
-                    Product.categories.through.objects.bulk_create(category_relations, ignore_conflicts=True)
+                    Product.categories.through.objects.bulk_create(
+                        category_relations, ignore_conflicts=True
+                    )
         else:
             with transaction.atomic():
                 Product.objects.bulk_update(
@@ -160,14 +202,27 @@ def syncProducts(token):
                 # Create a list of many-to-many relationships
                 # Clear existing category relationships and create new ones
                 product_ids = [p.productId for p in products_to_update]
-                Product.categories.through.objects.filter(product_id__in=product_ids).delete()
+                Product.categories.through.objects.filter(
+                    product_id__in=product_ids
+                ).delete()
 
                 # Create new category relationships
-                category_relations = [Product.categories.through(product_id=product.productId, category_id=category.categoryId) for product in products_to_update for category in product_categories_map.get(product.productId, [])]
+                category_relations = [
+                    Product.categories.through(
+                        product_id=product.productId,
+                        category_id=category.categoryId,
+                    )
+                    for product in products_to_update
+                    for category in product_categories_map.get(
+                        product.productId, []
+                    )
+                ]
 
                 # Bulk create the many-to-many relationships
                 if category_relations:
-                    Product.categories.through.objects.bulk_create(category_relations, ignore_conflicts=False)
+                    Product.categories.through.objects.bulk_create(
+                        category_relations, ignore_conflicts=False
+                    )
         yield 30 + (i * 70) / totalProducts
 
 
@@ -189,7 +244,10 @@ def syncBusinessTypes(token):
         "sec-ch-ua-platform": '"Windows"',
     }
 
-    response = requests.get("https://erp.101distributorsga.com/api/store/businessType", headers=headers)
+    response = requests.get(
+        "https://erp.101distributorsga.com/api/store/businessType",
+        headers=headers,
+    )
     data = response.json()
     if data["hasError"]:
         raise Exception("Error fetching business types: " + data["message"])
@@ -274,8 +332,12 @@ def syncVendors(token):
                             "workPhone": vendorData.get("workPhone"),
                             "email": vendorData.get("email"),
                             "websiteUrl": vendorData.get("websiteUrl"),
-                            "websiteUsername": vendorData.get("websiteUsername"),
-                            "websitePassword": vendorData.get("websitePassword"),
+                            "websiteUsername": vendorData.get(
+                                "websiteUsername"
+                            ),
+                            "websitePassword": vendorData.get(
+                                "websitePassword"
+                            ),
                             "portalUserName": vendorData.get("portalUserName"),
                             "portalPassword": vendorData.get("portalPassword"),
                             "taxId": vendorData.get("taxId"),
@@ -284,19 +346,33 @@ def syncVendors(token):
                             "dueAmount": vendorData.get("dueAmount", 0),
                             "excessAmount": vendorData.get("excessAmount", 0),
                             "storeCredit": vendorData.get("storeCredit", 0),
-                            "insuranceExpiryDate": vendorData.get("insuranceExpiryDate"),
+                            "insuranceExpiryDate": vendorData.get(
+                                "insuranceExpiryDate"
+                            ),
                             "manufacturerId": vendorData.get("manufacturerId"),
-                            "manufacturerType": vendorData.get("manufacturerType"),
+                            "manufacturerType": vendorData.get(
+                                "manufacturerType"
+                            ),
                             "msaTypeId": vendorData.get("msaTypeId"),
                             "msaTypeName": vendorData.get("msaTypeName"),
                             "paymentTermsId": vendorData.get("paymentTermsId"),
-                            "paymentTermsName": vendorData.get("paymentTermsName"),
-                            "primarySalesRepresentativeId": vendorData.get("primarySalesRepresentativeId"),
-                            "primarySalesRepresentativeName": vendorData.get("primarySalesRepresentativeName"),
+                            "paymentTermsName": vendorData.get(
+                                "paymentTermsName"
+                            ),
+                            "primarySalesRepresentativeId": vendorData.get(
+                                "primarySalesRepresentativeId"
+                            ),
+                            "primarySalesRepresentativeName": vendorData.get(
+                                "primarySalesRepresentativeName"
+                            ),
                             "createdBy": vendorData.get("createdBy"),
                             "updatedBy": vendorData.get("updatedBy"),
-                            "insertedTimestamp": vendorData.get("insertedTimestamp"),
-                            "updatedTimestamp": vendorData.get("updatedTimestamp"),
+                            "insertedTimestamp": vendorData.get(
+                                "insertedTimestamp"
+                            ),
+                            "updatedTimestamp": vendorData.get(
+                                "updatedTimestamp"
+                            ),
                         },
                     )
                     j += 1
@@ -328,7 +404,9 @@ def syncCategories(token):
         "sec-ch-ua-platform": '"Windows"',
     }
 
-    response = requests.get("https://erp.101distributorsga.com/api/category/all", headers=headers)
+    response = requests.get(
+        "https://erp.101distributorsga.com/api/category/all", headers=headers
+    )
     data = response.json()
     if data["hasError"]:
         raise Exception("Error fetching categories: " + data)
@@ -348,9 +426,13 @@ def syncCategories(token):
                     "imageUrl": category_data.get("imageUrl"),
                     "description": category_data.get("description"),
                     "ecommerce": category_data.get("ecommerce", False),
-                    "customerSpecific": category_data.get("customerSpecific", False),
+                    "customerSpecific": category_data.get(
+                        "customerSpecific", False
+                    ),
                     "loginRequired": category_data.get("loginRequired", False),
-                    "repairCategory": category_data.get("repairCategory", False),
+                    "repairCategory": category_data.get(
+                        "repairCategory", False
+                    ),
                     "businessTypeId": category_data.get("businessTypeId"),
                     "businessTypeName": category_data.get("businessTypeName"),
                     "sequenceNumber": category_data.get("sequenceNumber", 0),
@@ -365,7 +447,10 @@ def syncCategories(token):
             yield (i * 80) / totalCategories
 
         # Handle businessTypeList
-        if "businessTypeList" in category_data and category_data["businessTypeList"]:
+        if (
+            "businessTypeList" in category_data
+            and category_data["businessTypeList"]
+        ):
             business_types = []
             for bt in category_data["businessTypeList"]:
                 bt_obj, _ = BusinessType.objects.get_or_create(
@@ -398,13 +483,43 @@ def syncSearchData(token):
 
     # Prepare collection schema
     collection_name = "101"
-    schema = {"name": collection_name, "fields": [{"name": "id", "type": "auto"}, {"name": "productId", "type": "auto"}, {"name": "sku", "type": "auto"}, {"name": "upc", "type": "auto"}, {"name": "productName", "type": "auto"}, {"name": "availableQuantity", "type": "int32"}, {"name": "eta", "type": "auto"}, {"name": "imageUrl", "type": "auto"}, {"name": "masterProductId", "type": "auto"}, {"name": "masterProductName", "type": "auto"}, {"name": "standardPrice", "type": "auto"}, {"name": "tierPrice", "type": "auto"}, {"name": "costPrice", "type": "auto"}, {"name": "ecommerce", "type": "auto"}, {"name": "active", "type": "auto"}, {"name": "compositeProduct", "type": "auto"}, {"name": "stateRestricted", "type": "auto"}, {"name": "customerGroupRestricted", "type": "auto"}, {"name": "categories", "type": "auto", "facet": True}, {"name": "trackInventory", "type": "auto"}, {"name": "trackInventoryByImei", "type": "auto"}, {"name": "insertedTimestamp", "type": "auto"}, {"name": "size", "type": "auto"}], "default_sorting_field": "availableQuantity"}
+    schema = {
+        "name": collection_name,
+        "fields": [
+            {"name": "id", "type": "auto"},
+            {"name": "productId", "type": "auto"},
+            {"name": "sku", "type": "auto"},
+            {"name": "upc", "type": "auto"},
+            {"name": "productName", "type": "auto"},
+            {"name": "availableQuantity", "type": "int32"},
+            {"name": "eta", "type": "auto"},
+            {"name": "imageUrl", "type": "auto"},
+            {"name": "masterProductId", "type": "auto"},
+            {"name": "masterProductName", "type": "auto"},
+            {"name": "standardPrice", "type": "auto"},
+            {"name": "tierPrice", "type": "auto"},
+            {"name": "costPrice", "type": "auto"},
+            {"name": "ecommerce", "type": "auto"},
+            {"name": "active", "type": "auto"},
+            {"name": "compositeProduct", "type": "auto"},
+            {"name": "stateRestricted", "type": "auto"},
+            {"name": "customerGroupRestricted", "type": "auto"},
+            {"name": "categories", "type": "auto", "facet": True},
+            {"name": "trackInventory", "type": "auto"},
+            {"name": "trackInventoryByImei", "type": "auto"},
+            {"name": "insertedTimestamp", "type": "auto"},
+            {"name": "size", "type": "auto"},
+        ],
+        "default_sorting_field": "availableQuantity",
+    }
 
     # Delete collection if exists
     try:
         client.collections[collection_name].delete()
     except Exception as e:
-        print(f"Collection {collection_name} does not exist or could not be deleted: {e}")
+        print(
+            f"Collection {collection_name} does not exist or could not be deleted: {e}"
+        )
     # Create collection
     client.collections.create(schema)
 
@@ -415,31 +530,32 @@ def syncSearchData(token):
 
     headers = {
         "Accept": "application/json, text/plain",
-        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
         "Authorization": "Bearer " + token,
+        "Cache-Control": "no-cache",
         "Connection": "keep-alive",
+        "Pragma": "no-cache",
         "Referer": "https://erp.101distributorsga.com/product",
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-origin",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+        "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
     }
     # Fetch all products first
     all_products = []
     while page <= totalPages:
-        response = requests.get(
-            f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=1000",
-            headers=headers,
-        )
+        response = requests.request("GET", f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=1000", headers=headers)
         products = []
         try:
             products = response.json()["result"]["content"]
             totalPages = response.json()["result"]["totalPages"]
         except Exception as e:
-            print(f"Error fetching products on page {page}: {e} {response.json()}")
+            print(
+                f"Error fetching products on page {page}: {e} {response.json()}"
+            )
         for product in products:
             product["id"] = str(product["id"])
             product["eta"] = str(product["eta"])
@@ -456,7 +572,9 @@ def syncSearchData(token):
 
     # Import to Typesense in chunks of 1000
     for i in range(0, len(all_products), 1000):
-        client.collections[collection_name].documents.import_(all_products[i : i + 1000], {"action": "create"})
+        client.collections[collection_name].documents.import_(
+            all_products[i : i + 1000], {"action": "create"}
+        )
         percent = 50 + ((i + 1000) / len(all_products)) * 50
         yield percent
 
@@ -527,7 +645,16 @@ def syncCustomers(token):
             customers_to_update.append(
                 Customer(
                     id=customer["id"],
-                    insertedTimestamp=timezone.make_aware(datetime.strptime(customer["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if customer["insertedTimestamp"] else None,
+                    insertedTimestamp=(
+                        timezone.make_aware(
+                            datetime.strptime(
+                                customer["insertedTimestamp"],
+                                "%Y-%m-%d %H:%M:%S",
+                            )
+                        )
+                        if customer["insertedTimestamp"]
+                        else None
+                    ),
                     name=customer["name"],
                     company=customer["company"],
                     storeId=customer["storeId"],
@@ -560,7 +687,16 @@ def syncCustomers(token):
             customers_to_create.append(
                 Customer(
                     id=customer["id"],
-                    insertedTimestamp=timezone.make_aware(datetime.strptime(customer["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if customer["insertedTimestamp"] else None,
+                    insertedTimestamp=(
+                        timezone.make_aware(
+                            datetime.strptime(
+                                customer["insertedTimestamp"],
+                                "%Y-%m-%d %H:%M:%S",
+                            )
+                        )
+                        if customer["insertedTimestamp"]
+                        else None
+                    ),
                     name=customer["name"],
                     company=customer["company"],
                     storeId=customer["storeId"],
@@ -599,7 +735,38 @@ def syncCustomers(token):
 
     # Bulk update existing customers
     if customers_to_update:
-        Customer.objects.bulk_update(customers_to_update, ["insertedTimestamp", "name", "company", "storeId", "email", "phone", "tier", "notes", "storeCredit", "loyaltyPoints", "dueAmount", "excessAmount", "active", "verified", "viewSpecificCategory", "viewSpecificProduct", "salesRepresentativeName", "taxable", "communicateViaPhone", "communicateViaText", "dbaName", "address1", "stateId", "billingStateId", "sendDuePaymentReminder", "rewardable", "saveProductPrice"])
+        Customer.objects.bulk_update(
+            customers_to_update,
+            [
+                "insertedTimestamp",
+                "name",
+                "company",
+                "storeId",
+                "email",
+                "phone",
+                "tier",
+                "notes",
+                "storeCredit",
+                "loyaltyPoints",
+                "dueAmount",
+                "excessAmount",
+                "active",
+                "verified",
+                "viewSpecificCategory",
+                "viewSpecificProduct",
+                "salesRepresentativeName",
+                "taxable",
+                "communicateViaPhone",
+                "communicateViaText",
+                "dbaName",
+                "address1",
+                "stateId",
+                "billingStateId",
+                "sendDuePaymentReminder",
+                "rewardable",
+                "saveProductPrice",
+            ],
+        )
         yield 100
 
 
@@ -629,24 +796,80 @@ def syncInvoices(token):
             data = response.json()
             if data["hasError"]:
                 notifyMe("Sync Error : " + data["errorMessage"], "101-error")
-                return Response({"status": "error", "message": data["errorMessage"]}, status=400)
+                return Response(
+                    {"status": "error", "message": data["errorMessage"]},
+                    status=400,
+                )
             totalPages = data["result"]["totalPages"]
             content = data["result"]["content"]
             invoices_to_create = []
             invoices_to_update = []
 
             # Get existing invoice IDs from database
-            existing_invoice_ids = set(Invoice.objects.values_list("id", flat=True))
+            existing_invoice_ids = set(
+                Invoice.objects.values_list("id", flat=True)
+            )
 
             # premap the customer IDs
-            customer_id_map = {customer.id: customer for customer in Customer.objects.all()}
+            customer_id_map = {
+                customer.id: customer for customer in Customer.objects.all()
+            }
 
             for invoice in content:
                 # Convert timestamps
-                inserted_timestamp = timezone.make_aware(datetime.strptime(invoice["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if invoice["insertedTimestamp"] else None
-                due_date = timezone.make_aware(datetime.strptime(invoice["dueDate"].split(".")[0], "%Y-%m-%dT%H:%M:%S")) if invoice["dueDate"] else None
+                inserted_timestamp = (
+                    timezone.make_aware(
+                        datetime.strptime(
+                            invoice["insertedTimestamp"], "%Y-%m-%d %H:%M:%S"
+                        )
+                    )
+                    if invoice["insertedTimestamp"]
+                    else None
+                )
+                due_date = (
+                    timezone.make_aware(
+                        datetime.strptime(
+                            invoice["dueDate"].split(".")[0],
+                            "%Y-%m-%dT%H:%M:%S",
+                        )
+                    )
+                    if invoice["dueDate"]
+                    else None
+                )
 
-                invoice_obj = Invoice(id=invoice["id"], totalQuantity=invoice.get("totalQuantity", 0), discount=invoice.get("discount", 0), totalAmount=invoice.get("totalAmount", 0), status=invoice.get("status", ""), insertedTimestamp=inserted_timestamp, customerId=customer_id_map.get(invoice.get("customerId")), customerName=invoice.get("customerName", ""), companyName=invoice.get("companyName", ""), email=invoice.get("email"), storeName=invoice.get("storeName", ""), orderTags=invoice.get("orderTags"), dueAmount=invoice.get("dueAmount", 0), dueDate=due_date, orderNotes=invoice.get("orderNotes"), salesRepId=invoice.get("salesRepId"), salesRepName=invoice.get("salesRepName", ""), pickerId=invoice.get("pickerId"), pickerName=invoice.get("pickerName"), trackingUrl=invoice.get("trackingUrl"), trackingNumber=invoice.get("trackingNumber"), salesOrderId=invoice.get("salesOrderId"), quotationId=invoice.get("quotationId"), shippingStatusId=invoice.get("shippingStatusId"), shippingStatusName=invoice.get("shippingStatusName", ""), stateId=invoice.get("stateId"), state=invoice.get("state", ""), city=invoice.get("city", ""), county=invoice.get("county"), dbaName=invoice.get("dbaName"), lastSyncTimestamp=timezone.now())
+                invoice_obj = Invoice(
+                    id=invoice["id"],
+                    totalQuantity=invoice.get("totalQuantity", 0),
+                    discount=invoice.get("discount", 0),
+                    totalAmount=invoice.get("totalAmount", 0),
+                    status=invoice.get("status", ""),
+                    insertedTimestamp=inserted_timestamp,
+                    customerId=customer_id_map.get(invoice.get("customerId")),
+                    customerName=invoice.get("customerName", ""),
+                    companyName=invoice.get("companyName", ""),
+                    email=invoice.get("email"),
+                    storeName=invoice.get("storeName", ""),
+                    orderTags=invoice.get("orderTags"),
+                    dueAmount=invoice.get("dueAmount", 0),
+                    dueDate=due_date,
+                    orderNotes=invoice.get("orderNotes"),
+                    salesRepId=invoice.get("salesRepId"),
+                    salesRepName=invoice.get("salesRepName", ""),
+                    pickerId=invoice.get("pickerId"),
+                    pickerName=invoice.get("pickerName"),
+                    trackingUrl=invoice.get("trackingUrl"),
+                    trackingNumber=invoice.get("trackingNumber"),
+                    salesOrderId=invoice.get("salesOrderId"),
+                    quotationId=invoice.get("quotationId"),
+                    shippingStatusId=invoice.get("shippingStatusId"),
+                    shippingStatusName=invoice.get("shippingStatusName", ""),
+                    stateId=invoice.get("stateId"),
+                    state=invoice.get("state", ""),
+                    city=invoice.get("city", ""),
+                    county=invoice.get("county"),
+                    dbaName=invoice.get("dbaName"),
+                    lastSyncTimestamp=timezone.now(),
+                )
 
                 if invoice["id"] in existing_invoice_ids:
                     invoices_to_update.append(invoice_obj)
@@ -659,7 +882,41 @@ def syncInvoices(token):
 
             # Bulk update existing invoices
             if invoices_to_update:
-                Invoice.objects.bulk_update(invoices_to_update, fields=["totalQuantity", "discount", "totalAmount", "status", "insertedTimestamp", "customerName", "companyName", "email", "storeName", "orderTags", "dueAmount", "dueDate", "orderNotes", "salesRepId", "salesRepName", "pickerId", "pickerName", "trackingUrl", "trackingNumber", "salesOrderId", "quotationId", "shippingStatusId", "shippingStatusName", "stateId", "state", "city", "county", "dbaName", "lastSyncTimestamp"], batch_size=1000)
+                Invoice.objects.bulk_update(
+                    invoices_to_update,
+                    fields=[
+                        "totalQuantity",
+                        "discount",
+                        "totalAmount",
+                        "status",
+                        "insertedTimestamp",
+                        "customerName",
+                        "companyName",
+                        "email",
+                        "storeName",
+                        "orderTags",
+                        "dueAmount",
+                        "dueDate",
+                        "orderNotes",
+                        "salesRepId",
+                        "salesRepName",
+                        "pickerId",
+                        "pickerName",
+                        "trackingUrl",
+                        "trackingNumber",
+                        "salesOrderId",
+                        "quotationId",
+                        "shippingStatusId",
+                        "shippingStatusName",
+                        "stateId",
+                        "state",
+                        "city",
+                        "county",
+                        "dbaName",
+                        "lastSyncTimestamp",
+                    ],
+                    batch_size=1000,
+                )
 
             page += 1
             yield (page * 100) / totalPages
@@ -694,7 +951,10 @@ def productSales(productId, token):
     data = response.json()
     if data["hasError"]:
         notifyMe("Sync Error : " + str(data["errorMessage"]), "101-error")
-        return Response({"status": "error", "message": str(data["errorMessage"])}, status=400)
+        return Response(
+            {"status": "error", "message": str(data["errorMessage"])},
+            status=400,
+        )
     else:
         return data["result"]["salesByProductList"]["content"]
 
@@ -734,7 +994,9 @@ def fetch_product_data(product, token):
         product_id = product.productId
         # check if file exists
         if os.path.exists(f"./dataHistory/product_{product_id}_sales.json"):
-            with open(f"./dataHistory/product_{product_id}_sales.json", "r") as f:
+            with open(
+                f"./dataHistory/product_{product_id}_sales.json", "r"
+            ) as f:
                 data = json.load(f)
                 sales_data = data.get("sales_data", [])
                 purchase_data = data.get("purchase_data", [])
@@ -742,16 +1004,34 @@ def fetch_product_data(product, token):
         else:
             sales_data = productSales(product_id, token)
             purchase_data = purchaseHistory(product_id, token)
-            with open(f"./dataHistory/product_{product_id}_sales.json", "w") as f:
-                data = {"sales_data": sales_data, "purchase_data": purchase_data}
+            with open(
+                f"./dataHistory/product_{product_id}_sales.json", "w"
+            ) as f:
+                data = {
+                    "sales_data": sales_data,
+                    "purchase_data": purchase_data,
+                }
                 f.write(json.dumps(data, indent=4))
             skip = False
         if not skip:
-            print(f"Data for product {product_id} fetched successfully with {len(sales_data)} sales records and {len(purchase_data)} purchase records.")
-        return {"product": product, "sales_data": sales_data, "purchase_data": purchase_data, "error": None, "skip": skip}
+            print(
+                f"Data for product {product_id} fetched successfully with {len(sales_data)} sales records and {len(purchase_data)} purchase records."
+            )
+        return {
+            "product": product,
+            "sales_data": sales_data,
+            "purchase_data": purchase_data,
+            "error": None,
+            "skip": skip,
+        }
     except Exception as e:
         print(f"Error fetching data for product {product.productId}: {e}")
-        return {"product": product, "sales_data": [], "purchase_data": [], "error": e}
+        return {
+            "product": product,
+            "sales_data": [],
+            "purchase_data": [],
+            "error": e,
+        }
 
 
 def syncProductHistory(token):
@@ -762,7 +1042,11 @@ def syncProductHistory(token):
             product_id = filename.split("_")[1]
             existing_ids.add(product_id)
 
-    products = list(Product.objects.filter(active=True).exclude(productId__in=existing_ids).order_by("productId"))
+    products = list(
+        Product.objects.filter(active=True)
+        .exclude(productId__in=existing_ids)
+        .order_by("productId")
+    )
     product_count = len(products)
     doUpdate = False
     if product_count == 0:
@@ -778,7 +1062,10 @@ def syncProductHistory(token):
         # Use a ThreadPoolExecutor to fetch data for the current batch in parallel
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
             # Submit the fetch_product_data function for each product in the batch
-            future_to_product = {executor.submit(fetch_product_data, product, token): product for product in product_batch}
+            future_to_product = {
+                executor.submit(fetch_product_data, product, token): product
+                for product in product_batch
+            }
 
             # This list will hold the results from the threads
             batch_results = []
@@ -790,7 +1077,9 @@ def syncProductHistory(token):
                     batch_results.append(data)
                 except Exception as exc:
                     product = future_to_product[future]
-                    print(f"Product {product.productId} generated an exception: {exc}")
+                    print(
+                        f"Product {product.productId} generated an exception: {exc}"
+                    )
             fullBatch.extend(batch_results)
 
         if len(fullBatch) > 200:
@@ -810,70 +1099,190 @@ def syncProductHistory(token):
                     sales_to_create = []
                     sales_to_update = []
 
-                    incoming_sale_dates = {timezone.make_aware(datetime.strptime(sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) for sale in sales_data if sale.get("insertedTimestamp")}
+                    incoming_sale_dates = {
+                        timezone.make_aware(
+                            datetime.strptime(
+                                sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S"
+                            )
+                        )
+                        for sale in sales_data
+                        if sale.get("insertedTimestamp")
+                    }
 
                     if incoming_sale_dates:
-                        existing_sales = ProductHistory.objects.filter(productId=product, date__in=incoming_sale_dates)
-                        existing_sales_map = {sale.date: sale for sale in existing_sales}
+                        existing_sales = ProductHistory.objects.filter(
+                            productId=product, date__in=incoming_sale_dates
+                        )
+                        existing_sales_map = {
+                            sale.date: sale for sale in existing_sales
+                        }
 
                         for sale in sales_data:
                             if not sale.get("insertedTimestamp"):
                                 continue
 
-                            sale_date = timezone.make_aware(datetime.strptime(sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S"))
+                            sale_date = timezone.make_aware(
+                                datetime.strptime(
+                                    sale["insertedTimestamp"],
+                                    "%Y-%m-%d %H:%M:%S",
+                                )
+                            )
 
-                            defaults = {"quantity": sale.get("totalQuantity", 0), "costPrice": sale.get("costPrice", 0), "retailPrice": sale.get("retailPrice", 0)}
+                            defaults = {
+                                "quantity": sale.get("totalQuantity", 0),
+                                "costPrice": sale.get("costPrice", 0),
+                                "retailPrice": sale.get("retailPrice", 0),
+                            }
 
                             if sale_date in existing_sales_map:
                                 if doUpdate:
-                                    existing_sale_obj = existing_sales_map[sale_date]
+                                    existing_sale_obj = existing_sales_map[
+                                        sale_date
+                                    ]
                                     for key, value in defaults.items():
                                         setattr(existing_sale_obj, key, value)
                                     sales_to_update.append(existing_sale_obj)
                             else:
-                                sales_to_create.append(ProductHistory(productId=product, date=sale_date, **defaults))
+                                sales_to_create.append(
+                                    ProductHistory(
+                                        productId=product,
+                                        date=sale_date,
+                                        **defaults,
+                                    )
+                                )
 
                         if sales_to_create:
                             ProductHistory.objects.bulk_create(sales_to_create)
-                        if sales_to_update:  # doUpdate is implicitly checked by this list being populated
-                            ProductHistory.objects.bulk_update(sales_to_update, ["quantity", "costPrice", "retailPrice"])
+                        if (
+                            sales_to_update
+                        ):  # doUpdate is implicitly checked by this list being populated
+                            ProductHistory.objects.bulk_update(
+                                sales_to_update,
+                                ["quantity", "costPrice", "retailPrice"],
+                            )
 
                 # --- Process Purchase Data in Bulk (for one product) ---
                 if purchase_data:
                     purchases_to_create = []
                     purchases_to_update = []
 
-                    vendor_ids = {p["vendorId"] for p in purchase_data if p.get("vendorId")}
-                    vendor_map = {v.id: v for v in Vendor.objects.filter(id__in=vendor_ids)}
+                    vendor_ids = {
+                        p["vendorId"]
+                        for p in purchase_data
+                        if p.get("vendorId")
+                    }
+                    vendor_map = {
+                        v.id: v
+                        for v in Vendor.objects.filter(id__in=vendor_ids)
+                    }
 
-                    incoming_po_ids = {p["purchaseOrderId"] for p in purchase_data if p.get("purchaseOrderId")}
+                    incoming_po_ids = {
+                        p["purchaseOrderId"]
+                        for p in purchase_data
+                        if p.get("purchaseOrderId")
+                    }
                     if incoming_po_ids:
-                        existing_purchases = PurchaseHistory.objects.filter(productId=product, purchaseOrderId__in=incoming_po_ids)
-                        existing_purchases_map = {p.purchaseOrderId: p for p in existing_purchases}
+                        existing_purchases = PurchaseHistory.objects.filter(
+                            productId=product,
+                            purchaseOrderId__in=incoming_po_ids,
+                        )
+                        existing_purchases_map = {
+                            p.purchaseOrderId: p for p in existing_purchases
+                        }
 
                         for purchase in purchase_data:
                             po_id = purchase.get("purchaseOrderId")
-                            if not po_id or not purchase.get("purchaseOrderInsertedTimestamp"):
+                            if not po_id or not purchase.get(
+                                "purchaseOrderInsertedTimestamp"
+                            ):
                                 continue
 
                             vendor = vendor_map.get(purchase.get("vendorId"))
 
-                            defaults = {"upc": purchase.get("upc"), "sku": purchase.get("sku"), "name": purchase.get("name", ""), "purchasedQuantity": purchase.get("purchasedQuantity", 0), "passedQuantity": purchase.get("passedQuantity", 0), "failedQuantity": purchase.get("failedQuantity", 0), "costPrice": purchase.get("costPrice", 0), "totalCostPrice": purchase.get("totalCostPrice", 0), "vendorId": vendor, "vendorName": purchase.get("vendorName", ""), "billId": purchase.get("billId"), "purchaseOrderInsertedTimestamp": timezone.make_aware(datetime.strptime(purchase["purchaseOrderInsertedTimestamp"], "%Y-%m-%d %H:%M:%S")), "billInsertedTimestamp": timezone.make_aware(datetime.strptime(purchase["billInsertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if purchase.get("billInsertedTimestamp") else None}
+                            defaults = {
+                                "upc": purchase.get("upc"),
+                                "sku": purchase.get("sku"),
+                                "name": purchase.get("name", ""),
+                                "purchasedQuantity": purchase.get(
+                                    "purchasedQuantity", 0
+                                ),
+                                "passedQuantity": purchase.get(
+                                    "passedQuantity", 0
+                                ),
+                                "failedQuantity": purchase.get(
+                                    "failedQuantity", 0
+                                ),
+                                "costPrice": purchase.get("costPrice", 0),
+                                "totalCostPrice": purchase.get(
+                                    "totalCostPrice", 0
+                                ),
+                                "vendorId": vendor,
+                                "vendorName": purchase.get("vendorName", ""),
+                                "billId": purchase.get("billId"),
+                                "purchaseOrderInsertedTimestamp": timezone.make_aware(
+                                    datetime.strptime(
+                                        purchase[
+                                            "purchaseOrderInsertedTimestamp"
+                                        ],
+                                        "%Y-%m-%d %H:%M:%S",
+                                    )
+                                ),
+                                "billInsertedTimestamp": (
+                                    timezone.make_aware(
+                                        datetime.strptime(
+                                            purchase["billInsertedTimestamp"],
+                                            "%Y-%m-%d %H:%M:%S",
+                                        )
+                                    )
+                                    if purchase.get("billInsertedTimestamp")
+                                    else None
+                                ),
+                            }
 
                             if po_id in existing_purchases_map:
                                 if doUpdate:
-                                    existing_purchase_obj = existing_purchases_map[po_id]
+                                    existing_purchase_obj = (
+                                        existing_purchases_map[po_id]
+                                    )
                                     for key, value in defaults.items():
-                                        setattr(existing_purchase_obj, key, value)
-                                    purchases_to_update.append(existing_purchase_obj)
+                                        setattr(
+                                            existing_purchase_obj, key, value
+                                        )
+                                    purchases_to_update.append(
+                                        existing_purchase_obj
+                                    )
                             else:
-                                purchases_to_create.append(PurchaseHistory(purchaseOrderId=po_id, productId=product, **defaults))
+                                purchases_to_create.append(
+                                    PurchaseHistory(
+                                        purchaseOrderId=po_id,
+                                        productId=product,
+                                        **defaults,
+                                    )
+                                )
 
                         if purchases_to_create:
-                            PurchaseHistory.objects.bulk_create(purchases_to_create)
+                            PurchaseHistory.objects.bulk_create(
+                                purchases_to_create
+                            )
                         if purchases_to_update:
-                            update_fields = ["upc", "sku", "name", "purchasedQuantity", "passedQuantity", "failedQuantity", "costPrice", "totalCostPrice", "vendorId", "vendorName", "billId", "purchaseOrderInsertedTimestamp", "billInsertedTimestamp"]
-                            PurchaseHistory.objects.bulk_update(purchases_to_update, update_fields)
+                            update_fields = [
+                                "upc",
+                                "sku",
+                                "name",
+                                "purchasedQuantity",
+                                "passedQuantity",
+                                "failedQuantity",
+                                "costPrice",
+                                "totalCostPrice",
+                                "vendorId",
+                                "vendorName",
+                                "billId",
+                                "purchaseOrderInsertedTimestamp",
+                                "billInsertedTimestamp",
+                            ]
+                            PurchaseHistory.objects.bulk_update(
+                                purchases_to_update, update_fields
+                            )
 
                 # Update and yield progress after each product is fully processed
                 processed_count += 1
@@ -895,82 +1304,194 @@ def syncProductHistory(token):
                 sales_to_create = []
                 sales_to_update = []
 
-                incoming_sale_dates = {timezone.make_aware(datetime.strptime(sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S")) for sale in sales_data if sale.get("insertedTimestamp")}
+                incoming_sale_dates = {
+                    timezone.make_aware(
+                        datetime.strptime(
+                            sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S"
+                        )
+                    )
+                    for sale in sales_data
+                    if sale.get("insertedTimestamp")
+                }
 
                 if incoming_sale_dates:
-                    existing_sales = ProductHistory.objects.filter(productId=product, date__in=incoming_sale_dates)
-                    existing_sales_map = {sale.date: sale for sale in existing_sales}
+                    existing_sales = ProductHistory.objects.filter(
+                        productId=product, date__in=incoming_sale_dates
+                    )
+                    existing_sales_map = {
+                        sale.date: sale for sale in existing_sales
+                    }
 
                     for sale in sales_data:
                         if not sale.get("insertedTimestamp"):
                             continue
 
-                        sale_date = timezone.make_aware(datetime.strptime(sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S"))
+                        sale_date = timezone.make_aware(
+                            datetime.strptime(
+                                sale["insertedTimestamp"], "%Y-%m-%d %H:%M:%S"
+                            )
+                        )
 
-                        defaults = {"quantity": sale.get("totalQuantity", 0), "costPrice": sale.get("costPrice", 0), "retailPrice": sale.get("retailPrice", 0)}
+                        defaults = {
+                            "quantity": sale.get("totalQuantity", 0),
+                            "costPrice": sale.get("costPrice", 0),
+                            "retailPrice": sale.get("retailPrice", 0),
+                        }
 
                         if sale_date in existing_sales_map:
                             if doUpdate:
-                                existing_sale_obj = existing_sales_map[sale_date]
+                                existing_sale_obj = existing_sales_map[
+                                    sale_date
+                                ]
                                 for key, value in defaults.items():
                                     setattr(existing_sale_obj, key, value)
                                 sales_to_update.append(existing_sale_obj)
                         else:
-                            sales_to_create.append(ProductHistory(productId=product, date=sale_date, **defaults))
+                            sales_to_create.append(
+                                ProductHistory(
+                                    productId=product,
+                                    date=sale_date,
+                                    **defaults,
+                                )
+                            )
 
                     if sales_to_create:
                         ProductHistory.objects.bulk_create(sales_to_create)
-                    if sales_to_update:  # doUpdate is implicitly checked by this list being populated
-                        ProductHistory.objects.bulk_update(sales_to_update, ["quantity", "costPrice", "retailPrice"])
+                    if (
+                        sales_to_update
+                    ):  # doUpdate is implicitly checked by this list being populated
+                        ProductHistory.objects.bulk_update(
+                            sales_to_update,
+                            ["quantity", "costPrice", "retailPrice"],
+                        )
 
             # --- Process Purchase Data in Bulk (for one product) ---
             if purchase_data:
                 purchases_to_create = []
                 purchases_to_update = []
 
-                vendor_ids = {p["vendorId"] for p in purchase_data if p.get("vendorId")}
-                vendor_map = {v.id: v for v in Vendor.objects.filter(id__in=vendor_ids)}
+                vendor_ids = {
+                    p["vendorId"] for p in purchase_data if p.get("vendorId")
+                }
+                vendor_map = {
+                    v.id: v for v in Vendor.objects.filter(id__in=vendor_ids)
+                }
 
-                incoming_po_ids = {p["purchaseOrderId"] for p in purchase_data if p.get("purchaseOrderId")}
+                incoming_po_ids = {
+                    p["purchaseOrderId"]
+                    for p in purchase_data
+                    if p.get("purchaseOrderId")
+                }
                 if incoming_po_ids:
-                    existing_purchases = PurchaseHistory.objects.filter(productId=product, purchaseOrderId__in=incoming_po_ids)
-                    existing_purchases_map = {p.purchaseOrderId: p for p in existing_purchases}
+                    existing_purchases = PurchaseHistory.objects.filter(
+                        productId=product, purchaseOrderId__in=incoming_po_ids
+                    )
+                    existing_purchases_map = {
+                        p.purchaseOrderId: p for p in existing_purchases
+                    }
 
                     for purchase in purchase_data:
                         po_id = purchase.get("purchaseOrderId")
-                        if not po_id or not purchase.get("purchaseOrderInsertedTimestamp"):
+                        if not po_id or not purchase.get(
+                            "purchaseOrderInsertedTimestamp"
+                        ):
                             continue
 
                         vendor = vendor_map.get(purchase.get("vendorId"))
 
-                        defaults = {"upc": purchase.get("upc"), "sku": purchase.get("sku"), "name": purchase.get("name", ""), "purchasedQuantity": purchase.get("purchasedQuantity", 0), "passedQuantity": purchase.get("passedQuantity", 0), "failedQuantity": purchase.get("failedQuantity", 0), "costPrice": purchase.get("costPrice", 0), "totalCostPrice": purchase.get("totalCostPrice", 0), "vendorId": vendor, "vendorName": purchase.get("vendorName", ""), "billId": purchase.get("billId"), "purchaseOrderInsertedTimestamp": timezone.make_aware(datetime.strptime(purchase["purchaseOrderInsertedTimestamp"], "%Y-%m-%d %H:%M:%S")), "billInsertedTimestamp": timezone.make_aware(datetime.strptime(purchase["billInsertedTimestamp"], "%Y-%m-%d %H:%M:%S")) if purchase.get("billInsertedTimestamp") else None}
+                        defaults = {
+                            "upc": purchase.get("upc"),
+                            "sku": purchase.get("sku"),
+                            "name": purchase.get("name", ""),
+                            "purchasedQuantity": purchase.get(
+                                "purchasedQuantity", 0
+                            ),
+                            "passedQuantity": purchase.get("passedQuantity", 0),
+                            "failedQuantity": purchase.get("failedQuantity", 0),
+                            "costPrice": purchase.get("costPrice", 0),
+                            "totalCostPrice": purchase.get("totalCostPrice", 0),
+                            "vendorId": vendor,
+                            "vendorName": purchase.get("vendorName", ""),
+                            "billId": purchase.get("billId"),
+                            "purchaseOrderInsertedTimestamp": timezone.make_aware(
+                                datetime.strptime(
+                                    purchase["purchaseOrderInsertedTimestamp"],
+                                    "%Y-%m-%d %H:%M:%S",
+                                )
+                            ),
+                            "billInsertedTimestamp": (
+                                timezone.make_aware(
+                                    datetime.strptime(
+                                        purchase["billInsertedTimestamp"],
+                                        "%Y-%m-%d %H:%M:%S",
+                                    )
+                                )
+                                if purchase.get("billInsertedTimestamp")
+                                else None
+                            ),
+                        }
 
                         if po_id in existing_purchases_map:
                             if doUpdate:
-                                existing_purchase_obj = existing_purchases_map[po_id]
+                                existing_purchase_obj = existing_purchases_map[
+                                    po_id
+                                ]
                                 for key, value in defaults.items():
                                     setattr(existing_purchase_obj, key, value)
-                                purchases_to_update.append(existing_purchase_obj)
+                                purchases_to_update.append(
+                                    existing_purchase_obj
+                                )
                         else:
-                            purchases_to_create.append(PurchaseHistory(purchaseOrderId=po_id, productId=product, **defaults))
+                            purchases_to_create.append(
+                                PurchaseHistory(
+                                    purchaseOrderId=po_id,
+                                    productId=product,
+                                    **defaults,
+                                )
+                            )
 
                     if purchases_to_create:
                         PurchaseHistory.objects.bulk_create(purchases_to_create)
                     if purchases_to_update:
-                        update_fields = ["upc", "sku", "name", "purchasedQuantity", "passedQuantity", "failedQuantity", "costPrice", "totalCostPrice", "vendorId", "vendorName", "billId", "purchaseOrderInsertedTimestamp", "billInsertedTimestamp"]
-                        PurchaseHistory.objects.bulk_update(purchases_to_update, update_fields)
+                        update_fields = [
+                            "upc",
+                            "sku",
+                            "name",
+                            "purchasedQuantity",
+                            "passedQuantity",
+                            "failedQuantity",
+                            "costPrice",
+                            "totalCostPrice",
+                            "vendorId",
+                            "vendorName",
+                            "billId",
+                            "purchaseOrderInsertedTimestamp",
+                            "billInsertedTimestamp",
+                        ]
+                        PurchaseHistory.objects.bulk_update(
+                            purchases_to_update, update_fields
+                        )
 
     yield 100
 
 
 class syncData(APIView):
     def post(self, request):
-        token = SalesgentToken.objects.first().accessToken if SalesgentToken.objects.exists() else None
+        token = (
+            SalesgentToken.objects.first().accessToken
+            if SalesgentToken.objects.exists()
+            else None
+        )
         syncType = request.data.get("syncType", "all")
 
         if not token:
-            notifyMe("Sync Error : Token not found. Please check your Salesgent token configuration.", "101-error")
-            return Response({"status": "error", "message": "Token is required"}, status=400)
+            notifyMe(
+                "Sync Error : Token not found. Please check your Salesgent token configuration.",
+                "101-error",
+            )
+            return Response(
+                {"status": "error", "message": "Token is required"}, status=400
+            )
 
         def event_stream():
             try:
@@ -1034,6 +1555,8 @@ class syncData(APIView):
                 # Send a generic error to the client
                 yield f"data: {json.dumps({'error': f'An error occurred during {syncType} sync: {str(e)}', 'status': 'error'})}\n\n"
 
-        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response = StreamingHttpResponse(
+            event_stream(), content_type="text/event-stream"
+        )
         response["Cache-Control"] = "no-cache"  # Important for SSE
         return response

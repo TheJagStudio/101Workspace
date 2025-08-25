@@ -88,9 +88,10 @@ class SyncProductsView(APIView):
                 try:
                     client.collections[collection_name].delete()
                 except Exception as e:
-                    print(f"Collection {collection_name} does not exist or could not be deleted: {e}")
+                    pass
                 # Create collection
                 client.collections.create(schema)
+                print(f"Collection {collection_name} created successfully.")
 
                 # Fetch products from API and import to Typesense
                 totalPages = 10
