@@ -7,5 +7,10 @@ urlpatterns = [
         "invoices/",
         views.InvoicesView.as_view(),
         name="InvoicesView",
-    )
+    ),
+    path(
+        "stamp-invoice/",
+        views.StampInvoiceView.as_view(),
+        name="StampInvoiceView",
+    ),
 ]

@@ -53,29 +53,29 @@ const Header = () => {
         <div className="h-16 bg-white border-b border-gray-200 shadow-lg flex items-center justify-between px-6 z-50">
             {/* Logo and Search Bar */}
             <div className="flex items-center w-full sm:w-86 ml-5">
-                <div className="relative w-full">
+                <div className="relative w-64">
                     <input
                         type="text"
                         ref={searchInputRef}
                         placeholder="Search Invoices"
                         onChange={handleSearchChange}
-                        className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-indigo-500 text-sm"
+                        className="pl-10 pr-20 py-2 peer w-full rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:border-pink-500 text-sm"
                     />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-pink-500">
                         {/* Search Icon */}
                         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <circle cx="11" cy="11" r="8" />
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                     </span>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500 text-xs bg-gray-100 peer-focus:bg-indigo-50 px-2 py-0.5 rounded">⌘ + K</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-pink-500 text-xs bg-gray-100 peer-focus:bg-pink-50 px-2 py-0.5 rounded">⌘ + K</span>
                     {/* Search Results Dropdown */}
                     {results?.length > 0 && (
                         <div className="absolute hidden peer-focus:block hover:block left-0 right-0 mt-2 py-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 h-fit w-full sm:w-[150%] overflow-hidden">
                             {results.map((item, idx) => (
                                 <div
                                     key={item?.id || idx}
-                                    className="flex flex-row flex-nowrap gap-2 w-full items-center justify-start px-4 py-1 h-12 hover:bg-indigo-50 cursor-pointer text-sm"
+                                    className="flex flex-row flex-nowrap gap-2 w-full items-center justify-start px-4 py-1 h-12 hover:bg-pink-50 cursor-pointer text-sm"
                                 >
                                     <img src={item?.imageUrl || "/static/images/default.png"} alt={item?.name} className="w-10 h-10 rounded mr-2 inline-block" />
                                     <div className="truncate-2">{item?.name || "Delivery"}</div>
@@ -108,7 +108,7 @@ const Header = () => {
                 {user?.first_name && (
                     <div className="relative">
                         <button className="flex items-center gap-3" onClick={() => setShowProfileMenu(!showProfileMenu)}>
-                            <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center border border-gray-200">
+                            <div className="w-9 h-9 rounded-full bg-pink-100 flex items-center justify-center border border-gray-200">
                                 <img
                                     src={"https://api.dicebear.com/9.x/micah/svg?seed=" + encodeURIComponent(user?.first_name + " " + user?.last_name) || "https://api.dicebear.com/9.x/micah/svg?seed=default"}
                                     className="w-full h-full object-cover rounded-full"

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Receipt } from "lucide-react";
+import { Receipt, StampIcon } from "lucide-react";
 import { useAtom } from "jotai";
 import { userAtom,isSidebarOpenAtom } from "../../Variables";
 
@@ -62,6 +62,22 @@ const Sidebar = () => {
                                         <Receipt size={20} />
                                     </span>
                                     {!collapsed && "Invoice"}
+                                </button>
+                            </li>
+                        )}
+                        {user?.permissions?.accounts_invoice && (
+                            <li className="mb-1">
+                                <button
+                                    className={`flex items-center ${collapsed ? "justify-center" : ""} px-4 py-2 transition-colors w-full text-left ${location.pathname === "/accounts/stamp-invoice" ? "bg-pink-100 text-pink-700 font-bold" : "text-gray-800 hover:bg-gray-100"}`}
+                                    onClick={() => {
+                                        setActiveItem("Stamp-Invoice");
+                                        navigate("/accounts/stamp-invoice");
+                                    }}
+                                >
+                                    <span className={`w-5 h-5 mr-3 flex items-center justify-center ${location.pathname === "/accounts/stamp-invoice" ? "text-pink-600" : "text-gray-500"}`}>
+                                        <StampIcon size={20} />
+                                    </span>
+                                    {!collapsed && "Stamp Invoice"}
                                 </button>
                             </li>
                         )}

@@ -46,6 +46,7 @@ import HotProduct from "./Pages/Purchase/Inventory/HotProduct";
 import ClearanceLoss from "./Pages/Purchase/Inventory/ClearanceLoss";
 import Catalog from "./Pages/Catalog/Catalog";
 import ParLevel from "./Pages/Purchase/General/ParLevel";
+import StampInvoice from "./Pages/Accounts/StampInvoice";
 
 const Loader = ({ height, width, stroke = "#615fff" }) => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
@@ -181,6 +182,7 @@ function App() {
 				</Route>
 				<Route path="/accounts" element={user?.is_active ? <AccountOutlet logout={logout} /> : <Navigate to="/login" replace />} >
 					{user?.permissions?.accounts_invoice && (<Route path="invoice" element={<Invoice />} />)}
+					{user?.permissions?.accounts_invoice && (<Route path="stamp-invoice" element={<StampInvoice />} />)}
 				</Route>
 				<Route path="*" element={<Navigate to="/404" replace />} />
 				<Route path="/404" element={<NotFound />} />
