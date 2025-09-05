@@ -17,7 +17,6 @@ from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
 class InvoicesView(View):
-    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         token = SalesgentToken.objects.filter(id=1).first()
@@ -294,7 +293,6 @@ def stampMaker(data, token):
 
 
 class StampInvoiceView(View):
-    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         token = SalesgentToken.objects.filter(id=1).first()
