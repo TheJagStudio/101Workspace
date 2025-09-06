@@ -18,14 +18,9 @@ const Toast = ({ message, onClose }) => (
 							All selected invoices have been stamped and zipped.
 						</p>
 						{message?.zipUrl && (
-							<a
-								href={import.meta.env.VITE_SERVER_URL + message.zipUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="mt-2 inline-block text-pink-600 underline text-xs"
-							>
+							<button onClick={downloadZip} className="mt-2 inline-block text-pink-600 underline text-xs">
 								Download ZIP
-							</a>
+							</button>
 						)}
 					</div>
 				</div>
@@ -109,6 +104,20 @@ function StampInvoice() {
 			setStatus('error')
 		} finally {
 			setIsSyncing(false)
+		}
+	}
+
+	function downloadZip() {
+		if (zipUrl) {
+			fetch(import.meta.env.VITE_SERVER_URL + zipUrl)
+				.then(res => res.blob())
+				.then(blob => {
+					const url = window.URL.createObjectURL(blob)
+					window.open(url, '_blank')
+					setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+				})
+		}else{
+			alert("No ZIP file available for download.")
 		}
 	}
 
@@ -202,9 +211,9 @@ function StampInvoice() {
 						</div>
 						{zipUrl && (
 							<div className="mt-4">
-								<a href={import.meta.env.VITE_SERVER_URL+zipUrl} target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">
+								<button onClick={downloadZip} className="text-pink-600 underline">
 									Download Stamped Invoices ZIP
-								</a>
+								</button>
 							</div>
 						)}
 					</div>
