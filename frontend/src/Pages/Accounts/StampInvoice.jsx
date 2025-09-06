@@ -94,8 +94,8 @@ function StampInvoice() {
 						if (data.zipUrl) {
 							setProgress(100)
 							setStatus('completed')
-							setZipUrl(data.zipUrl)
-							setToastMessage({ zipUrl: data.zipUrl })
+							setZipUrl("/api/accounts/download-stamped-invoices/")
+							setToastMessage({ zipUrl: "/api/accounts/download-stamped-invoices/" })
 							setShowToast(true)
 						}
 					} catch (e) {

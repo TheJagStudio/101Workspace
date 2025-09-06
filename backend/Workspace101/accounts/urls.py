@@ -13,4 +13,5 @@ urlpatterns = [
         views.StampInvoiceView.as_view(),
         name="StampInvoiceView",
     ),
+    path("download-stamped-invoices/", views.DownloadStampedInvoicesView.as_view(), name="DownloadStampedInvoicesView"),
 ]

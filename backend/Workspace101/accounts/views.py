@@ -321,3 +321,15 @@ class StampInvoiceView(View):
         response = StreamingHttpResponse(stampMaker(data, token), content_type="text/event-stream")
         response["Cache-Control"] = "no-cache"
         return response
+
+class DownloadStampedInvoicesView(View):
+    def get(self, request):
+        zip_filename = "stamped_invoices.zip"
+        zip_filepath = f"./media/zip/{zip_filename}"
+        if os.path.exists(zip_filepath):
+            with open(zip_filepath, "rb") as f:
+                response = StreamingHttpResponse(f, content_type="application/zip")
+                response["Content-Disposition"] = f'attachment; filename="{zip_filename}"'
+                return response
+        else:
+            return JsonResponse({"error": "No stamped invoices available for download."}, status=404)
