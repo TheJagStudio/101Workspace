@@ -2,7 +2,22 @@ import React, { useState, useRef } from 'react'
 import Calendar from '../../Components/utils/Calendar'
 import { Loader, Database, CheckCircle, X } from 'lucide-react'
 
-const Toast = ({ message, onClose }) => (
+const Toast = ({ message, onClose }) => {
+	function downloadZip() {
+		if (message?.zipUrl) {
+			fetch(import.meta.env.VITE_SERVER_URL + message.zipUrl)
+				.then(res => res.blob())
+				.then(blob => {
+					const url = window.URL.createObjectURL(blob)
+					window.open(url, '_blank')
+					setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+				})
+		}else{
+			alert("No ZIP file available for download.")
+		}
+	}
+
+	return(
 	<div className="fixed bottom-4 right-4 z-50 w-96 animate-slideIn">
 		<div className="max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5">
 			<div className="flex-1 w-0 p-4">
@@ -35,7 +50,7 @@ const Toast = ({ message, onClose }) => (
 			</div>
 		</div>
 	</div>
-);
+)};
 
 function StampInvoice() {
 	const [startDate, setStartDate] = useState(null)
