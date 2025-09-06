@@ -106,7 +106,7 @@ def create_paid_stamp(info_lines=None):
 
     # Draw extra info below "PAID"
     can.setFont("Helvetica", info_font_size)
-    info_x_offset = font_size + 10  # space to the right of "PAID"
+    info_x_offset = font_size + 5  # space to the right of "PAID"
     for i, (label, value) in enumerate(info_lines):
         # Draw label in red
         can.setFillColor(colors.red, alpha=opacity)
