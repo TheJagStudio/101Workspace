@@ -185,19 +185,19 @@ function StampInvoice() {
 						<div className="mb-2">
 							<div className="text-xs text-gray-500 mb-1">Processed:</div>
 							<ul className="text-xs text-gray-700 max-h-40 overflow-y-auto">
-								{log.map((item, idx) => (
+								{log?.map((item, idx) => (
 									<li key={idx} className="mb-1">
-										Customer: <span className="font-semibold">{item.data?.customerName || item.customerId}</span>
-										{item.data?.company && (
-											<> &mdash; <span className="italic">{item.data.company}</span></>
+										Customer: <span className="font-semibold">{item?.data?.customerName || item?.customerId}</span>
+										{item?.data?.company && (
+											<> &mdash; <span className="italic">{item?.data?.company}</span></>
 										)}
-										, Transaction: <span className="font-mono">{item.transactionId}</span>
-										{typeof item.data?.paymentAmount === 'number' && (
-											<> &mdash; <span className="text-green-700 font-semibold">${item.data.paymentAmount.toFixed(2)}</span></>
+										, Transaction: <span className="font-mono">{item?.transactionId}</span>
+										{typeof item?.data?.paymentAmount === 'number' && (
+											<> &mdash; <span className="text-green-700 font-semibold">${item?.data?.paymentAmount.toFixed(2)}</span></>
 										)}
 									</li>
 								))}
-								{log.length === 0 && <li className="text-gray-400">No invoices processed yet.</li>}
+								{log?.length === 0 && <li className="text-gray-400">No invoices processed yet.</li>}
 							</ul>
 						</div>
 						{zipUrl && (
