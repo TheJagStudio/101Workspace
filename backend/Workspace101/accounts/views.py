@@ -13,6 +13,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from rest_framework.permissions import IsAuthenticated
+import zipfile
+from django.http import FileResponse
 
 
 # Create your views here.
@@ -52,14 +54,14 @@ class InvoicesView(View):
 
 def download_pdf(url, save_path):
     """Downloads a PDF from a given URL and saves it to a local path."""
-    print(f"Downloading PDF from {url}...")
+    # print(f"Downloading PDF from {url}...")
     try:
         response = requests.get(url, timeout=30)
         # Raise an exception for bad status codes (4xx or 5xx)
         response.raise_for_status()
         with open("./media/pdf/" + save_path, "wb") as f:
             f.write(response.content)
-        print(f"Successfully downloaded and saved to {save_path}")
+        # print(f"Successfully downloaded and saved to {save_path}")
         return True
     except requests.exceptions.RequestException as e:
         print(f"Error downloading PDF: {e}")
@@ -126,7 +128,7 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None):
     """
     Overlays the "PAID" stamp onto the first page of the original PDF.
     """
-    print(f"Stamping {original_pdf_path}...")
+    # print(f"Stamping {original_pdf_path}...")
     try:
         # Create the stamp PDF in memory
         stamp_data = create_paid_stamp(info_lines)
@@ -153,10 +155,14 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None):
         # remove the original file if needed
         os.remove("./media/pdf/" + original_pdf_path)
 
-        print(f"Successfully created stamped PDF: {stamped_pdf_path}")
+        # print(f"Successfully created stamped PDF: {stamped_pdf_path}")
 
     except Exception as e:
         print(f"An error occurred during the stamping process: {e}")
+        # remove the original file if needed
+        if os.path.exists("./media/pdf/" + original_pdf_path):
+            os.remove("./media/pdf/" + original_pdf_path)
+        raise e
 
 
 def stampMaker(data, token):
@@ -164,121 +170,125 @@ def stampMaker(data, token):
     total = len(data)
     count = 1
     for entry in data:
-        transactionId = entry.get("transactionId", None)
-        invoiceId = entry.get("orderId", None)
-        paymentAmount = entry.get("paymentAmount", None)
-        date = entry.get("paymentInsertedTimestamp", None)
-        parentPaymentId = entry.get("parentPaymentId", None)
-        customerId = entry.get("customerId", None)
-        if parentPaymentId:
-            headers = {
-                "Accept": "application/json, text/plain",
-                "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
-                "Authorization": ("Bearer " + token.accessToken if token else ""),
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Pragma": "no-cache",
-                "Referer": "https://erp.101distributorsga.com/sales/paymentReceived",
-                "Sec-Fetch-Dest": "empty",
-                "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Site": "same-origin",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-                "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Windows"',
-            }
+        try:
+            transactionId = entry.get("transactionId", None)
+            invoiceId = entry.get("orderId", None)
+            paymentAmount = entry.get("paymentAmount", None)
+            date = entry.get("paymentInsertedTimestamp", None)
+            parentPaymentId = entry.get("parentPaymentId", None)
+            customerId = entry.get("customerId", None)
+            if parentPaymentId:
+                headers = {
+                    "Accept": "application/json, text/plain",
+                    "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+                    "Authorization": ("Bearer " + token.accessToken if token else ""),
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Pragma": "no-cache",
+                    "Referer": "https://erp.101distributorsga.com/sales/paymentReceived",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-origin",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+                    "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+                    "sec-ch-ua-mobile": "?0",
+                    "sec-ch-ua-platform": '"Windows"',
+                }
 
-            response = requests.get(
-                f"https://erp.101distributorsga.com/api/customer/paymentDetails?storeIds=1,2&parentPaymentId={parentPaymentId}&page=0&size=999",
-                headers=headers,
-            )
-            if response.json().get("hasError", False):
-                yield json.dumps({"error": "Failed to fetch child payment details"}, indent=4)
-            else:
-                childPayments = response.json()["result"]["content"]
-                if len(childPayments) == 1:
-                    invoiceId = childPayments[0].get("orderId", None)
-                    if transactionId:
-                        url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
-                        invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
-                        original_file = f"{invoiceName}_original.pdf"
-                        stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
-                        if download_pdf(url, original_file):
-                            checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
-                            info_lines = [
-                                (
-                                    checkLabel,
-                                    (str(transactionId) if transactionId else "N/A"),
-                                ),
-                                (
-                                    "AMOUNT",
-                                    (str(paymentAmount) if paymentAmount else "N/A"),
-                                ),
-                                ("DATE", str(date) if date else "N/A"),
-                            ]
-                            add_stamp_to_pdf(original_file, stamped_file, info_lines)
-                            yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
-                        else:
-                            yield json.dumps({"error": "Failed to download invoice PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-                    else:
-                        yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+                response = requests.get(
+                    f"https://erp.101distributorsga.com/api/customer/paymentDetails?storeIds=1,2&parentPaymentId={parentPaymentId}&page=0&size=999",
+                    headers=headers,
+                )
+                if response.json().get("hasError", False):
+                    yield json.dumps({"error": "Failed to fetch child payment details"}, indent=4)
                 else:
-                    if transactionId:
-                        url = f"https://erp.101distributorsga.com/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={token}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1"
-                        invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
-                        original_file = f"{invoiceName}_original.pdf"
-                        stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
-                        if download_pdf(url, original_file):
-                            checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
-                            info_lines = [
-                                (
-                                    checkLabel,
-                                    (str(transactionId) if transactionId else "N/A"),
-                                ),
-                                (
-                                    "AMOUNT",
-                                    (str(paymentAmount) if paymentAmount else "N/A"),
-                                ),
-                                ("DATE", str(date) if date else "N/A"),
-                            ]
-                            add_stamp_to_pdf(original_file, stamped_file, info_lines)
-                            yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
+                    childPayments = response.json()["result"]["content"]
+                    if len(childPayments) == 1:
+                        invoiceId = childPayments[0].get("orderId", None)
+                        if transactionId:
+                            url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
+                            invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
+                            original_file = f"{invoiceName}_original.pdf"
+                            stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
+                            if download_pdf(url, original_file):
+                                checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
+                                info_lines = [
+                                    (
+                                        checkLabel,
+                                        (str(transactionId) if transactionId else "N/A"),
+                                    ),
+                                    (
+                                        "AMOUNT",
+                                        (str(paymentAmount) if paymentAmount else "N/A"),
+                                    ),
+                                    ("DATE", str(date) if date else "N/A"),
+                                ]
+                                add_stamp_to_pdf(original_file, stamped_file, info_lines)
+                                yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
+                            else:
+                                yield json.dumps({"error": "Failed to download invoice PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
                         else:
-                            yield json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+                            yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
                     else:
-                        yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-        else:
-            if transactionId:
-                url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
-                invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
-                original_file = f"{invoiceName}_original.pdf"
-                stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
-                if download_pdf(url, original_file):
-                    checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
-                    info_lines = [
-                        (
-                            checkLabel,
-                            str(transactionId) if transactionId else "N/A",
-                        ),
-                        (
-                            "AMOUNT",
-                            str(paymentAmount) if paymentAmount else "N/A",
-                        ),
-                        ("DATE", str(date) if date else "N/A"),
-                    ]
-                    add_stamp_to_pdf(original_file, stamped_file, info_lines)
-                    yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
-                else:
-                    yield json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+                        if transactionId:
+                            url = f"https://erp.101distributorsga.com/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={token}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1"
+                            invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
+                            original_file = f"{invoiceName}_original.pdf"
+                            stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
+                            if download_pdf(url, original_file):
+                                checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
+                                info_lines = [
+                                    (
+                                        checkLabel,
+                                        (str(transactionId) if transactionId else "N/A"),
+                                    ),
+                                    (
+                                        "AMOUNT",
+                                        (str(paymentAmount) if paymentAmount else "N/A"),
+                                    ),
+                                    ("DATE", str(date) if date else "N/A"),
+                                ]
+                                add_stamp_to_pdf(original_file, stamped_file, info_lines)
+                                yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
+                            else:
+                                yield json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+                        else:
+                            yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
             else:
-                yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+                if transactionId:
+                    url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
+                    invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
+                    original_file = f"{invoiceName}_original.pdf"
+                    stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
+                    if download_pdf(url, original_file):
+                        checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
+                        info_lines = [
+                            (
+                                checkLabel,
+                                str(transactionId) if transactionId else "N/A",
+                            ),
+                            (
+                                "AMOUNT",
+                                str(paymentAmount) if paymentAmount else "N/A",
+                            ),
+                            ("DATE", str(date) if date else "N/A"),
+                        ]
+                        add_stamp_to_pdf(original_file, stamped_file, info_lines)
+                        yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
+                    else:
+                        yield json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+                else:
+                    yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+        except Exception as e:
+            yield json.dumps({"error": f"An error occurred while processing payment for customer: {customerId} and Parent Payment ID: {parentPaymentId}. Error: {str(e)}"}, indent=4)
         count += 1
+            
     # zip all stamped files from ./media/pdf/ and save it to ./media/zip/stamped_invoices.zip
     # and remove all stamped files from ./media/pdf/
     # and send the zip file as response
     zip_filename = "stamped_invoices.zip"
     zip_filepath = f"./media/zip/{zip_filename}"
-    import zipfile
+    
 
     with zipfile.ZipFile(zip_filepath, "w") as zipf:
         for root, dirs, files in os.walk("./media/pdf/"):
@@ -327,9 +337,7 @@ class DownloadStampedInvoicesView(View):
         zip_filename = "stamped_invoices.zip"
         zip_filepath = f"./media/zip/{zip_filename}"
         if os.path.exists(zip_filepath):
-            with open(zip_filepath, "rb") as f:
-                response = StreamingHttpResponse(f, content_type="application/zip")
-                response["Content-Disposition"] = f'attachment; filename="{zip_filename}"'
-                return response
+            response = FileResponse(open(zip_filepath, "rb"), as_attachment=True, filename=zip_filename, content_type="application/zip")
+            return response
         else:
             return JsonResponse({"error": "No stamped invoices available for download."}, status=404)

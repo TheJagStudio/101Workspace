@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import Calendar from '../../Components/utils/Calendar'
 import { Loader, Database, CheckCircle, X } from 'lucide-react'
+import { set } from 'lodash';
 
 const Toast = ({ message, onClose }) => {
 	function downloadZip() {
@@ -12,45 +13,46 @@ const Toast = ({ message, onClose }) => {
 					window.open(url, '_blank')
 					setTimeout(() => window.URL.revokeObjectURL(url), 10000)
 				})
-		}else{
+		} else {
 			alert("No ZIP file available for download.")
 		}
 	}
 
-	return(
-	<div className="fixed bottom-4 right-4 z-50 w-96 animate-slideIn">
-		<div className="max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5">
-			<div className="flex-1 w-0 p-4">
-				<div className="flex items-start">
-					<div className="flex-shrink-0 pt-0.5">
-						<CheckCircle className="h-10 w-10 text-green-500" />
-					</div>
-					<div className="ml-3 flex-1">
-						<p className="text-sm font-medium text-gray-900">
-							Stamped Invoices Completed
-						</p>
-						<p className="mt-1 text-sm text-gray-500">
-							All selected invoices have been stamped and zipped.
-						</p>
-						{message?.zipUrl && (
-							<button onClick={downloadZip} className="mt-2 inline-block text-pink-600 underline text-xs">
-								Download ZIP
-							</button>
-						)}
+	return (
+		<div className="fixed bottom-4 right-4 z-50 w-96 animate-slideIn">
+			<div className="max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5">
+				<div className="flex-1 w-0 p-4">
+					<div className="flex items-start">
+						<div className="flex-shrink-0 pt-0.5">
+							<CheckCircle className="h-10 w-10 text-green-500" />
+						</div>
+						<div className="ml-3 flex-1">
+							<p className="text-sm font-medium text-gray-900">
+								Stamped Invoices Completed
+							</p>
+							<p className="mt-1 text-sm text-gray-500">
+								All selected invoices have been stamped and zipped.
+							</p>
+							{message?.zipUrl && (
+								<button onClick={downloadZip} className="mt-2 inline-block text-pink-600 underline text-xs">
+									Download ZIP
+								</button>
+							)}
+						</div>
 					</div>
 				</div>
-			</div>
-			<div className="flex border-l border-gray-200">
-				<button
-					onClick={onClose}
-					className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-pink-600 hover:text-pink-500 focus:outline-none"
-				>
-					<X className="h-5 w-5" />
-				</button>
+				<div className="flex border-l border-gray-200">
+					<button
+						onClick={onClose}
+						className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-pink-600 hover:text-pink-500 focus:outline-none"
+					>
+						<X className="h-5 w-5" />
+					</button>
+				</div>
 			</div>
 		</div>
-	</div>
-)};
+	)
+};
 
 function StampInvoice() {
 	const [startDate, setStartDate] = useState(null)
@@ -60,6 +62,7 @@ function StampInvoice() {
 	const [progress, setProgress] = useState(0)
 	const [status, setStatus] = useState('idle')
 	const [log, setLog] = useState([])
+	const [errorLog, setErrorLog] = useState([])
 	const [showToast, setShowToast] = useState(false)
 	const [toastMessage, setToastMessage] = useState(null)
 	const [zipUrl, setZipUrl] = useState(null)
@@ -71,6 +74,7 @@ function StampInvoice() {
 		setStatus('starting')
 		setProgress(0)
 		setLog([])
+		setErrorLog([])
 		setZipUrl(null)
 		setError(null)
 		logRef.current = []
@@ -108,6 +112,9 @@ function StampInvoice() {
 							setToastMessage({ zipUrl: "/api/accounts/download-stamped-invoices/" })
 							setShowToast(true)
 						}
+						if (data.error) {
+							setErrorLog(prev => [...prev, data.error])
+						}
 					} catch (e) {
 						// ignore parse errors
 					}
@@ -131,7 +138,7 @@ function StampInvoice() {
 					window.open(url, '_blank')
 					setTimeout(() => window.URL.revokeObjectURL(url), 10000)
 				})
-		}else{
+		} else {
 			alert("No ZIP file available for download.")
 		}
 	}
@@ -224,6 +231,16 @@ function StampInvoice() {
 								{log?.length === 0 && <li className="text-gray-400">No invoices processed yet.</li>}
 							</ul>
 						</div>
+						{errorLog.length > 0 && (<div className="mb-2">
+							<div className="text-xs text-gray-500 mb-1">Errors:</div>
+							<ul className="text-xs text-gray-700 max-h-40 overflow-y-auto">
+								{errorLog.map((error, idx) => (
+									<li key={idx} className="mb-1">
+										{error}
+									</li>
+								))}
+							</ul>
+						</div>)}
 						{zipUrl && (
 							<div className="mt-4">
 								<button onClick={downloadZip} className="text-pink-600 underline">
