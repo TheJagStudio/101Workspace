@@ -207,7 +207,7 @@ def stampMaker(data, token):
                         invoiceId = childPayments[0].get("orderId", None)
                         if transactionId:
                             url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
-                            invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
+                            invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
                             original_file = f"{invoiceName}_original.pdf"
                             stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
                             if download_pdf(url, original_file):
@@ -232,7 +232,7 @@ def stampMaker(data, token):
                     else:
                         if transactionId:
                             url = f"https://erp.101distributorsga.com/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={token}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1"
-                            invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
+                            invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
                             original_file = f"{invoiceName}_original.pdf"
                             stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
                             if download_pdf(url, original_file):
@@ -257,7 +257,7 @@ def stampMaker(data, token):
             else:
                 if transactionId:
                     url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
-                    invoiceName = f"Statement-{customerId}-{date.split(' ')[0]}"
+                    invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
                     original_file = f"{invoiceName}_original.pdf"
                     stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
                     if download_pdf(url, original_file):
