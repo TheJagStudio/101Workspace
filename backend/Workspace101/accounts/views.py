@@ -105,7 +105,7 @@ def create_paid_stamp(info_lines=None):
     can.drawCentredString(0, 0, stamp_text)
 
     # Draw extra info below "PAID"
-    can.setFont("Helvetica", info_font_size)
+    can.setFont("Helvetica-Bold", info_font_size)
     info_x_offset = font_size + 5  # space to the right of "PAID"
     for i, (label, value) in enumerate(info_lines):
         # Draw label in red
@@ -113,7 +113,7 @@ def create_paid_stamp(info_lines=None):
         can.drawString(-info_x_offset, -(i + 1.5) * info_gap, label)
         # Draw value in black
         can.setFillColor(colors.black, alpha=opacity)
-        label_width = can.stringWidth(label, "Helvetica", info_font_size)
+        label_width = can.stringWidth(label, "Helvetica-Bold", info_font_size)
         can.drawString(-info_x_offset + label_width + 5, -(i + 1.5) * info_gap, value)
     can.restoreState()
 
