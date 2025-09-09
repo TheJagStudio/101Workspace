@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { ArrowLeft, LogOut } from "lucide-react-native";
+import { ArrowLeft, LogOut, History } from "lucide-react-native";
 
 const Settings = () => {
 	const navigation = useNavigation();
@@ -55,6 +55,23 @@ const Settings = () => {
 					<Text className="text-green-500 font-bold text-lg">{userInfo?.is_active ? "Yes" : "No"}</Text>
 				</View>
 			</View>
+
+			{/* Action Buttons */}
+			<View className="m-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+				<Text className="text-gray-700 font-semibold mb-1 text-xl py-2 px-4 bg-gray-100 border-b border-gray-200">Actions</Text>
+				
+				<TouchableOpacity 
+					className="flex-row items-center p-4 border-b border-gray-100"
+					onPress={() => navigation.navigate("history")}
+				>
+					<History size={24} color="#f97316" />
+					<View className="ml-3 flex-1">
+						<Text className="text-gray-900 font-semibold text-lg">Route History</Text>
+						<Text className="text-gray-500 text-sm">View your saved route history</Text>
+					</View>
+				</TouchableOpacity>
+			</View>
+
 			{/* Logout Button at bottom */}
 			<View className="flex-1 justify-end p-4">
 				<TouchableOpacity className="flex-row items-center justify-center bg-orange-500 px-6 py-3 rounded-lg" onPress={handleLogout}>

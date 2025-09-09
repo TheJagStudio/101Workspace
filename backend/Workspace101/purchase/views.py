@@ -48,7 +48,7 @@ client = typesense.Client(
                 "host": "purityai-typesense.hf.space",
                 "port": "443",
                 "protocol": "https",
-            },
+            }
         ],
         "connection_timeout_seconds": 2,
     }
@@ -123,8 +123,24 @@ class InventorySummaryView(APIView):
         dataType = request.GET.get("dataType", "total")
         reverse_sort = request.GET.get("reverse_sort", "true").lower() == "true"
         loadSubcategories = request.GET.get("loadSubcategories", "False").lower() == "true"
+        searchTerm = request.GET.get("searchTerm", "").strip()
 
-        products = Product.objects.filter(active=True)
+        products = []
+
+        if searchTerm != "":
+            productsTypesense = client.collections["101"].documents.search(
+                {
+                    "q": searchTerm,
+                    "query_by": "productName,sku,upc",
+                    "filter_by": "active:=true",
+                    "per_page": 250
+                }
+            )
+            typesensePages = 1
+            product_ids = [hit["document"]["id"] for hit in productsTypesense["hits"]]
+            products = Product.objects.filter(productId__in=product_ids, active=True)
+        else:
+            products = Product.objects.filter(active=True)
         if loadSubcategories:
             categories = Category.objects.filter(parentId__isnull=False)
         else:
@@ -284,7 +300,7 @@ class InventorySummaryView(APIView):
                     finalData.append(tempData)
                     i += 1
                 return JsonResponse(
-                    {"data": finalData, "totalPages": totalPossiblePages},
+                    {"data": finalData, "totalPages": typesensePages if searchTerm != "" else totalPossiblePages},
                 )
             elif report_type == "category":
                 totalPossiblePages = (categories.count() + int(page_size) - 1) // int(page_size)
@@ -345,7 +361,7 @@ class InventorySummaryView(APIView):
                     finalData.append(tempData)
                     i += 1
                 return JsonResponse(
-                    {"data": finalData, "totalPages": totalPossiblePages},
+                    {"data": finalData, "totalPages": typesensePages if searchTerm != "" else totalPossiblePages},
                 )
             else:
                 return JsonResponse({"error": "Invalid report type"}, status=400)
@@ -368,6 +384,7 @@ class InventoryReplenishmentView(APIView):
     - reverse_sort (str, default='true'): 'true' for descending, 'False' for ascending.
     - loadSubcategories (str, default='False'): For 'category' report_type. 'true' for subcategories.
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -389,20 +406,14 @@ class InventoryReplenishmentView(APIView):
         end_date = timezone.now()
         if end_date_str:
             try:
-                end_date = timezone.make_aware(
-                    datetime.datetime.strptime(end_date_str, "%Y-%m-%d"), 
-                    current_timezone
-                ) + timedelta(days=1, microseconds=-1)
+                end_date = timezone.make_aware(datetime.datetime.strptime(end_date_str, "%Y-%m-%d"), current_timezone) + timedelta(days=1, microseconds=-1)
             except ValueError:
                 return JsonResponse({"error": "Invalid end_date format. Use YYYY-MM-DD."}, status=400)
 
         start_date = end_date - timedelta(days=30)
         if start_date_str:
             try:
-                start_date = timezone.make_aware(
-                    datetime.datetime.strptime(start_date_str, "%Y-%m-%d"), 
-                    current_timezone
-                )
+                start_date = timezone.make_aware(datetime.datetime.strptime(start_date_str, "%Y-%m-%d"), current_timezone)
             except ValueError:
                 return JsonResponse({"error": "Invalid start_date format. Use YYYY-MM-DD."}, status=400)
 
@@ -421,22 +432,10 @@ class InventoryReplenishmentView(APIView):
 
             # Annotate for DB-level sorting where efficient
             if sort_by == "items_sold":
-                base_queryset = base_queryset.annotate(
-                    items_sold_sort=Coalesce(
-                        Sum("invoice_line_items__quantity", filter=sales_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
+                base_queryset = base_queryset.annotate(items_sold_sort=Coalesce(Sum("invoice_line_items__quantity", filter=sales_filter), Value(0), output_field=DecimalField()))
                 sort_expression = F("items_sold_sort")
             elif sort_by == "inbound_inventory":
-                base_queryset = base_queryset.annotate(
-                    inbound_sort=Coalesce(
-                        Sum("purchase_history__purchasedQuantity", filter=po_inbound_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
+                base_queryset = base_queryset.annotate(inbound_sort=Coalesce(Sum("purchase_history__purchasedQuantity", filter=po_inbound_filter), Value(0), output_field=DecimalField()))
                 sort_expression = F("inbound_sort")
             elif sort_by == "closing_inventory":
                 sort_expression = Coalesce(F("availableQuantity"), Value(0))
@@ -460,31 +459,9 @@ class InventoryReplenishmentView(APIView):
                 return JsonResponse({"data": [], "totalPages": paginator.num_pages}, safe=False)
 
             # Batch fetch all required data for the page
-            sales_map = {
-                d["productId"]: d["total"] 
-                for d in Product.objects.filter(productId__in=object_ids)
-                .values("productId")
-                .annotate(
-                    total=Coalesce(
-                        Sum("invoice_line_items__quantity", filter=sales_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
-            }
+            sales_map = {d["productId"]: d["total"] for d in Product.objects.filter(productId__in=object_ids).values("productId").annotate(total=Coalesce(Sum("invoice_line_items__quantity", filter=sales_filter), Value(0), output_field=DecimalField()))}
 
-            inbound_map = {
-                d["productId"]: d["total"] 
-                for d in Product.objects.filter(productId__in=object_ids)
-                .values("productId")
-                .annotate(
-                    total=Coalesce(
-                        Sum("purchase_history__purchasedQuantity", filter=po_inbound_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
-            }
+            inbound_map = {d["productId"]: d["total"] for d in Product.objects.filter(productId__in=object_ids).values("productId").annotate(total=Coalesce(Sum("purchase_history__purchasedQuantity", filter=po_inbound_filter), Value(0), output_field=DecimalField()))}
 
             final_data = []
             for i, product in enumerate(page_objects.object_list):
@@ -492,65 +469,39 @@ class InventoryReplenishmentView(APIView):
                 avg_items_sold_per_day = items_sold / days_in_period
                 closing_inventory = product.availableQuantity or 0
                 days_cover = closing_inventory / avg_items_sold_per_day if avg_items_sold_per_day > 0 else float("inf")
-                
+
                 # Use avgCostPrice if available, otherwise fall back to costPrice
                 average_cost = product.avgCostPrice or product.costPrice or 0
 
-                final_data.append({
-                    "id": product.productId,
-                    "name": product.productName,
-                    "closingInventory": round(float(closing_inventory), 2),
-                    "itemsSold": round(float(items_sold), 2),
-                    "itemsSoldPerDay": round(float(avg_items_sold_per_day), 2),
-                    "daysCover": round(float(days_cover), 2) if days_cover != float("inf") else "0",
-                    "averageCost": round(float(average_cost), 2),
-                    "inboundInventory": round(float(inbound_map.get(product.productId, 0)), 2),
-                    "imageUrl": product.imageUrl,
-                    "sku": product.sku,
-                    "upc": product.upc,
-                })
+                final_data.append(
+                    {
+                        "id": product.productId,
+                        "name": product.productName,
+                        "closingInventory": round(float(closing_inventory), 2),
+                        "itemsSold": round(float(items_sold), 2),
+                        "itemsSoldPerDay": round(float(avg_items_sold_per_day), 2),
+                        "daysCover": round(float(days_cover), 2) if days_cover != float("inf") else "0",
+                        "averageCost": round(float(average_cost), 2),
+                        "inboundInventory": round(float(inbound_map.get(product.productId, 0)), 2),
+                        "imageUrl": product.imageUrl,
+                        "sku": product.sku,
+                        "upc": product.upc,
+                    }
+                )
 
         # --- Category Report Implementation ---
         elif report_type == "category":
-            base_queryset = Category.objects.filter(
-                parentId__isnull=False if load_subcategories else True,
-                deleted__ne=True  # Exclude deleted categories
-            )
+            base_queryset = Category.objects.filter(parentId__isnull=False if load_subcategories else True, deleted__ne=True)  # Exclude deleted categories
 
             # Annotate for DB-level sorting
             if sort_by == "items_sold":
-                base_queryset = base_queryset.annotate(
-                    sort_val=Coalesce(
-                        Sum("products_m2m__invoice_line_items__quantity", filter=sales_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
+                base_queryset = base_queryset.annotate(sort_val=Coalesce(Sum("products_m2m__invoice_line_items__quantity", filter=sales_filter), Value(0), output_field=DecimalField()))
             elif sort_by == "inbound_inventory":
-                base_queryset = base_queryset.annotate(
-                    sort_val=Coalesce(
-                        Sum("products_m2m__purchase_history__purchasedQuantity", filter=po_inbound_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
+                base_queryset = base_queryset.annotate(sort_val=Coalesce(Sum("products_m2m__purchase_history__purchasedQuantity", filter=po_inbound_filter), Value(0), output_field=DecimalField()))
             elif sort_by == "closing_inventory":
-                base_queryset = base_queryset.annotate(
-                    sort_val=Coalesce(
-                        Sum("products_m2m__availableQuantity"), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
+                base_queryset = base_queryset.annotate(sort_val=Coalesce(Sum("products_m2m__availableQuantity"), Value(0), output_field=DecimalField()))
             elif sort_by == "average_cost":
-                base_queryset = base_queryset.annotate(
-                    sort_val=Coalesce(
-                        Avg("products_m2m__avgCostPrice"), 
-                        Avg("products_m2m__costPrice"), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
+                base_queryset = base_queryset.annotate(sort_val=Coalesce(Avg("products_m2m__avgCostPrice"), Avg("products_m2m__costPrice"), Value(0), output_field=DecimalField()))
             else:  # Default to name
                 base_queryset = base_queryset.annotate(sort_val=F("name"))
 
@@ -569,62 +520,17 @@ class InventoryReplenishmentView(APIView):
             # Batch fetch all data for categories on the page
             cat_filter = Q(categories__categoryId__in=object_ids)
 
-            inv_map = {
-                d["categories"]: d["total"] 
-                for d in Product.objects.filter(cat_filter)
-                .values("categories")
-                .annotate(
-                    total=Coalesce(
-                        Sum("availableQuantity"), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
-            }
+            inv_map = {d["categories"]: d["total"] for d in Product.objects.filter(cat_filter).values("categories").annotate(total=Coalesce(Sum("availableQuantity"), Value(0), output_field=DecimalField()))}
 
-            sales_map = {
-                d["categories"]: d["total"] 
-                for d in Product.objects.filter(cat_filter)
-                .values("categories")
-                .annotate(
-                    total=Coalesce(
-                        Sum("invoice_line_items__quantity", filter=sales_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
-            }
+            sales_map = {d["categories"]: d["total"] for d in Product.objects.filter(cat_filter).values("categories").annotate(total=Coalesce(Sum("invoice_line_items__quantity", filter=sales_filter), Value(0), output_field=DecimalField()))}
 
-            inbound_map = {
-                d["categories"]: d["total"] 
-                for d in Product.objects.filter(cat_filter)
-                .values("categories")
-                .annotate(
-                    total=Coalesce(
-                        Sum("purchase_history__purchasedQuantity", filter=po_inbound_filter), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
-            }
+            inbound_map = {d["categories"]: d["total"] for d in Product.objects.filter(cat_filter).values("categories").annotate(total=Coalesce(Sum("purchase_history__purchasedQuantity", filter=po_inbound_filter), Value(0), output_field=DecimalField()))}
 
-            cost_map = {
-                d["categories"]: d["avg_cost"] 
-                for d in Product.objects.filter(cat_filter)
-                .values("categories")
-                .annotate(
-                    avg_cost=Coalesce(
-                        Avg("avgCostPrice"), 
-                        Avg("costPrice"), 
-                        Value(0), 
-                        output_field=DecimalField()
-                    )
-                )
-            }
+            cost_map = {d["categories"]: d["avg_cost"] for d in Product.objects.filter(cat_filter).values("categories").annotate(avg_cost=Coalesce(Avg("avgCostPrice"), Avg("costPrice"), Value(0), output_field=DecimalField()))}
 
             # Efficiently get one image per category
             image_map = {}
-            for product in Product.objects.filter(categories__categoryId__in=object_ids).select_related().prefetch_related('categories'):
+            for product in Product.objects.filter(categories__categoryId__in=object_ids).select_related().prefetch_related("categories"):
                 for category in product.categories.all():
                     if category.categoryId not in image_map and product.imageUrl:
                         image_map[category.categoryId] = product.imageUrl
@@ -637,26 +543,29 @@ class InventoryReplenishmentView(APIView):
                 avg_items_sold_per_day = items_sold / days_in_period
                 days_cover = closing_inventory / avg_items_sold_per_day if avg_items_sold_per_day > 0 else float("inf")
 
-                final_data.append({
-                    "id": cat_id,
-                    "index": page_objects.start_index() + i,
-                    "name": category.name,
-                    "closingInventory": round(float(closing_inventory), 2),
-                    "itemsSold": round(float(items_sold), 2),
-                    "itemsSoldPerDay": round(float(avg_items_sold_per_day), 2),
-                    "daysCover": round(float(days_cover), 2) if days_cover != float("inf") else "0",
-                    "averageCost": round(float(cost_map.get(cat_id, 0)), 2),
-                    "inboundInventory": round(float(inbound_map.get(cat_id, 0)), 2),
-                    "imageUrl": image_map.get(cat_id),
-                })
+                final_data.append(
+                    {
+                        "id": cat_id,
+                        "index": page_objects.start_index() + i,
+                        "name": category.name,
+                        "closingInventory": round(float(closing_inventory), 2),
+                        "itemsSold": round(float(items_sold), 2),
+                        "itemsSoldPerDay": round(float(avg_items_sold_per_day), 2),
+                        "daysCover": round(float(days_cover), 2) if days_cover != float("inf") else "0",
+                        "averageCost": round(float(cost_map.get(cat_id, 0)), 2),
+                        "inboundInventory": round(float(inbound_map.get(cat_id, 0)), 2),
+                        "imageUrl": image_map.get(cat_id),
+                    }
+                )
 
         else:
             return JsonResponse({"error": "Invalid report type. Must be 'product' or 'category'."}, status=400)
 
         # Python-level sorting for complex calculated fields (same for both report types)
         if sort_by in ["items_sold_per_day", "days_cover"]:
+
             def sort_key(x):
-                val = x[sort_by.replace('_', '')]  # Convert snake_case to camelCase
+                val = x[sort_by.replace("_", "")]  # Convert snake_case to camelCase
                 if val == "0" or val == "N/A":
                     return float("inf") if not reverse_sort else float("-inf")
                 return float(val) if isinstance(val, (str, int, float)) else 0
@@ -664,7 +573,8 @@ class InventoryReplenishmentView(APIView):
             final_data.sort(key=sort_key, reverse=reverse_sort)
 
         return JsonResponse({"data": final_data, "totalPages": paginator.num_pages}, safe=False)
-    
+
+
 # class InventoryReplenishmentView(APIView):
 #     """
 #     API View to provide inventory replenishment data.
@@ -1481,7 +1391,7 @@ class ClearanceLossReportView(APIView):
             retail_price = float(entry.retailPrice)
 
             transaction_loss = round(entry.quantity * (retail_price - original_cost), 2)
-           
+
             if transaction_loss < 0:
                 product_id = entry.productId.productId
 
@@ -1511,7 +1421,7 @@ class ParLevelView(APIView):
 
     def get(self, request):
         dataType = request.query_params.get("dataType", "category")
-        
+
         if dataType == "category":
             par_levels = Category.objects.values("categoryId", "name", "parValueDays", "parentId")
         else:
@@ -1531,19 +1441,19 @@ class ParLevelView(APIView):
         return periods.get(period_str, 90)
 
     @transaction.atomic
-    def _handle_product_update(self, changes,period_days):
+    def _handle_product_update(self, changes, period_days):
         """Optimized handler for updating individual product parValueDays."""
         products_to_update = []
         products_to_update_to_none = []
         for change in changes:
             product_id = change.get("productId")
             # CORRECTED: Use parValueDays to match the model field
-            par_days = change.get("parValueDays",0)
-            if par_days is not 0 and par_days is not None:
+            par_days = change.get("parValueDays", 0)
+            if par_days != 0 and par_days is not None:
                 product = Product(productId=product_id, parValueDays=par_days)
                 # add logic for calculating minQuantity
-                sales_data = ProductHistory.objects.filter(productId=product_id).aggregate(total_quantity=Sum('quantity'))
-                total_quantity_sold = sales_data.get('total_quantity', 0)
+                sales_data = ProductHistory.objects.filter(productId=product_id).aggregate(total_quantity=Sum("quantity"))
+                total_quantity_sold = sales_data.get("total_quantity", 0)
                 if total_quantity_sold is None:
                     total_quantity_sold = 0
                 avg_daily_sale = total_quantity_sold / period_days if period_days > 0 else 0
@@ -1576,32 +1486,27 @@ class ParLevelView(APIView):
             if category_id is not None and par_days is not None:
                 categories_to_update.append(Category(categoryId=category_id, parValueDays=par_days))
                 category_par_map[category_id] = par_days
-        
+
         if categories_to_update:
             Category.objects.bulk_update(categories_to_update, ["parValueDays"])
 
         # Fetch sales data for all products in the affected categories
         category_ids = list(category_par_map.keys())
         start_date = timezone.now() - datetime.timedelta(days=period_days)
-        
-        sales_data = ProductHistory.objects.filter(
-            productId__categories__categoryId__in=category_ids,
-            date__range=[start_date, timezone.now()]
-        ).values('productId').annotate(total_quantity=Sum('quantity'))
 
-        sales_map = {item['productId']: item['total_quantity'] for item in sales_data}
+        sales_data = ProductHistory.objects.filter(productId__categories__categoryId__in=category_ids, date__range=[start_date, timezone.now()]).values("productId").annotate(total_quantity=Sum("quantity"))
+
+        sales_map = {item["productId"]: item["total_quantity"] for item in sales_data}
 
         # Fetch all products to recalculate their minQuantity
-        products_to_recalculate = Product.objects.filter(
-            categories__categoryId__in=category_ids
-        ).prefetch_related('categories').distinct()
-        
+        products_to_recalculate = Product.objects.filter(categories__categoryId__in=category_ids).prefetch_related("categories").distinct()
+
         products_for_bulk_update = []
         for product in products_to_recalculate:
             effective_par_days = product.parValueDays
 
             if effective_par_days is None:
-                effective_par_days = 10 
+                effective_par_days = 10
                 for cat in product.categories.all():
                     if cat.categoryId in category_par_map:
                         effective_par_days = category_par_map[cat.categoryId]
@@ -1623,7 +1528,7 @@ class ParLevelView(APIView):
 
         if dataType == "category":
             self._handle_category_update(changes, period_days)
-        else: # dataType == 'product'
+        else:  # dataType == 'product'
             self._handle_product_update(changes, period_days)
 
         return JsonResponse({"message": "Parlevel and Minimum Quantity updated successfully"}, status=200)

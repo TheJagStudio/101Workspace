@@ -44,6 +44,7 @@ const Login = () => {
 				}),
 			});
 			const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+			await AsyncStorage.setItem("loginInfo", JSON.stringify({ email, password }));
 			if (error) Alert.alert("Login Error", error.message);
 			if (data) {
 				let userId = data?.user?.id;

@@ -96,12 +96,13 @@ const Summary = () => {
 	const [totalPages, setTotalPages] = useState(0);
 	const [openGlossary, setOpenGlossary] = useAtom(glossaryAtom);
 	const [search, setSearch] = useAtom(searchAtom);
+	const [localSearch, setLocalSearch] = useState("");
 	const [loadingExport, setLoadingExport] = useState(false);
 
-	async function getData() {
+	async function getData(searchTerm) {
 		setLoading(true);
 		try {
-			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}`);
+			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/inventory-summary/?report_type=${reportType}&measure=${measure}&start_date=${startDate}&end_date=${endDate}&sort_by=${sortBy}&page=${page}&page_size=${pageSize}&dataType=child&reverse_sort=${reverseSort}&loadSubcategories=${subCategoryVisible}&searchTerm=${searchTerm}`);
 			setTableData(data["data"]);
 			setTotalPages(data["totalPages"]);
 		} catch (error) {
@@ -122,7 +123,7 @@ const Summary = () => {
 	}
 
 	useEffect(() => {
-		getData();
+		getData(localSearch);
 	}, [page, pageSize, reverseSort, sortBy, measure, reportType, subCategoryVisible]);
 
 	useEffect(() => {
@@ -187,6 +188,23 @@ const Summary = () => {
 				</div>
 			</div>
 			<div className={"bg-white select-none w-full h-fit rounded-lg shadow-md mt-5 p-4 items-end justify-start flex flex-row flex-wrap gap-x-4 gap-y-1 " + (loading ? "opacity-50 pointer-events-none" : "")}>
+				<div className="flex flex-col">
+					{/* search input */}
+					<label className="text-sm text-gray-600 mb-1">Search</label>
+					<input type="text" placeholder="Search..." value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} className="border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+				</div>
+				<svg
+					className="bg-indigo-500 text-white px-2 py-1.5 rounded-md hover:bg-indigo-600 cursor-pointer"
+					onClick={() => {
+						getData(localSearch);
+					}}
+					width={40}
+					height={40}
+					viewBox="0 0 24 24"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path fill="currentColor" d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.39M11 18a7 7 0 1 1 7-7 7 7 0 0 1-7 7" />
+				</svg>
 				<div className="flex flex-col">
 					<label className="text-sm text-gray-600 mb-1">Report type</label>
 					<CustomDropdown options={dropdownOptions.reportType} value={reportType} onChange={setReportType} placeholder="report type" />

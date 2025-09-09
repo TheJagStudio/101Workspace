@@ -59,7 +59,7 @@ def download_pdf(url, save_path):
         response = requests.get(url, timeout=30)
         # Raise an exception for bad status codes (4xx or 5xx)
         response.raise_for_status()
-        with open("./media/pdf/" + save_path, "wb") as f:
+        with open("./media/pdf/original/" + save_path, "wb") as f:
             f.write(response.content)
         # print(f"Successfully downloaded and saved to {save_path}")
         return True
@@ -136,7 +136,7 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None):
         stamp_page = stamp_pdf.pages[0]
 
         # Open the original PDF to be stamped
-        original_pdf = PdfReader("./media/pdf/" + original_pdf_path)
+        original_pdf = PdfReader("./media/pdf/original/" + original_pdf_path)
         writer = PdfWriter()
 
         first_page = original_pdf.pages[0]
@@ -149,19 +149,33 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None):
             for page_num in range(1, len(original_pdf.pages)):
                 writer.add_page(original_pdf.pages[page_num])
 
-        with open("./media/pdf/" + stamped_pdf_path, "wb") as f:
+        # add extra folder in pdf based on payment type
+        payment_type = "other"
+        if info_lines:
+            transaction_line = next((line for line in info_lines if line[0] in ["CK#NO:", "CC#NO:", "ACH#NO:", "TX#NO:"]), None)
+            if transaction_line:
+                if transaction_line[0] == "CK#NO:":
+                    payment_type = "ck"
+                elif transaction_line[0] == "CC#NO:":
+                    payment_type = "cc"
+                elif transaction_line[0] == "ACH#NO:":
+                    payment_type = "ach"
+                elif transaction_line[0] == "TX#NO:":
+                    payment_type = "cash"
+
+        with open(f"./media/pdf/{payment_type}/" + stamped_pdf_path, "wb") as f:
             writer.write(f)
 
         # remove the original file if needed
-        os.remove("./media/pdf/" + original_pdf_path)
+        os.remove(f"./media/pdf/original/{original_pdf_path}")
 
         # print(f"Successfully created stamped PDF: {stamped_pdf_path}")
 
     except Exception as e:
         print(f"An error occurred during the stamping process: {e}")
         # remove the original file if needed
-        if os.path.exists("./media/pdf/" + original_pdf_path):
-            os.remove("./media/pdf/" + original_pdf_path)
+        if os.path.exists(f"./media/pdf/original/{original_pdf_path}"):
+            os.remove(f"./media/pdf/original/{original_pdf_path}")
         raise e
 
 
@@ -169,7 +183,7 @@ def stampMaker(data, token):
     print(f"Processing {len(data)} payments for stamping...")
     total = len(data)
     count = 1
-    for entry in data:
+    for entry in data[:5]:
         try:
             transactionId = entry.get("transactionId", None)
             invoiceId = entry.get("orderId", None)
@@ -294,11 +308,10 @@ def stampMaker(data, token):
         for root, dirs, files in os.walk("./media/pdf/"):
             for file in files:
                 if file.endswith("_with_paid_stamp.pdf"):
-                    zipf.write(
-                        os.path.join(root, file),
-                        arcname=file,
-                    )
-                    os.remove(os.path.join(root, file))
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, "./media/pdf/")
+                    zipf.write(file_path, arcname=arcname)
+                    os.remove(file_path)
     yield json.dumps({"zipUrl": f"/media/zip/{zip_filename}"}, indent=4)
 
 
@@ -308,6 +321,27 @@ class StampInvoiceView(View):
         token = SalesgentToken.objects.filter(id=1).first()
         startDate = request.GET.get("startDate", None)
         endDate = request.GET.get("endDate", None)
+
+        # create folder ./media/pdf/ if not exists
+        if not os.path.exists("./media/pdf/"):
+            os.makedirs("./media/pdf/")
+        # create folder ./media/pdf/original/ if not exists
+        if not os.path.exists("./media/pdf/original/"):
+            os.makedirs("./media/pdf/original/")
+        # create folder ./media/pdf/ck if not exists
+        if not os.path.exists("./media/pdf/ck/"):
+            os.makedirs("./media/pdf/ck/")
+        if not os.path.exists("./media/pdf/cc/"):
+            os.makedirs("./media/pdf/cc/")
+        if not os.path.exists("./media/pdf/ach/"):
+            os.makedirs("./media/pdf/ach/")
+        if not os.path.exists("./media/pdf/cash/"):
+            os.makedirs("./media/pdf/cash/")
+        if not os.path.exists("./media/pdf/other/"):
+            os.makedirs("./media/pdf/other/")
+        # create folder ./media/zip/ if not exists
+        if not os.path.exists("./media/zip/"):
+            os.makedirs("./media/zip/")
 
         headers = {
             "sec-ch-ua-platform": '"Windows"',

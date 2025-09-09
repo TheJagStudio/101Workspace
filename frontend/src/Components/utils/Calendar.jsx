@@ -10,7 +10,7 @@ const DateInputGroup = ({ startDate, endDate, onFocus, setStartDate, setEndDate,
     const dateFormat = "MM/dd/yyyy";
 
     return (
-        <div className="flex items-center border border-gray-300 rounded-md px-1 w-fit">
+        <div className="flex items-center border border-gray-300 rounded-md px-0.5 w-fit">
             <input
                 type="text"
                 value={startDate ? format(startDate, dateFormat) : ''}
@@ -18,7 +18,7 @@ const DateInputGroup = ({ startDate, endDate, onFocus, setStartDate, setEndDate,
                 onChange={(e) => {
                     setStartDate(e.target.value);
                 }}
-                className={`p-1 w-36 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-l`}
+                className={`p-1 w-28 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-l`}
                 placeholder="Start Date"
             />
             <span className="px-1 text-gray-500">{">>"}</span>
@@ -29,7 +29,7 @@ const DateInputGroup = ({ startDate, endDate, onFocus, setStartDate, setEndDate,
                 onChange={(e) => {
                     setEndDate(e.target.value);
                 }}
-                className={`p-1 w-36 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-r`}
+                className={`p-1 w-28 text-center focus:outline-none focus:ring-2 focus:ring-${accent}-500/25 rounded-r`}
                 placeholder="End Date"
             />
             <div className="p-2 text-gray-500">

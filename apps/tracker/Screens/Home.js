@@ -55,85 +55,176 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const LOCATION_TASK_NAME = "background-location-task";
 
-// Enhanced TaskManager with better error handling
+// Enhanced TaskManager with automatic token refresh, re-authentication, and better error handling
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 	if (error) {
-		console.error("TaskManager Error:", error);
+		console.error("TaskManager Error:", error.message);
 		return;
 	}
 
-	if (data) {
-		const { locations } = data;
-		const location = locations[0];
+	if (data && data.locations) {
+		const location = data.locations[0];
+		if (!location) return;
 
-		if (location) {
-			console.log("Background Location Update:", location.coords);
+		console.log("Background Location Update:", location.coords);
 
+		// Helper function to perform re-authentication using stored credentials
+		const attemptReAuthentication = async () => {
 			try {
-				const sessionStr = await AsyncStorage.getItem("supabase.auth.token");
-				const session = sessionStr ? JSON.parse(sessionStr) : null;
-
-				if (!session || !session.user || !session.access_token) {
-					console.log("No valid session found, skipping location update");
-					return;
+				console.log("Background Task: Attempting re-authentication...");
+				const loginInfoStr = await AsyncStorage.getItem("loginInfo");
+				if (!loginInfoStr) {
+					console.log("Background Task: No stored login credentials found.");
+					return null;
 				}
 
-				// Update current location
-				let response = await fetch(supabaseUrl + "/rest/v1/salesman?authId=eq." + session?.user.id, {
-					method: "PATCH",
-					headers: {
-						apikey: supabaseAnonKey,
-						Authorization: `Bearer ${session?.access_token}`,
-						"Content-Type": "application/json",
-						Prefer: "return=minimal",
+				const { email, password } = JSON.parse(loginInfoStr);
+				
+				// Initialize fresh Supabase client for re-authentication
+				const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+					auth: {
+						storage: AsyncStorage,
+						autoRefreshToken: true,
+						persistSession: true,
+						detectSessionInUrl: false,
 					},
-					body: JSON.stringify({
-						current_location_lat: location.coords.latitude,
-						current_location_lng: location.coords.longitude,
-						last_seen: new Date().toISOString().replace("T", " ").replace("Z", "+00"),
-					}),
 				});
-				// response = await response.text();
-				// console.log(response,new Date().toISOString().replace("T", " ").replace("Z", "+00"))
 
-				// console.log("Location sent to Supabase successfully.");
-				await AsyncStorage.setItem(
-					"lastLocation",
-					JSON.stringify({
-						...location.coords,
-						timestamp: new Date().toISOString().replace("T", " ").replace("Z", "+00"),
-					})
-				);
-
-				// Store route tracking data
-				const salesmanInfo = await AsyncStorage.getItem("salesmanInfo");
-				if (salesmanInfo) {
-					const parsedSalesmanInfo = JSON.parse(salesmanInfo);
-					let response2 = await fetch(supabaseUrl + "/rest/v1/tracker_locationpoint", {
-						method: "POST",
-						headers: {
-							apikey: supabaseAnonKey,
-							Authorization: `Bearer ${session?.access_token}`, // Use access token for this, not anon key
-							"Content-Type": "application/json",
-							Prefer: "return=minimal",
-						},
-						body: JSON.stringify({
-							latitude: location.coords.latitude,
-							longitude: location.coords.longitude,
-							timestamp: new Date().toISOString().replace("T", " ").replace("Z", "+00"),
-							salesman_id: parsedSalesmanInfo?.id,
-							// accuracy: location.coords.accuracy,
-							// speed: location.coords.speed,
-							// heading: location.coords.heading,
-						}),
-					});
-					// response2 = await response2.text();
-					// console.log("Route tracking data sent successfully:", response2);
-					// console.log("Route tracking data sent successfully.");
+				// Re-authenticate with Supabase
+				const { data, error } = await authSupabase.auth.signInWithPassword({ email, password });
+				
+				if (error) {
+					console.error("Background Task: Re-authentication failed:", error.message);
+					return null;
 				}
+
+				if (data?.session) {
+					console.log("Background Task: Re-authentication successful!");
+					// Update stored session
+					await AsyncStorage.setItem("supabase.auth.token", JSON.stringify(data.session));
+					
+					// Also re-authenticate with your backend API
+					try {
+						const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/login/`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								username: email,
+								password: password,
+							}),
+						});
+						
+						const apiData = await response.json();
+						if (apiData.status === "success") {
+							await AsyncStorage.setItem("accessToken", apiData.tokens.access);
+							await AsyncStorage.setItem("refreshToken", apiData.tokens.refresh);
+							console.log("Background Task: Backend re-authentication successful!");
+						}
+					} catch (apiError) {
+						console.error("Background Task: Backend re-authentication failed:", apiError.message);
+					}
+
+					return authSupabase;
+				}
+				
+				return null;
 			} catch (e) {
-				console.error("Background Task Error:", e);
+				console.error("Background Task: Re-authentication exception:", e.message);
+				return null;
 			}
+		};
+
+		try {
+			let taskSupabase = null;
+			let validSession = null;
+
+			// 1. First, try to get the stored session and refresh it
+			const sessionStr = await AsyncStorage.getItem("supabase.auth.token");
+			
+			if (sessionStr) {
+				const storedSession = JSON.parse(sessionStr);
+				
+				if (storedSession?.access_token && storedSession?.refresh_token) {
+					// 2. Initialize Supabase client with auth handling
+					taskSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+						auth: {
+							storage: AsyncStorage,
+							autoRefreshToken: true,
+							persistSession: true,
+							detectSessionInUrl: false,
+						},
+					});
+
+					// 3. Try to set/refresh the session
+					const { data: { session: refreshedSession }, error: sessionError } = await taskSupabase.auth.setSession({
+						access_token: storedSession.access_token,
+						refresh_token: storedSession.refresh_token,
+					});
+
+					if (!sessionError && refreshedSession) {
+						validSession = refreshedSession;
+						console.log("Background Task: Session refreshed successfully!");
+					} else {
+						console.log("Background Task: Session refresh failed, attempting re-authentication...");
+					}
+				}
+			}
+
+			// 4. If session refresh failed, attempt re-authentication using stored credentials
+			if (!validSession) {
+				taskSupabase = await attemptReAuthentication();
+				if (taskSupabase) {
+					const { data: { session } } = await taskSupabase.auth.getSession();
+					validSession = session;
+				}
+			}
+
+			// 5. If we still don't have a valid session, stop the task
+			if (!validSession || !taskSupabase) {
+				console.log("Background Task: No valid session available. Stopping location tracking.");
+				await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+				return;
+			}
+
+			// 6. Now use the Supabase client with valid session for all requests
+
+			// Update current location using Supabase client
+			const { error: updateError } = await taskSupabase
+				.from("salesman")
+				.update({
+					current_location_lat: location.coords.latitude,
+					current_location_lng: location.coords.longitude,
+					last_seen: new Date().toISOString(),
+				})
+				.eq("authId", validSession.user.id);
+
+			if (updateError) throw updateError;
+			
+			await AsyncStorage.setItem("lastLocation", JSON.stringify({
+				...location.coords,
+				timestamp: new Date().toISOString(),
+			}));
+
+			// Store route tracking data
+			const salesmanInfoStr = await AsyncStorage.getItem("salesmanInfo");
+			if (salesmanInfoStr) {
+				const parsedSalesmanInfo = JSON.parse(salesmanInfoStr);
+				const { error: insertError } = await taskSupabase
+					.from("tracker_locationpoint")
+					.insert({
+						latitude: location.coords.latitude,
+						longitude: location.coords.longitude,
+						timestamp: new Date().toISOString(),
+						salesman_id: parsedSalesmanInfo?.id,
+					});
+
+				if (insertError) throw insertError;
+				console.log("Background Task: Route tracking data sent successfully.");
+			}
+		} catch (e) {
+			console.error("Background Task Exception:", e.message);
 		}
 	}
 });
@@ -628,7 +719,7 @@ const Home = () => {
 	);
 
 	// Navigation controls
-	const startNavigation = useCallback(() => {
+	const startNavigation = useCallback(async () => {
 		if (plannedRouteMarkers.length < 2) {
 			addAlert("error", "At least two stops are needed to start navigation.");
 			return;
@@ -637,6 +728,9 @@ const Home = () => {
 		setIsNavigating(true);
 		setShowInstructions(true);
 		addAlert("success", "Navigation started! Follow the red route.");
+
+		// Save current route to history when navigation starts
+		await saveRouteToHistory(plannedRouteMarkers);
 
 		// Focus map on route
 		if (mapRef.current && plannedRouteMarkers.length > 0) {
@@ -648,7 +742,7 @@ const Home = () => {
 				}
 			);
 		}
-	}, [plannedRouteMarkers, addAlert]);
+	}, [plannedRouteMarkers, addAlert, saveRouteToHistory]);
 
 	const stopNavigation = useCallback(() => {
 		setIsNavigating(false);
@@ -657,6 +751,47 @@ const Home = () => {
 		setRouteProgress(null);
 		addAlert("info", "Navigation stopped.");
 	}, [addAlert]);
+
+	// Function to save route markers to history
+	const saveRouteToHistory = useCallback(async (markers) => {
+		if (!markers || markers.length === 0) return;
+
+		try {
+			const today = new Date().toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
+			const timestamp = Date.now();
+			
+			// Get existing history
+			const existingHistory = await AsyncStorage.getItem('routeHistory');
+			const history = existingHistory ? JSON.parse(existingHistory) : {};
+			
+			// Initialize array for today if it doesn't exist
+			if (!history[today]) {
+				history[today] = [];
+			}
+			
+			// Add new route entry
+			const routeEntry = {
+				timestamp,
+				markers: markers.map(marker => ({
+					id: marker.id,
+					placeId: marker.placeId,
+					title: marker.title,
+					description: marker.description,
+					coordinate: marker.coordinate,
+					isFirst: marker.isFirst,
+					isLast: marker.isLast
+				}))
+			};
+			
+			history[today].push(routeEntry);
+			
+			// Save updated history
+			await AsyncStorage.setItem('routeHistory', JSON.stringify(history));
+			console.log('Route saved to history for date:', today);
+		} catch (error) {
+			console.error('Error saving route to history:', error);
+		}
+	}, []);
 
 	// Enhanced tracking toggle
 	const handleToggleTracking = useCallback(async () => {
@@ -677,6 +812,12 @@ const Home = () => {
 				if (success) {
 					setIsTracking(true);
 					addAlert("success", "Tracking started successfully!");
+					
+					// Save current route to history when tracking starts
+					if (plannedRouteMarkers.length > 0) {
+						await saveRouteToHistory(plannedRouteMarkers);
+						addAlert("info", "Route saved to history!");
+					}
 				}
 			} else {
 				await handleUnregisterTask();
@@ -688,7 +829,7 @@ const Home = () => {
 			console.error("Error toggling tracking:", error);
 			addAlert("error", "Failed to update tracking status.");
 		}
-	}, [isTracking, handleRegisterTask, handleUnregisterTask, addAlert, fetchTodaysData]);
+	}, [isTracking, handleRegisterTask, handleUnregisterTask, addAlert, fetchTodaysData, plannedRouteMarkers, saveRouteToHistory]);
 
 	// Memoized computed values
 	const plannedRouteMarkers = useMemo(() => {
