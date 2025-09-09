@@ -124,7 +124,7 @@ def create_paid_stamp(info_lines=None):
     return packet
 
 
-def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None):
+def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None,paymentModeName="other"):
     """
     Overlays the "PAID" stamp onto the first page of the original PDF.
     """
@@ -149,21 +149,11 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None):
             for page_num in range(1, len(original_pdf.pages)):
                 writer.add_page(original_pdf.pages[page_num])
 
-        # add extra folder in pdf based on payment type
-        payment_type = "other"
-        if info_lines:
-            transaction_line = next((line for line in info_lines if line[0] in ["CK#NO:", "CC#NO:", "ACH#NO:", "TX#NO:"]), None)
-            if transaction_line:
-                if transaction_line[0] == "CK#NO:":
-                    payment_type = "ck"
-                elif transaction_line[0] == "CC#NO:":
-                    payment_type = "cc"
-                elif transaction_line[0] == "ACH#NO:":
-                    payment_type = "ach"
-                elif transaction_line[0] == "TX#NO:":
-                    payment_type = "cash"
+        # create directory ./media/pdf/{paymentModeName}/ if not exists
+        if not os.path.exists(f"./media/pdf/{paymentModeName}/"):
+            os.makedirs(f"./media/pdf/{paymentModeName}/")
 
-        with open(f"./media/pdf/{payment_type}/" + stamped_pdf_path, "wb") as f:
+        with open(f"./media/pdf/{paymentModeName}/" + stamped_pdf_path, "wb") as f:
             writer.write(f)
 
         # remove the original file if needed
@@ -191,6 +181,7 @@ def stampMaker(data, token):
             date = entry.get("paymentInsertedTimestamp", None)
             parentPaymentId = entry.get("parentPaymentId", None)
             customerId = entry.get("customerId", None)
+            paymentModeName = entry.get("paymentModeName", None)
             if parentPaymentId:
                 headers = {
                     "Accept": "application/json, text/plain",
@@ -237,7 +228,7 @@ def stampMaker(data, token):
                                     ),
                                     ("DATE", str(date) if date else "N/A"),
                                 ]
-                                add_stamp_to_pdf(original_file, stamped_file, info_lines)
+                                add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
                                 yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
                             else:
                                 yield json.dumps({"error": "Failed to download invoice PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
@@ -262,7 +253,7 @@ def stampMaker(data, token):
                                     ),
                                     ("DATE", str(date) if date else "N/A"),
                                 ]
-                                add_stamp_to_pdf(original_file, stamped_file, info_lines)
+                                add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
                                 yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
                             else:
                                 yield json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
@@ -287,7 +278,7 @@ def stampMaker(data, token):
                             ),
                             ("DATE", str(date) if date else "N/A"),
                         ]
-                        add_stamp_to_pdf(original_file, stamped_file, info_lines)
+                        add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
                         yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
                     else:
                         yield json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
@@ -328,17 +319,6 @@ class StampInvoiceView(View):
         # create folder ./media/pdf/original/ if not exists
         if not os.path.exists("./media/pdf/original/"):
             os.makedirs("./media/pdf/original/")
-        # create folder ./media/pdf/ck if not exists
-        if not os.path.exists("./media/pdf/ck/"):
-            os.makedirs("./media/pdf/ck/")
-        if not os.path.exists("./media/pdf/cc/"):
-            os.makedirs("./media/pdf/cc/")
-        if not os.path.exists("./media/pdf/ach/"):
-            os.makedirs("./media/pdf/ach/")
-        if not os.path.exists("./media/pdf/cash/"):
-            os.makedirs("./media/pdf/cash/")
-        if not os.path.exists("./media/pdf/other/"):
-            os.makedirs("./media/pdf/other/")
         # create folder ./media/zip/ if not exists
         if not os.path.exists("./media/zip/"):
             os.makedirs("./media/zip/")
