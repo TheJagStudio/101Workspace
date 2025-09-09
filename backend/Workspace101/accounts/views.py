@@ -183,7 +183,7 @@ def stampMaker(data, token):
     print(f"Processing {len(data)} payments for stamping...")
     total = len(data)
     count = 1
-    for entry in data[:5]:
+    for entry in data:
         try:
             transactionId = entry.get("transactionId", None)
             invoiceId = entry.get("orderId", None)
