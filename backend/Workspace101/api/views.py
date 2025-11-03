@@ -84,7 +84,7 @@ class SyncSalesgentTokenView(APIView):
         if not user or not user.check_password(password):
             return JsonResponse({"error": "Invalid username or password.", "status": "failed"}, status=401)
 
-        entry = SalesgentToken.objects.first()
+        entry = SalesgentToken.objects.filter(id=1).first()
         if not entry:
             return JsonResponse({"error": "No Salesgent token found.", "status": "failed"}, status=404)
         refresh_token = entry.refreshToken
@@ -111,6 +111,34 @@ class SyncSalesgentTokenView(APIView):
         entry.accessToken = data.get("access")
         entry.refreshToken = data.get("refresh")
         entry.save()
+        
+        entry2 = SalesgentToken.objects.filter(id=2).first()
+        if not entry2:
+            return JsonResponse({"error": "No Salesgent token found.", "status": "failed"}, status=404)
+        refresh_token = entry2.refreshToken
+        headers = {
+            "Accept": "application/json, text/plain",
+            "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+            "refreshToken": refresh_token,
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Pragma": "no-cache",
+            "Referer": "https://erp.rivercitywholesale.com/product",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+            "device-id": "07b17521-b821-41fd-beea-22679d5ef98f",
+            "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+        }
+
+        response = requests.post("https://erp.rivercitywholesale.com/api/refreshToken", headers=headers)
+        data = response.json()["result"]
+        entry2.accessToken = data.get("access")
+        entry2.refreshToken = data.get("refresh")
+        entry2.save()
         return JsonResponse({"message": "Token synced successfully.", "status": "success"}, status=200)
 
 

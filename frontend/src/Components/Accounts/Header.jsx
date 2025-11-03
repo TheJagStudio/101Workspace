@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Truck } from "lucide-react";
 import { useAtom } from "jotai";
-import { userAtom, searchAtom } from "../../Variables";
+import { userAtom, searchAtom, accountWebsitesAtom } from "../../Variables";
+import CustomDropdown from "../utils/CustomDropdown";
 
 
 const Header = () => {
@@ -11,6 +12,12 @@ const Header = () => {
     const debounceRef = useRef();
     const [user] = useAtom(userAtom);
     const searchInputRef = useRef();
+    const [selectedCompany, setSelectedCompany] = useAtom(accountWebsitesAtom);
+
+    const companyOptions = [
+        { value: "Rivercity", label: "Rivercity Wholesale" },
+        { value: "101GA", label: "101 Distributors GA" },
+    ];
 
     const handleLogout = () => {
         window.location.href = "/login";
@@ -89,20 +96,12 @@ const Header = () => {
             <div className="items-center gap-6 hidden sm:flex">
                 {/* Icons */}
                 <div className="flex items-center gap-4 text-gray-500">
-                    {/* Bell Icon */}
-                    <button className="hover:text-gray-700">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                            <path d="M18 16v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
-                    </button>
-                    {/* Plus Icon */}
-                    <button className="hover:text-gray-700">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                    </button>
+                    <CustomDropdown
+                        options={companyOptions}
+                        value={selectedCompany}
+                        onChange={setSelectedCompany}
+                        placeholder="Company"
+                    />
                 </div>
                 {/* Profile */}
                 {user?.first_name && (
