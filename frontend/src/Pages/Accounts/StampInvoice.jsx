@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react'
 import Calendar from '../../Components/utils/Calendar'
 import { Loader, Database, CheckCircle, X } from 'lucide-react'
-import { set } from 'lodash';
+import { useAtom } from 'jotai';
+import { accountWebsitesAtom } from '../../Variables';
 
 const Toast = ({ message, onClose }) => {
 	function downloadZip() {
@@ -68,6 +69,8 @@ function StampInvoice() {
 	const [zipUrl, setZipUrl] = useState(null)
 	const [error, setError] = useState(null)
 	const logRef = useRef([])
+	const [selectedCompany, setSelectedCompany] = useAtom(accountWebsitesAtom);
+	const [websiteUrl, setWebsiteUrl] = useState(selectedCompany !== "101GA" ? "https://erp.rivercitywholesale.com" : `https://erp.101distributorsga.com`);
 
 	const startSync = async () => {
 		setIsSyncing(true)
@@ -79,7 +82,7 @@ function StampInvoice() {
 		setError(null)
 		logRef.current = []
 		try {
-			const url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?startDate=${startDate}&endDate=${endDate}`
+			const url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?startDate=${startDate}&endDate=${endDate}&website=${selectedCompany}`
 			const response = await fetch(url, { method: 'GET' })
 			if (!response.body) throw new Error('No response body')
 			const reader = response.body.getReader()

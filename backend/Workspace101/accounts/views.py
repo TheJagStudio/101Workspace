@@ -21,7 +21,10 @@ from django.http import FileResponse
 class InvoicesView(View):
 
     def get(self, request):
-        token = SalesgentToken.objects.filter(id=1).first()
+        website = request.GET.get("website", "101GA")
+        idToken = 2 if website == "Rivercity" else 1
+        url = "https://erp.rivercitywholesale.com" if website == "Rivercity" else "https://erp.101distributorsga.com"
+        token = SalesgentToken.objects.filter(id=idToken).first()
         page = request.GET.get("page", 0)
         size = request.GET.get("size", 20)
         startDate = request.GET.get("startDate", None)
@@ -33,7 +36,6 @@ class InvoicesView(View):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Pragma": "no-cache",
-            "Referer": "https://erp.101distributorsga.com/sales",
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
@@ -42,7 +44,7 @@ class InvoicesView(View):
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Windows"',
         }
-        url = "https://erp.101distributorsga.com/api/order/list?storeIds=1,2&page=" + str(page) + "&size=" + str(size) + "&showEmployeeSpecificData=false"
+        url = f"{url}/api/order/list?storeIds=1,2&page=" + str(page) + "&size=" + str(size) + "&showEmployeeSpecificData=false"
         if startDate and endDate:
             url += f"&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59"
         response = requests.get(
@@ -73,7 +75,7 @@ def create_paid_stamp(info_lines=None):
     Creates a PDF in memory containing a rotated, transparent "PAID" stamp and extra info.
     """
     if info_lines is None:
-        info_lines = [("CK#NO:", "N/A"), ("AMOUNT", "N/A"), ("DATE", "N/A")]
+        info_lines = [("CK#NO:", "N/A"), ("AMOUNT", "N/A"), ("DATE", "N/A"), ("BY", "N/A")]
 
     packet = io.BytesIO()
     # Create a new PDF with ReportLab
@@ -169,7 +171,7 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None,paymen
         raise e
 
 
-def stampMaker(data, token):
+def stampMaker(data, token, urlMain):
     print(f"Processing {len(data)} payments for stamping...")
     total = len(data)
     count = 1
@@ -190,7 +192,7 @@ def stampMaker(data, token):
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
                     "Pragma": "no-cache",
-                    "Referer": "https://erp.101distributorsga.com/sales/paymentReceived",
+                    "Referer": f"{urlMain}/sales/paymentReceived",
                     "Sec-Fetch-Dest": "empty",
                     "Sec-Fetch-Mode": "cors",
                     "Sec-Fetch-Site": "same-origin",
@@ -199,9 +201,8 @@ def stampMaker(data, token):
                     "sec-ch-ua-mobile": "?0",
                     "sec-ch-ua-platform": '"Windows"',
                 }
-
                 response = requests.get(
-                    f"https://erp.101distributorsga.com/api/customer/paymentDetails?storeIds=1,2&parentPaymentId={parentPaymentId}&page=0&size=999",
+                    f"{urlMain}/api/customer/paymentDetails?storeIds=1,2&parentPaymentId={parentPaymentId}&page=0&size=999",
                     headers=headers,
                 )
                 if response.json().get("hasError", False):
@@ -211,7 +212,7 @@ def stampMaker(data, token):
                     if len(childPayments) == 1:
                         invoiceId = childPayments[0].get("orderId", None)
                         if transactionId:
-                            url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
+                            url = f"{urlMain}/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
                             invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
                             original_file = f"{invoiceName}_original.pdf"
                             stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
@@ -227,6 +228,7 @@ def stampMaker(data, token):
                                         (str(paymentAmount) if paymentAmount else "N/A"),
                                     ),
                                     ("DATE", str(date) if date else "N/A"),
+                                    ("BY", entry["createdByName"] if "createdByName" in entry else "N/A"),
                                 ]
                                 add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
                                 yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
@@ -236,7 +238,7 @@ def stampMaker(data, token):
                             yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
                     else:
                         if transactionId:
-                            url = f"https://erp.101distributorsga.com/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={token}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1"
+                            url = f"{urlMain}/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={token}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1"
                             invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
                             original_file = f"{invoiceName}_original.pdf"
                             stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
@@ -252,6 +254,7 @@ def stampMaker(data, token):
                                         (str(paymentAmount) if paymentAmount else "N/A"),
                                     ),
                                     ("DATE", str(date) if date else "N/A"),
+                                    ("BY", entry["createdByName"] if "createdByName" in entry else "N/A"),
                                 ]
                                 add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
                                 yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
@@ -261,7 +264,7 @@ def stampMaker(data, token):
                             yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
             else:
                 if transactionId:
-                    url = f"https://erp.101distributorsga.com/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
+                    url = f"{urlMain}/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
                     invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
                     original_file = f"{invoiceName}_original.pdf"
                     stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
@@ -277,6 +280,7 @@ def stampMaker(data, token):
                                 str(paymentAmount) if paymentAmount else "N/A",
                             ),
                             ("DATE", str(date) if date else "N/A"),
+                            ("BY", entry["createdByName"] if "createdByName" in entry else "N/A"),
                         ]
                         add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
                         yield json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
@@ -285,6 +289,11 @@ def stampMaker(data, token):
                 else:
                     yield json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
         except Exception as e:
+            # I want to print the line number where the error occurred
+            import sys
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            line_number = exc_tb.tb_lineno
+            print(f"Error occurred at line {line_number}: {str(e)}")
             yield json.dumps({"error": f"An error occurred while processing payment for customer: {customerId} and Parent Payment ID: {parentPaymentId}. Error: {str(e)}"}, indent=4)
         count += 1
             
@@ -309,7 +318,10 @@ def stampMaker(data, token):
 class StampInvoiceView(View):
 
     def get(self, request):
-        token = SalesgentToken.objects.filter(id=1).first()
+        website = request.GET.get("website", "101GA")
+        idToken = 2 if website == "Rivercity" else 1
+        url = "https://erp.rivercitywholesale.com" if website == "Rivercity" else "https://erp.101distributorsga.com"
+        token = SalesgentToken.objects.filter(id=idToken).first()
         startDate = request.GET.get("startDate", None)
         endDate = request.GET.get("endDate", None)
 
@@ -326,7 +338,7 @@ class StampInvoiceView(View):
         headers = {
             "sec-ch-ua-platform": '"Windows"',
             "Authorization": f"Bearer {token.accessToken}" if token else "",
-            "Referer": "https://erp.101distributorsga.com/sales/paymentReceived",
+            "Referer": f"{url}/sales/paymentReceived",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
             "Accept": "application/json, text/plain",
             "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
@@ -334,7 +346,7 @@ class StampInvoiceView(View):
         }
 
         response = requests.get(
-            f"https://erp.101distributorsga.com/api/customer/paymentDetails?storeIds=1,2&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000",
+            f"{url}/api/customer/paymentDetails?storeIds=1,2&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000",
             headers=headers,
         )
         if response.json().get("hasError", False):
@@ -342,7 +354,7 @@ class StampInvoiceView(View):
             return JsonResponse({"error": "Failed to fetch payment details"}, status=500)
         data = response.json()["result"]["content"]
 
-        response = StreamingHttpResponse(stampMaker(data, token), content_type="text/event-stream")
+        response = StreamingHttpResponse(stampMaker(data, token, url), content_type="text/event-stream")
         response["Cache-Control"] = "no-cache"
         return response
 

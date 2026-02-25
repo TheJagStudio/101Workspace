@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import React, { useState, useEffect } from 'react';
-import { isSidebarOpenAtom } from '../../Variables';
+import { isSidebarOpenAtom,accountWebsitesAtom } from '../../Variables';
 import { apiRequest } from '../../utils/api';
 import CustomDropdown from '../../Components/utils/CustomDropdown';
 import Calendar from '../../Components/utils/Calendar';
@@ -85,18 +85,20 @@ const Invoice = () => {
     ]);
     const [showColumnSettings, setShowColumnSettings] = useState(false);
     const [loadingExport, setLoadingExport] = useState(false);
+    const [selectedCompany, setSelectedCompany] = useAtom(accountWebsitesAtom);
+    const [websiteUrl, setWebsiteUrl] = useState(selectedCompany !== "101GA" ? "https://erp.rivercitywholesale.com" : `https://erp.101distributorsga.com`);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/accounts/invoices/?page=${currentPage - 1}&size=${pageSize}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
+            const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/accounts/invoices/?page=${currentPage - 1}&website=${selectedCompany}&size=${pageSize}${startDate ? `&startDate=${startDate}` : ""}${endDate ? `&endDate=${endDate}` : ""}`);
             setInvoiceData(data["result"]["content"] || []);
             setTotalPages(data["result"]["totalPages"] || 0);
             setLoading(false);
         };
         fetchData();
-        localStorage.setItem('invoicePageSize', pageSize);
-    }, [pageSize, currentPage, startDate, endDate]);
+        localStorage.setItem("invoicePageSize", pageSize);
+    }, [pageSize, currentPage, startDate, endDate, selectedCompany]);
 
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
@@ -279,7 +281,7 @@ const Invoice = () => {
                             <div>
                                 <button onClick={async () => {
                                     setLoadingExport(true);
-                                    const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/accounts/invoices/?page=${currentPage - 1}&size=1000000000${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
+                                    const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/accounts/invoices/?page=${currentPage - 1}&website=${selectedCompany}&size=1000000000${startDate ? `&startDate=${startDate}` : ""}${endDate ? `&endDate=${endDate}` : ""}`);
                                     // Export to Excel logic
                                     const ws = XLSX.utils.json_to_sheet(data["result"]["content"].map(item => {
                                         const formattedItem = {};
@@ -386,12 +388,12 @@ const Invoice = () => {
                                                 {column?.key === 'createdAt' && formatTimestamp(invoice.insertedTimestamp)}
                                                 {column?.key === 'invoiceNo' && (
                                                     <div className="flex items-center gap-2">
-                                                        <a href={`https://erp.101distributorsga.com/sales/orders/${invoice.id}`} target='_blank' className="text-pink-600 flex flex-row flex-nowrap items-center justify-center gap-2 cursor-pointer hover:underline">{invoice.id}
+                                                        <a href={`${websiteUrl}/sales/orders/${invoice.id}`} target='_blank' className="text-pink-600 flex flex-row flex-nowrap items-center justify-center gap-2 cursor-pointer hover:underline">{invoice.id}
                                                         </a>
                                                     </div>
                                                 )}
                                                 {column?.key === 'soNo' && invoice.salesOrderId && (
-                                                    <a href={`https://erp.101distributorsga.com/salesOrder/orders/${invoice.salesOrderId}`} target='_blank' className="text-pink-600 cursor-pointer hover:underline">
+                                                    <a href={`${websiteUrl}/salesOrder/orders/${invoice.salesOrderId}`} target='_blank' className="text-pink-600 cursor-pointer hover:underline">
                                                         {invoice.salesOrderId}
                                                     </a>
                                                 )}

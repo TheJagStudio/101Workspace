@@ -31,3 +31,5 @@ export const warningsAtom = atom([])
 export const successAtom = atom([])
 export const infoAtom = atom([])
 export const searchAtom = atom("");
+
+export const accountWebsitesAtom = atom("101GA");
