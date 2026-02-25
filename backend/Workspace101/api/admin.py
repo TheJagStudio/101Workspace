@@ -186,7 +186,7 @@ class VendorAdmin(ImportExportModelAdmin):
 
 class InvoiceAdmin(ImportExportModelAdmin):
     list_display = ("id", "customerId", "totalAmount", "status", "insertedTimestamp")
-    search_fields = ("id", "customerId__customerName", "email", "storeName")
+    search_fields = ("id", "customerId__name", "email", "storeName")
     list_filter = ("status", "insertedTimestamp", "storeName")
 
 

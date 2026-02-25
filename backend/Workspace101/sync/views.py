@@ -1037,17 +1037,18 @@ def fetch_product_data(product, token):
 def syncProductHistory(token):
     # get all ids from ./dataHistory/
     existing_ids = set()
-    for filename in os.listdir("./dataHistory/"):
+    for filename in os.listdir("./dataHistory"):
         if filename.startswith("product_") and filename.endswith("_sales.json"):
             product_id = filename.split("_")[1]
             existing_ids.add(product_id)
 
     products = list(
         Product.objects.filter(active=True)
-        .exclude(productId__in=existing_ids)
+        # .exclude(productId__in=existing_ids)
         .order_by("productId")
     )
     product_count = len(products)
+    print(f"Total products to sync history for: {product_count}")
     doUpdate = False
     if product_count == 0:
         yield 100
@@ -1060,27 +1061,43 @@ def syncProductHistory(token):
         product_batch = products[i : i + batch_size]
 
         # Use a ThreadPoolExecutor to fetch data for the current batch in parallel
-        with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            # Submit the fetch_product_data function for each product in the batch
-            future_to_product = {
-                executor.submit(fetch_product_data, product, token): product
-                for product in product_batch
-            }
+        # with ThreadPoolExecutor(max_workers=batch_size) as executor:
+        #     # Submit the fetch_product_data function for each product in the batch
+        #     future_to_product = {
+        #         executor.submit(fetch_product_data, product, token): product
+        #         for product in product_batch
+        #     }
 
-            # This list will hold the results from the threads
-            batch_results = []
-            for future in as_completed(future_to_product):
-                try:
-                    data = future.result()
-                    if data["skip"]:
-                        continue
-                    batch_results.append(data)
-                except Exception as exc:
-                    product = future_to_product[future]
-                    print(
-                        f"Product {product.productId} generated an exception: {exc}"
-                    )
-            fullBatch.extend(batch_results)
+        #     # This list will hold the results from the threads
+        #     batch_results = []
+        #     for future in as_completed(future_to_product):
+        #         try:
+        #             data = future.result()
+        #             if data["skip"]:
+        #                 continue
+        #             batch_results.append(data)
+        #         except Exception as exc:
+        #             product = future_to_product[future]
+        #             print(
+        #                 f"Product {product.productId} generated an exception: {exc}"
+        #             )
+        #     fullBatch.extend(batch_results)
+
+        for product in product_batch:
+            with open(
+                f"./dataHistory/product_{product.productId}_sales.json", "r"
+            ) as f:
+                data = json.load(f)
+                sales_data = data.get("sales_data", [])
+                purchase_data = data.get("purchase_data", [])
+            fullBatch.append(
+                {
+                    "product": product,
+                    "sales_data": sales_data,
+                    "purchase_data": purchase_data,
+                    "error": None,
+                }
+            )
 
         if len(fullBatch) > 200:
             # Now that all data for the batch is fetched, process it for DB operations

@@ -3,7 +3,7 @@ from django.http import JsonResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import Product, SalesgentToken, AIReport,Category
+from .models import Product, SalesgentToken, AIReport,Category,Invoice,InvoiceLineItem,Customer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -114,164 +114,6 @@ class SyncSalesgentTokenView(APIView):
         return JsonResponse({"message": "Token synced successfully.", "status": "success"}, status=200)
 
 
-# class dataMaker(APIView):
-#     permission_classes = []
-
-#     # It's better to define constants outside the request method
-#     API_BASE_URL = 'https://erp.101distributorsga.com/api/product/'
-    
-#     # WARNING: Hardcoding tokens is insecure and not recommended for production.
-#     # The token will expire. Consider using environment variables or a secure vault.
-#     API_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkaGF2YWwucEAxMDFkaXN0cmlidXRvcnNnYS5jb20iLCJ1c2VyVHlwZSI6IkVtcGxveWVlIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwic3RvcmVJZCI6MSwiZXhwIjoxNzU1MzM3Mzk5LCJ1c2VySWQiOjIwLCJpYXQiOjE3NTUyMTczOTksInJlc2V0UGFzc3dvcmRSZXF1aXJlZCI6ZmFsc2V9.HdpgYFJJUBnmcazaqQrr005tEyepg6JTWCrnMRfuPm0'
-
-#     def get(self, request):
-#         """
-#         Fetches detailed data for each product from an external API and updates the database.
-#         """
-#         # To update all products, use Product.objects.all(). 
-#         # The user's original filter is retained here.
-#         # Only sync products that are active and have not been synced recently (e.g., in the last 24 hours)
-
-#         cutoff_time = timezone.now() - timedelta(hours=24)
-#         products_to_sync = Product.objects.filter(active=True).filter(lastSyncTimestamp__lt=cutoff_time)
-        
-#         updated_count = 0
-#         failed_products = []
-
-#         for product in products_to_sync:
-#             try:
-#                 # Use a database transaction to ensure that all updates for a single 
-#                 # product either succeed or fail together.
-#                 with transaction.atomic():
-#                     # 1. Prepare and send the API request
-#                     api_url = f"{self.API_BASE_URL}{product.productId}?storeIds=1,2"
-#                     headers = {
-#                         'Authorization': f'Bearer {self.API_TOKEN}',
-#                         'Accept': 'application/json, text/plain',
-#                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-#                         'Referer': f'https://erp.101distributorsga.com/product/{product.productId}/edit',
-#                     }
-
-#                     response = requests.get(api_url, headers=headers)
-#                     response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
-
-#                     data = response.json()["result"]
-
-#                     # 2. Map API data to the Product model instance
-#                     product.sku = data.get('sku')
-#                     product.upc = data.get('upc')
-#                     product.productName = data.get('name')
-#                     product.availableQuantity = data.get('availableQuantity')
-#                     product.masterProductId = data.get('masterProductId')
-#                     product.masterProductName = data.get('masterProductName')
-                    
-#                     # Prices
-#                     product.standardPrice = data.get('stdPrice')
-#                     product.tierPrice = data.get('tier1Price') # Example: using tier1 as the default tier price
-#                     product.costPrice = data.get('costPrice')
-#                     product.minimumSellingPrice = data.get('minimumSellingPrice')
-#                     product.avgCostPrice = data.get('avgCostPrice')
-#                     product.latestCostPrice = data.get('latestCostPrice')
-#                     product.stdPrice = data.get('stdPrice')
-#                     product.tier1Price = data.get('tier1Price')
-#                     product.tier2Price = data.get('tier2Price')
-#                     product.tier3Price = data.get('tier3Price')
-#                     product.tier4Price = data.get('tier4Price')
-#                     product.tier5Price = data.get('tier5Price')
-
-#                     # Booleans and Flags
-#                     product.ecommerce = data.get('ecommerce')
-#                     product.active = data.get('active')
-#                     product.compositeProduct = data.get('compositeProduct')
-#                     product.trackInventory = data.get('trackInventory')
-#                     product.trackInventoryByImei = data.get('trackInventoryByImei')
-#                     product.returnable = data.get('returnable')
-
-#                     # Descriptions and Metadata
-#                     product.urlAlias = data.get('urlAlias')
-#                     product.shortDescription = data.get('shortDescription')
-#                     product.fullDescription = data.get('fullDescription')
-#                     product.metaKeyword = data.get('metaKeyword')
-
-#                     # Other Identifiers and Quantities
-#                     product.upc1 = data.get('upc1')
-#                     product.upc2 = data.get('upc2')
-#                     product.singleUpc = data.get('singleUpc')
-#                     product.vendorUpc = data.get('vendorUpc')
-#                     product.size = data.get('size')
-#                     product.quantity = data.get('quantity')
-#                     product.reorderQuantity = data.get('reorderQuantity')
-#                     product.minQuantity = data.get('minQuantity')
-#                     product.caseQuantity = data.get('caseQuantity')
-#                     product.boxQuantity = data.get('boxQuantity')
-
-#                     # JSON Field
-#                     product.childProductList = data.get('childProductList')
-
-#                     # Handle Image URL (from a list in the API response)
-#                     image_list = data.get('productImageAttachmentList', [])
-#                     if image_list and isinstance(image_list, list) and image_list[0].get('imageConfigUrl'):
-#                         product.imageUrl = image_list[0]['imageConfigUrl']
-
-#                     # 3. Handle ManyToMany Relationship for Categories
-#                     category_pks = []
-#                     is_clearance = False
-#                     api_categories = data.get('productCategories', [])
-                    
-#                     if api_categories and isinstance(api_categories, list):
-#                         for cat_data in api_categories:
-#                             # Skip if category data is incomplete
-#                             if 'categoryId' not in cat_data or 'name' not in cat_data:
-#                                 continue
-
-#                             # Check for clearance category
-#                             if cat_data.get('name', '').upper() == 'CLEARANCE':
-#                                 is_clearance = True
-
-#                             # Create or update the category in your database
-#                             category, created = Category.objects.update_or_create(
-#                                 categoryId=cat_data['categoryId'],
-#                                 defaults={
-#                                     'name': cat_data.get('name'),
-#                                     'alias': cat_data.get('alias'),
-#                                     'parentId': cat_data.get('parentId'),
-#                                     'description': cat_data.get('description'),
-#                                     'ecommerce': cat_data.get('ecommerce'),
-#                                 }
-#                             )
-#                             category_pks.append(category.pk)
-                    
-#                     # Update the isClearanceProduct boolean flag based on category
-#                     product.isClearanceProduct = is_clearance
-                    
-#                     # Efficiently set the M2M relationship
-#                     product.categories.set(category_pks)
-
-#                     # 4. Save the updated product instance
-#                     # The 'lastSyncTimestamp' field will be updated automatically because of 'auto_now=True'
-#                     product.save()
-                    
-#                     updated_count += 1
-#                     print(f"Successfully updated Product ID: {product.productId} , {updated_count}")
-
-#             except requests.exceptions.RequestException as e:
-#                 error_message = f"Network error for Product ID {product.productId}: {e}"
-#                 print(error_message)
-#                 failed_products.append({"productId": product.productId, "error": str(e)})
-#             except Exception as e:
-#                 # Catch any other errors (e.g., JSON decoding, database errors)
-#                 error_message = f"An unexpected error occurred for Product ID {product.productId}: {e}"
-#                 print(error_message)
-#                 failed_products.append({"productId": product.productId, "error": str(e)})
-
-#         # 5. Return a summary of the operation
-#         return JsonResponse({
-#             "status": "Completed",
-#             "total_products_scanned": products_to_sync.count(),
-#             "successfully_updated": updated_count,
-#             "failed_updates": len(failed_products),
-#             "failed_products": failed_products
-#         })
 
 def get_all_descendant_pks(start_pk, category_map):
     # (function code from above)
@@ -287,63 +129,29 @@ def get_all_descendant_pks(start_pk, category_map):
     return list(all_descendants)
 
 class dataMaker(APIView):
+    permission_classes = []
+
     def get(self, request):
-        # --- Optimization: Fetch all category relationships at once ---
-        all_categories_relations = Category.objects.values('categoryId', 'parentId')
-        category_parent_map = defaultdict(list)
-        for cat in all_categories_relations:
-            if cat['parentId']:
-                category_parent_map[cat['parentId']].append(cat['categoryId'])
+        token = SalesgentToken.objects.first()
+        customer1 = Customer.objects.filter(id=66).first()
+        customer2 = Customer.objects.filter(id=1258).first()
+        invoices1 = Invoice.objects.filter(customerId=customer1).all()
+        invoices2 = Invoice.objects.filter(customerId=customer2).all()
+        invoices = invoices1 | invoices2
+        # create /media/pdf/66 and /media/pdf/1258 directories if they don't exist
+        os.makedirs("./media/pdf/", exist_ok=True)
+        os.makedirs(f"./media/pdf/{customer1.id}", exist_ok=True)
+        os.makedirs(f"./media/pdf/{customer2.id}", exist_ok=True)
 
-        # Get top-level categories to iterate through
-        top_level_categories = Category.objects.filter(parentId__isnull=True)
-        
-        excel_buffer = BytesIO()
-        with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-            for category in top_level_categories:
-                # --- Correction: Get ALL descendant categories, not just direct children ---
-                category_and_all_subcategory_pks = get_all_descendant_pks(
-                    category.categoryId, category_parent_map
-                )
-
-                products = Product.objects.filter(
-                    categories__in=category_and_all_subcategory_pks, 
-                    active=True
-                ).values(
-                    "productId", "upc", "productName", "masterProductId", "masterProductName",
-                    "standardPrice", "tierPrice", "costPrice", "TotalSaleAmount",
-                    "TotalGrossMargin", "TotalRevenue"
-                )
-                
-                if not products.exists():
-                    print(f"No active products found for category '{category.name}' and its subcategories.")
-                    continue # Skip creating an empty sheet
-
-                df = pd.DataFrame(list(products))
-                
-                # Convert all datetime columns to timezone-unaware if any exist
-                for col in df.select_dtypes(include=['datetimetz']).columns:
-                    df[col] = df[col].dt.tz_localize(None)
-
-                # Sanitize sheet name
-                invalid_chars = r'[]:*?/\\'
-                safe_name = ''.join(c for c in (category.name or f"Category_{category.pk}") if c not in invalid_chars)
-                sheet_name = safe_name[:31] # Excel sheet names must be <= 31 chars
-                
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-                print(f"Processed category: {category.name} with {len(df)} products")
-
-        excel_buffer.seek(0)
-        response = HttpResponse(
-            excel_buffer,
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = 'attachment; filename="products_by_category.xlsx"'
-        return response
-            
-        # return JsonResponse({
-        #     "status": "Completed"
-        # })
+        for invoice in invoices:
+            url = "https://erp.101distributorsga.com/services/pdf/sales-order/invoice/" + str(invoice.id) + "?token="+token.accessToken+"&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
+            response = requests.get(url)
+            with open(f"./media/pdf/{invoice.customerId.id}/{invoice.id}.pdf", "wb") as f:
+                f.write(response.content)
+            print(f"Saved invoice {invoice.id} for customer {invoice.customerId.id}")
+        return JsonResponse({
+            "status": "Completed"
+        })
 
 class vacuum_sqlite_database(APIView):
     permission_classes = []
