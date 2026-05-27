@@ -1,6 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 import { Search, X, Upload, Printer, Loader, Trash2 } from 'lucide-react';
 import './Sticker.css';
@@ -32,6 +30,8 @@ const Sticker = () => {
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [missingProducts, setMissingProducts] = useState([]);
+    const [singleLineRedText, setSingleLineRedText] = useState(false);
+    const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
 
     // --- REFS ---
     const stickerPreviewAreaRef = useRef(null);
@@ -48,15 +48,27 @@ const Sticker = () => {
         try {
             const savedData = localStorage.getItem('stickerGenerator_excelData');
             const savedEdits = localStorage.getItem('stickerGenerator_userEdits');
+            const savedSingleLineRedText = localStorage.getItem('stickerGenerator_singleLineRedText');
             if (savedData) {
                 setExcelData(JSON.parse(savedData));
                 setInfoMessage('Loaded data from previous session.');
             }
             if (savedEdits) setUserEdits(JSON.parse(savedEdits));
+            if (savedSingleLineRedText === 'true') setSingleLineRedText(true);
         } catch (error) {
             console.error('Failed to load data from localStorage', error);
         }
     }, []);
+
+    const refreshPreview = useCallback(() => {
+        setPreviewRefreshKey((key) => key + 1);
+    }, []);
+
+    const handleSingleLineRedTextChange = (enabled) => {
+        setSingleLineRedText(enabled);
+        localStorage.setItem('stickerGenerator_singleLineRedText', String(enabled));
+        refreshPreview();
+    };
 
     const saveToLocalStorage = (data, edits) => {
         try {
@@ -220,23 +232,59 @@ const Sticker = () => {
         const previewArea = stickerPreviewAreaRef.current;
         if (!previewArea) return;
 
-        setLoading(true);
+        const [jspdfModule, html2canvasModule] = await Promise.all([
+            import('jspdf'),
+            import('html2canvas'),
+        ]);
+        const { jsPDF } = jspdfModule;
+        const html2canvas = html2canvasModule.default;
+
         const originalBackgroundColor = previewArea.style.backgroundColor;
         previewArea.style.backgroundColor = '#f3f4f6';
 
+        setLoading(true);
+        setLoadingMessage('Preparing...');
+
+        await document.fonts.ready;
+        await waitForNextFrame();
+        await waitForNextFrame();
+
         const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
-        const pages = previewArea.querySelectorAll(`.pageWrapper`);
+        const pages = previewArea.querySelectorAll('.pageWrapper');
 
         for (let i = 0; i < pages.length; i++) {
             setLoadingMessage(`Processing page ${i + 1} of ${pages.length}...`);
             const page = pages[i];
-            const canvas = await html2canvas(page, {
+            const a4Page = page.querySelector('.a4Page');
+            if (!a4Page) continue;
+
+            const restorePage = preparePageForCapture(page);
+            forceLayout(a4Page);
+
+            if (singleLineRedText) {
+                fitAllSingleLineRedText(a4Page);
+                forceLayout(a4Page);
+                await waitForNextFrame();
+            }
+
+            const canvas = await html2canvas(a4Page, {
                 scale: 2,
                 useCORS: true,
                 logging: false,
-                width: page.offsetWidth,
-                height: page.offsetHeight
+                backgroundColor: '#ffffff',
+                onclone: (_clonedDoc, clonedA4Page) => {
+                    clonedA4Page.style.transform = 'none';
+                    clonedA4Page.style.boxShadow = 'none';
+                    if (singleLineRedText) {
+                        forceLayout(clonedA4Page);
+                        fitAllSingleLineRedText(clonedA4Page);
+                        forceLayout(clonedA4Page);
+                    }
+                },
             });
+
+            restorePage();
+
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             if (i > 0) doc.addPage();
             doc.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
@@ -329,9 +377,31 @@ const Sticker = () => {
                             )}
                         </div>
 
+                        {/* Display Options */}
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 flex justify-between items-center">
+                                3. Display Options
+                                <div className="flex items-center">
+                                    <span className="text-xs text-gray-500 mr-2">Single-line red text</span>
+                                    <label className="inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={singleLineRedText}
+                                            onChange={(e) => handleSingleLineRedTextChange(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="relative w-9 h-5 bg-gray-200 peer-checked:bg-sky-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:border-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                                    </label>
+                                </div>
+                            </label>
+                            <p className="text-xs text-gray-500">
+                                When enabled, red title and flavor text shrink to fit on one line instead of wrapping.
+                            </p>
+                        </div>
+
                         {/* Actions */}
                         <div>
-                            <label className="text-sm font-medium text-gray-700 mb-2 block">3. Final Actions</label>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">4. Final Actions</label>
                             <div className="flex flex-col space-y-3">
                                 <button onClick={generatePDF} disabled={excelData.length === 0 || loading} className={"w-full  text-white font-semibold py-2.5 px-6 rounded-md  flex items-center justify-center disabled:opacity-50 " + (excelData.length === 0 || loading ? 'cursor-not-allowed bg-gray-700 hover:bg-gray-800' : 'bg-sky-600 hover:bg-sky-700')}>
                                     <Printer className="h-5 w-5 mr-2" /> Print All Pages
@@ -361,21 +431,24 @@ const Sticker = () => {
                     )}
 
                     <div ref={stickerPreviewAreaRef} className={`previewArea bg-gray-200/50 p-4 rounded-xl border border-gray-200 h-[80vh] overflow-y-auto`}>
-                        {pages.map((pageData, pageIndex) => (
-                            <StickerPage key={pageIndex} previewAreaRef={stickerPreviewAreaRef}>
-                                {pageData.map((item, itemIndex) => {
-                                    const globalIndex = pageIndex * STICKERS_PER_PAGE + itemIndex;
-                                    return <StickerItem
-                                        key={item.upc || globalIndex}
-                                        item={item}
-                                        index={globalIndex}
-                                        edits={userEdits[globalIndex] || {}}
-                                        onEdit={handleFieldEdit}
-                                        onRemove={removeProduct}
-                                    />
-                                })}
-                            </StickerPage>
-                        ))}
+                        <div key={previewRefreshKey}>
+                            {pages.map((pageData, pageIndex) => (
+                                <StickerPage key={pageIndex} previewAreaRef={stickerPreviewAreaRef}>
+                                    {pageData.map((item, itemIndex) => {
+                                        const globalIndex = pageIndex * STICKERS_PER_PAGE + itemIndex;
+                                        return <StickerItem
+                                            key={item.upc || globalIndex}
+                                            item={item}
+                                            index={globalIndex}
+                                            edits={userEdits[globalIndex] || {}}
+                                            onEdit={handleFieldEdit}
+                                            onRemove={removeProduct}
+                                            singleLineRedText={singleLineRedText}
+                                        />
+                                    })}
+                                </StickerPage>
+                            ))}
+                        </div>
                     </div>
 
                     {missingProducts.length > 0 && (
@@ -441,7 +514,161 @@ const StickerPage = ({ children, previewAreaRef }) => {
 };
 
 
-const StickerItem = ({ item, index, edits, onEdit, onRemove }) => {
+const A4_PAGE_WIDTH_PX = 816;
+const A4_PAGE_HEIGHT_PX = 1056;
+const RED_TEXT_MAX_FONT_PX = 24;
+const RED_TEXT_MIN_FONT_PX = 6;
+const RED_TEXT_SIDE_MARGIN_PX = 8;
+const RED_TEXT_INNER_WIDTH_PX = 324;
+
+const estimateRedTextFontSize = (text, maxPx = RED_TEXT_MAX_FONT_PX, minPx = RED_TEXT_MIN_FONT_PX) => {
+    const trimmed = (text ?? '').trim();
+    if (!trimmed) return maxPx;
+    const charWidthFactor = 0.62;
+    const estimated = RED_TEXT_INNER_WIDTH_PX / (trimmed.length * charWidthFactor);
+    return Math.min(maxPx, Math.max(minPx, Math.round(estimated * 10) / 10));
+};
+
+const fitRedTextInner = (
+    container,
+    inner,
+    maxPx = RED_TEXT_MAX_FONT_PX,
+    minPx = RED_TEXT_MIN_FONT_PX
+) => {
+    const maxWidth = container.clientWidth - RED_TEXT_SIDE_MARGIN_PX * 2;
+    if (maxWidth <= 0) return null;
+
+    inner.style.lineHeight = '1.15';
+
+    const text = inner.textContent?.trim();
+    if (!text) {
+        inner.style.setProperty('font-size', `${maxPx}px`, 'important');
+        inner.dataset.fitFontSize = String(maxPx);
+        return maxPx;
+    }
+
+    inner.style.fontSize = `${maxPx}px`;
+    if (inner.scrollWidth <= maxWidth) {
+        inner.style.setProperty('font-size', `${maxPx}px`, 'important');
+        inner.dataset.fitFontSize = String(maxPx);
+        return maxPx;
+    }
+
+    let fontSize = Math.max(
+        minPx,
+        Math.floor((maxPx * maxWidth / inner.scrollWidth) * 10) / 10
+    );
+    inner.style.fontSize = `${fontSize}px`;
+
+    if (inner.scrollWidth > maxWidth && fontSize > minPx) {
+        fontSize = Math.max(
+            minPx,
+            Math.floor((fontSize * maxWidth / inner.scrollWidth) * 10) / 10
+        );
+        inner.style.fontSize = `${fontSize}px`;
+    }
+
+    inner.style.setProperty('font-size', `${fontSize}px`, 'important');
+    inner.style.setProperty('line-height', '1.15', 'important');
+    inner.dataset.fitFontSize = String(fontSize);
+    return fontSize;
+};
+
+const fitAllSingleLineRedText = (root) => {
+    root.querySelectorAll('.stickerRedTextSingleLine').forEach((container) => {
+        const inner = container.querySelector('.stickerRedTextInner');
+        if (inner) fitRedTextInner(container, inner);
+    });
+};
+
+const forceLayout = (element) => {
+    void element.offsetHeight;
+};
+
+const preparePageForCapture = (pageWrapper) => {
+    const a4Page = pageWrapper.querySelector('.a4Page');
+    const saved = {
+        wrapperWidth: pageWrapper.style.width,
+        wrapperHeight: pageWrapper.style.height,
+        a4Transform: a4Page?.style.transform ?? '',
+    };
+
+    pageWrapper.style.width = `${A4_PAGE_WIDTH_PX}px`;
+    pageWrapper.style.height = `${A4_PAGE_HEIGHT_PX}px`;
+    if (a4Page) {
+        a4Page.style.transform = 'scale(1)';
+    }
+
+    return () => {
+        pageWrapper.style.width = saved.wrapperWidth;
+        pageWrapper.style.height = saved.wrapperHeight;
+        if (a4Page) {
+            a4Page.style.transform = saved.a4Transform;
+        }
+    };
+};
+
+const waitForNextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
+const StickerRedText = ({ className, content, field, index, onEdit, onPaste, singleLine }) => {
+    const containerRef = useRef(null);
+    const innerRef = useRef(null);
+
+    const estimatedFontSize = useMemo(
+        () => (singleLine ? estimateRedTextFontSize(content) : RED_TEXT_MAX_FONT_PX),
+        [singleLine, content]
+    );
+
+    const refineFit = useCallback(() => {
+        if (!singleLine || !containerRef.current || !innerRef.current) return;
+        fitRedTextInner(containerRef.current, innerRef.current);
+    }, [singleLine]);
+
+    const handleInput = (e) => {
+        if (!singleLine) return;
+        const size = estimateRedTextFontSize(e.currentTarget.textContent);
+        e.currentTarget.style.fontSize = `${size}px`;
+    };
+
+    if (!singleLine) {
+        return (
+            <div
+                className={className}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => onEdit(index, field, e.currentTarget.textContent)}
+                onPaste={onPaste}
+            >
+                {content}
+            </div>
+        );
+    }
+
+    return (
+        <div ref={containerRef} className={className + ' stickerRedTextSingleLine'}>
+            <span
+                ref={innerRef}
+                className="stickerRedTextInner"
+                style={{ fontSize: `${estimatedFontSize}px`, lineHeight: 1.15 }}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                    onEdit(index, field, e.currentTarget.textContent);
+                    refineFit();
+                }}
+                onPaste={(e) => {
+                    onPaste(e);
+                    requestAnimationFrame(() => refineFit());
+                }}
+                onInput={handleInput}
+            >
+                {content}
+            </span>
+        </div>
+    );
+};
+
+const StickerItem = ({ item, index, edits, onEdit, onRemove, singleLineRedText }) => {
     // Parse product name for title, description, and flavor
     const { title, description, flavor } = useMemo(() => {
         const productName = item.productName || 'No Product Name';
@@ -473,15 +700,15 @@ const StickerItem = ({ item, index, edits, onEdit, onRemove }) => {
                 <X size={16} />
             </button>
 
-            <div
-                className={"stickerTitle"}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => onEdit(index, 'title', e.currentTarget.textContent)}
+            <StickerRedText
+                className="stickerTitle"
+                content={edits.title || title}
+                field="title"
+                index={index}
+                onEdit={onEdit}
                 onPaste={handlePaste}
-            >
-                {edits.title || title}
-            </div>
+                singleLine={singleLineRedText}
+            />
 
             <div
                 className={"stickerDescription"}
@@ -493,15 +720,15 @@ const StickerItem = ({ item, index, edits, onEdit, onRemove }) => {
                 {edits.description || description}
             </div>
 
-            <div
-                className={"stickerFlavor"}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => onEdit(index, 'flavor', e.currentTarget.textContent)}
+            <StickerRedText
+                className="stickerFlavor"
+                content={edits.flavor || flavor}
+                field="flavor"
+                index={index}
+                onEdit={onEdit}
                 onPaste={handlePaste}
-            >
-                {edits.flavor || flavor}
-            </div>
+                singleLine={singleLineRedText}
+            />
 
             <div className={"stickerPrice"}>
                 ${Number(item.standardPrice || 0).toFixed(2)}
