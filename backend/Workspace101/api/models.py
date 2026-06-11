@@ -1,3 +1,5 @@
+import secrets
+
 from django.db import models
 from django.contrib import admin
 
@@ -435,6 +437,7 @@ class ModulePermissions(models.Model):
     catalog = models.BooleanField(default=False)
     accounts = models.BooleanField(default=False)
     utility = models.BooleanField(default=False)
+    supplychain = models.BooleanField(default=False)
 
     purchase_PO = models.BooleanField(default=False)
     purchase_Inventory = models.BooleanField(default=False)
@@ -457,3 +460,25 @@ class ModulePermissions(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - Permissions"
+
+
+class ErpProxyApiKey(models.Model):
+    name = models.CharField(max_length=255, help_text="Label for this client (e.g. Label Designer Pro)")
+    key = models.CharField(max_length=64, unique=True, editable=False, db_index=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "ERP proxy API key"
+        verbose_name_plural = "ERP proxy API keys"
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        status = "active" if self.is_active else "inactive"
+        return f"{self.name} ({status})"

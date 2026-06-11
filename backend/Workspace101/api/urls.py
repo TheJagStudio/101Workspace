@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .erp_proxy import ErpProxyView
 
 urlpatterns = [
     path(
@@ -25,4 +26,5 @@ urlpatterns = [
     ),
     path("dataMaker/", views.dataMaker.as_view(), name="dataMaker"),
     path("vacuum-sqlite/", views.vacuum_sqlite_database.as_view(), name="vacuum_sqlite"),
+    path("proxy/<path:route>", ErpProxyView.as_view(), name="erp_proxy"),
 ]

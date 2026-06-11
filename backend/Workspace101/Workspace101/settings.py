@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "tracker",
     "accounts",
     "utility",
+    "supplychain",
     "import_export",
     "corsheaders",
     "rest_framework",
@@ -197,3 +198,12 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000000
 TIME_ZONE = 'America/New_York'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": BASE_DIR / "cache" / "django",
+        "TIMEOUT": 7 * 24 * 60 * 60,
+        "OPTIONS": {"MAX_ENTRIES": 500},
+    }
+}

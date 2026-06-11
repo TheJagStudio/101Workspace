@@ -31,6 +31,9 @@ const Home = ({logout}) => {
 			if (user?.permissions?.accounts) {
 				availablePermissions++;
 			}
+			if (user?.permissions?.supplychain) {
+				availablePermissions++;
+			}
 			if (availablePermissions === 1) {
 				// Redirect to the only available page
 				let redirectTo = user?.permissions?.tracker ? "/tracker" :
@@ -38,7 +41,8 @@ const Home = ({logout}) => {
 						user?.permissions?.delivery ? "/delivery" :
 							user?.permissions?.catalog ? "/catalog" :
 								user?.permissions?.utility ? "/utility" :
-									user?.permissions?.accounts ? "/accounts" : "/";
+									user?.permissions?.accounts ? "/accounts" :
+										user?.permissions?.supplychain ? "/supply-chain" : "/";
 				navigate(redirectTo, { replace: true });
 			}
 		} else {
@@ -114,6 +118,10 @@ const Home = ({logout}) => {
 				{user?.permissions?.utility && (<Link to="/utility" className="bg-gradient-to-br from-sky-50 to-sky-200 shadow-md hover:shadow-xl shadow-sky-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0  border-sky-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
 					<img src="/static/images/101-logo-utility.png" alt="Logo" className="w-auto h-16" />
 					<p className="text-5xl font-semibold text-sky-600">Utility</p>
+				</Link>)}
+				{user?.permissions?.supplychain && (<Link to="/supply-chain" className="bg-gradient-to-br from-teal-50 to-teal-200 shadow-md hover:shadow-xl shadow-teal-500/10 cursor-pointer border-b-4 border-r-4 hover:border-l-4 hover:border-t-4 hover:border-b-0 hover:border-r-0 border-teal-500 rounded-xl h-fit w-full md:w-fit px-3 py-2 flex items-center justify-center transition-all">
+					<img src="/static/images/101-logo-supplychain.png" alt="Logo" className="w-auto h-16" />
+					<p className="text-5xl font-semibold text-teal-600">Supply Chain</p>
 				</Link>)}
 			</div>
 		</div>

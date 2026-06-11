@@ -2,9 +2,10 @@
 
 @font-face {
 	font-family: "Arial Rounded MT Bold";
-	src: url("/font/arialroundedmtbold.ttf") format("truetype");
+	src: url("/static/font/arialroundedmtbold.ttf") format("truetype");
 	font-weight: bolder;
-	font-style: bolder;
+	font-style: normal;
+	font-display: swap;
 }
 
 .previewArea {
@@ -84,6 +85,28 @@
 	line-height: 20px;
 	transform: translateY(-15px);
 	font-family: "Arial Rounded MT Bold", sans-serif;
+}
+
+.stickerRedTextSingleLine {
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	box-sizing: border-box;
+	padding-inline: 8px;
+}
+
+.stickerRedTextInner {
+	white-space: nowrap;
+	display: inline-block;
+	line-height: 1.15;
+	vertical-align: middle;
+}
+
+.stickerFlavor.stickerRedTextSingleLine {
+	line-height: 1.15;
 }
 
 .stickerPrice {

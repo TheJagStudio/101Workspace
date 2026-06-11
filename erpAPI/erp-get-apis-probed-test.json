@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "base_url": "https://erp.101distributorsga.com/api",
+    "total_get_endpoints": 5,
+    "working_count": 3,
+    "failed_count": 2,
+    "probed_at": "2026-06-05T20:24:15Z",
+    "notes": "Path placeholders {param} are tested with generic value '1'. Some failures may be due to missing valid IDs, not broken APIs."
+  },
+  "working_apis": [
+    {
+      "path_template": "/ach/batch/payout/{param}",
+      "method": "GET",
+      "works": true,
+      "http_status": 201,
+      "tested_url": "https://erp.101distributorsga.com/api/ach/batch/payout/1",
+      "duration_ms": 1735,
+      "error": null,
+      "line": 254765,
+      "response_content_type": "application/json",
+      "input_requirements": [
+        {
+          "name": "path_param_0",
+          "location": "path",
+          "required": true,
+          "default_used": "1",
+          "description": "Dynamic path segment (placeholder name unknown in bundle)"
+        }
+      ],
+      "output_format": {
+        "type": "object",
+        "properties": {
+          "hasError": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "unknown"
+            }
+          }
+        }
+      },
+      "sample_response": {
+        "hasError": false,
+        "status": 201,
+        "result": []
+      }
+    },
+    {
+      "path_template": "/attachment/fieldId/{param}/recordId/{param}/moduleId/{param}",
+      "method": "GET",
+      "works": true,
+      "http_status": 200,
+      "tested_url": "https://erp.101distributorsga.com/api/attachment/fieldId/1/recordId/1/moduleId/1",
+      "duration_ms": 1454,
+      "error": null,
+      "line": 254944,
+      "response_content_type": "application/json",
+      "input_requirements": [
+        {
+          "name": "path_param_0",
+          "location": "path",
+          "required": true,
+          "default_used": "1",
+          "description": "Dynamic path segment (placeholder name unknown in bundle)"
+        },
+        {
+          "name": "path_param_1",
+          "location": "path",
+          "required": true,
+          "default_used": "1",
+          "description": "Dynamic path segment (placeholder name unknown in bundle)"
+        },
+        {
+          "name": "path_param_2",
+          "location": "path",
+          "required": true,
+          "default_used": "1",
+          "description": "Dynamic path segment (placeholder name unknown in bundle)"
+        }
+      ],
+      "output_format": {
+        "type": "object",
+        "properties": {
+          "hasError": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "unknown"
+            }
+          }
+        }
+      },
+      "sample_response": {
+        "hasError": false,
+        "status": 200,
+        "result": []
+      }
+    },
+    {
+      "path_template": "/audit?recordId={param}&moduleId={param}&parentModuleId={param}&storeIds={param}",
+      "method": "GET",
+      "works": true,
+      "http_status": 200,
+      "tested_url": "https://erp.101distributorsga.com/api/audit?recordId=1&moduleId=1&parentModuleId=1&storeIds=1%2C2%2C3%2C4%2C5",
+      "duration_ms": 1629,
+      "error": null,
+      "line": 41278,
+      "response_content_type": "application/json",
+      "input_requirements": [
+        {
+          "name": "recordId",
+          "location": "query",
+          "required": true,
+          "default_used": "1",
+          "description": null
+        },
+        {
+          "name": "moduleId",
+          "location": "query",
+          "required": true,
+          "default_used": "1",
+          "description": null
+        },
+        {
+          "name": "parentModuleId",
+          "location": "query",
+          "required": true,
+          "default_used": "1",
+          "description": null
+        },
+        {
+          "name": "storeIds",
+          "location": "query",
+          "required": true,
+          "default_used": "1,2,3,4,5",
+          "description": null
+        }
+      ],
+      "output_format": {
+        "type": "object",
+        "properties": {
+          "hasError": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "sample_response": {
+        "hasError": false,
+        "status": 200,
+        "result": [
+          {
+            "date": "2026-03-25 20:10:59.0",
+            "data": [
+              {
+                "id": 16175057,
+                "createdBy": "BALU BANALA",
+                "insertedTimestamp": "2026-03-25 20:10:59.0",
+                "module": "Product",
+                "action": "Updated",
+                "updatedValues": [
+                  {
+                    "newValue": "580366842105",
+                    "updatedFieldName": "upc",
+                    "oldValue": "WP-0001"
+                  },
+                  {
+                    "newValue": "WP-0001",
+                    "updatedFieldName": "upc1",
+                    "oldValue": "\"\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "date": "2025-12-18 14:47:03.0",
+            "data": [
+              {
+                "id": 14053173,
+                "createdBy": "DEVANSH PRAJAPATI",
+                "insertedTimestamp": "2025-12-18 14:47:03.0",
+                "module": "Product",
+                "action": "Updated",
+                "updatedValues": [
+                  {
+                    "newValue": "true",
+                    "updatedFieldName": "active",
+                    "oldValue": "false"
+                  },
+                  {
+                    "newValue": "true",
+                    "updatedFieldName": "ecommerce",
+                    "oldValue": "false"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "failed_apis": [
+    {
+      "path_template": "/ach/batch/payout/list",
+      "method": "GET",
+      "works": false,
+      "http_status": 400,
+      "tested_url": "https://erp.101distributorsga.com/api/ach/batch/payout/list?page=0&size=20",
+      "duration_ms": 1453,
+      "error": "HTTP 400: {\"hasError\":true,\"status\":400,\"error\":{\"message\":\"Required String parameter 'startDate' is not present\",\"details\":\"Required Request params are missing.\",\"hint\":null,\"nextActions\":null,\"support\":null,\"persistError\":false},\"exception\":true}",
+      "line": 254753,
+      "response_content_type": null,
+      "input_requirements": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "default_used": "0",
+          "description": null
+        },
+        {
+          "name": "size",
+          "location": "query",
+          "required": false,
+          "default_used": "20",
+          "description": null
+        }
+      ],
+      "output_format": {},
+      "sample_response": null
+    },
+    {
+      "path_template": "/attachment",
+      "method": "GET",
+      "works": false,
+      "http_status": 405,
+      "tested_url": "https://erp.101distributorsga.com/api/attachment",
+      "duration_ms": 1478,
+      "error": "HTTP 405: {\"hasError\":true,\"status\":405,\"error\":{\"message\":\"Request method 'GET' not supported\",\"details\":\"The HTTP Method you are trying to use on this path is not found.\",\"hint\":\"Try to use any other HTTP Method for this path.\",\"nextActions\":null,\"support\":null,\"persistError\":false},\"exception\":true}",
+      "line": 255011,
+      "response_content_type": null,
+      "input_requirements": [],
+      "output_format": {},
+      "sample_response": null
+    }
+  ]
+}

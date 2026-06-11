@@ -95,7 +95,7 @@ const DustyInventory = () => {
 		setLoading(true);
 		try {
 			const data = await apiRequest(`${import.meta.env.VITE_SERVER_URL}/api/purchase/dusty-inventory/?_report_type=${reportType}&_start_date=${startDate}&_end_date=${endDate}&_sort_by=${sortBy}&_page_num=${page}&_page_size=${pageSize}&_dataType=child&_reverse_sort=${reverseSort}&_load_subcategory=${subCategoryVisible}`);
-			setTableData(data["data"]);
+			setTableData(Array.isArray(data?.data) ? data.data : []);
 			let totalSize = parseInt(data["totalPages"]);
 			setTotalPages(Math.ceil(totalSize / pageSize));
 			if (page > Math.ceil(totalSize / pageSize)) {

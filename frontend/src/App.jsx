@@ -47,6 +47,23 @@ import ClearanceLoss from "./Pages/Purchase/Inventory/ClearanceLoss";
 import Catalog from "./Pages/Catalog/Catalog";
 import ParLevel from "./Pages/Purchase/General/ParLevel";
 import StampInvoice from "./Pages/Accounts/StampInvoice";
+import SupplyChainOutlet from "./Outlets/SupplyChainOutlet";
+import SupplyChainDashboard from "./Pages/SupplyChain/Dashboard";
+import SCDustyInventory from "./Pages/SupplyChain/modules/DustyInventory";
+import SCShrinkageAudit from "./Pages/SupplyChain/modules/ShrinkageAudit";
+import SCDemandForecast from "./Pages/SupplyChain/modules/DemandForecast";
+import SCVendorScorecard from "./Pages/SupplyChain/modules/VendorScorecard";
+import SCAPAging from "./Pages/SupplyChain/modules/APAging";
+import SCQuotationPipeline from "./Pages/SupplyChain/modules/QuotationPipeline";
+import SCMarginPricing from "./Pages/SupplyChain/modules/MarginPricing";
+import SCARRisk from "./Pages/SupplyChain/modules/ARRisk";
+import SCFinancialPL from "./Pages/SupplyChain/modules/FinancialPL";
+import SCTaxCompliance from "./Pages/SupplyChain/modules/TaxCompliance";
+import SCSalesRepROI from "./Pages/SupplyChain/modules/SalesRepROI";
+import SCLaborAllocation from "./Pages/SupplyChain/modules/LaborAllocation";
+import SCEditFriction from "./Pages/SupplyChain/modules/EditFriction";
+import SCRMAAnalysis from "./Pages/SupplyChain/modules/RMAAnalysis";
+import SCCustomerChurn from "./Pages/SupplyChain/modules/CustomerChurn";
 
 const Loader = ({ height, width, stroke = "#615fff" }) => (
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={width || 16} height={height || 16} className="mx-auto animate-spin">
@@ -184,6 +201,26 @@ function App() {
 					{user?.permissions?.accounts_invoice && (<Route path="invoice" element={<Invoice />} />)}
 					{user?.permissions?.accounts_invoice && (<Route path="stamp-invoice" element={<StampInvoice />} />)}
 				</Route>
+				{user?.permissions?.supplychain && (
+					<Route path="/supply-chain" element={user?.is_active ? <SupplyChainOutlet logout={logout} /> : <Navigate to="/login" replace />}>
+						<Route index element={<SupplyChainDashboard />} />
+						<Route path="dusty-inventory" element={<SCDustyInventory />} />
+						<Route path="shrinkage-audit" element={<SCShrinkageAudit />} />
+						<Route path="demand-forecast" element={<SCDemandForecast />} />
+						<Route path="vendor-scorecard" element={<SCVendorScorecard />} />
+						<Route path="ap-aging" element={<SCAPAging />} />
+						<Route path="quotation-pipeline" element={<SCQuotationPipeline />} />
+						<Route path="margin-pricing" element={<SCMarginPricing />} />
+						<Route path="ar-risk" element={<SCARRisk />} />
+						<Route path="financial-pl" element={<SCFinancialPL />} />
+						<Route path="tax-compliance" element={<SCTaxCompliance />} />
+						<Route path="sales-rep-roi" element={<SCSalesRepROI />} />
+						<Route path="labor-allocation" element={<SCLaborAllocation />} />
+						<Route path="edit-friction" element={<SCEditFriction />} />
+						<Route path="rma-analysis" element={<SCRMAAnalysis />} />
+						<Route path="customer-churn" element={<SCCustomerChurn />} />
+					</Route>
+				)}
 				<Route path="*" element={<Navigate to="/404" replace />} />
 				<Route path="/404" element={<NotFound />} />
 			</Routes>

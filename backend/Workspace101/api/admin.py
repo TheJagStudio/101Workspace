@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import Product, Category, BusinessType, Vendor, Invoice, InvoiceLineItem, ProductHistory, Customer, AIReport, ModulePermissions
 from .models import PurchaseHistory
-from .models import SalesgentToken
+from .models import SalesgentToken, ErpProxyApiKey
+from .erp_proxy import generate_proxy_api_key
 from .models import POLocal, POLocalLineItem
 from .signals import _calculate_and_update_product_metrics
 # import export
@@ -253,6 +254,21 @@ class POLocalLineItemAdmin(ImportExportModelAdmin):
     autocomplete_fields = ["po_local", "product"]
 
 
+@admin.action(description="Regenerate selected API keys")
+def regenerate_proxy_api_keys(modeladmin, request, queryset):
+    for api_key in queryset:
+        api_key.key = generate_proxy_api_key()
+        api_key.save(update_fields=["key"])
+
+
+class ErpProxyApiKeyAdmin(ImportExportModelAdmin):
+    list_display = ("name", "key", "is_active", "created_at", "last_used_at")
+    list_filter = ("is_active",)
+    search_fields = ("name", "key", "notes")
+    readonly_fields = ("key", "created_at", "last_used_at")
+    actions = [regenerate_proxy_api_keys]
+
+
 class ModulePermissionsAdmin(ImportExportModelAdmin):
     list_display = (
         "user",
@@ -262,6 +278,7 @@ class ModulePermissionsAdmin(ImportExportModelAdmin):
         "catalog",
         "accounts",
         "utility",
+        "supplychain",
     )
     search_fields = ("user__username",)
     list_filter = (
@@ -271,6 +288,7 @@ class ModulePermissionsAdmin(ImportExportModelAdmin):
         "catalog",
         "accounts",
         "utility",
+        "supplychain",
     )
     list_editable = (
         "purchase",
@@ -279,6 +297,7 @@ class ModulePermissionsAdmin(ImportExportModelAdmin):
         "catalog",
         "accounts",
         "utility",
+        "supplychain",
     )
     autocomplete_fields = ["user"]
 
@@ -302,3 +321,4 @@ admin.site.register(AIReport, AIReportAdmin)
 admin.site.register(POLocal, POLocalAdmin)
 admin.site.register(POLocalLineItem, POLocalLineItemAdmin)
 admin.site.register(ModulePermissions, ModulePermissionsAdmin)
+admin.site.register(ErpProxyApiKey, ErpProxyApiKeyAdmin)

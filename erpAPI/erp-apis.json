@@ -1,0 +1,3824 @@
+[
+  {
+    "method": "PUT",
+    "path": "/accountType",
+    "line": 258132,
+    "source": "url_config",
+    "raw": "\"/accountType\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/accountType/codeInfo",
+    "line": 239862,
+    "source": "url_config",
+    "raw": "\"/accountType/codeInfo\""
+  },
+  {
+    "method": "POST",
+    "path": "/ach/bankAccount/customer/{param}",
+    "line": 254711,
+    "source": "url_config",
+    "raw": "\"/ach/bankAccount/customer/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/ach/bankAccount/customer/{param}/list",
+    "line": 254704,
+    "source": "url_config",
+    "raw": "\"/ach/bankAccount/customer/\".concat(t, \"/list\")"
+  },
+  {
+    "method": "DELETE",
+    "path": "/ach/bankAccount/customer/{param}/uuid/{param}",
+    "line": 254731,
+    "source": "url_config",
+    "raw": "\"/ach/bankAccount/customer/\".concat(t, \"/uuid/\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/ach/batch/payout/list",
+    "line": 254753,
+    "source": "url_config",
+    "raw": "\"/ach/batch/payout/list\""
+  },
+  {
+    "method": "GET",
+    "path": "/ach/batch/payout/{param}",
+    "line": 254765,
+    "source": "url_config",
+    "raw": "\"/ach/batch/payout/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/adjustment",
+    "line": 50285,
+    "source": "url_config",
+    "raw": "\"/adjustment\""
+  },
+  {
+    "method": "PUT",
+    "path": "/adjustment/list",
+    "line": 50278,
+    "source": "url_config",
+    "raw": "\"/adjustment/list\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/adjustment/{param}",
+    "line": 50295,
+    "source": "url_config",
+    "raw": "\"/adjustment/\".concat(t)"
+  },
+  {
+    "method": "WS",
+    "path": "/api/ws-app",
+    "line": 3065,
+    "source": "websocket",
+    "raw": "/api/ws-app"
+  },
+  {
+    "method": "DELETE",
+    "path": "/attachment",
+    "line": 255032,
+    "source": "url_config",
+    "raw": "\"/attachment\""
+  },
+  {
+    "method": "GET",
+    "path": "/attachment",
+    "line": 255011,
+    "source": "url_config",
+    "raw": "\"/attachment\""
+  },
+  {
+    "method": "POST",
+    "path": "/attachment",
+    "line": 12021,
+    "source": "url_config",
+    "raw": "\"/attachment\""
+  },
+  {
+    "method": "PUT",
+    "path": "/attachment",
+    "line": 254977,
+    "source": "url_config",
+    "raw": "\"/attachment\""
+  },
+  {
+    "method": "POST",
+    "path": "/attachment/fieldId/450/recordId/{param}/moduleId/1",
+    "line": 12015,
+    "source": "url_config",
+    "raw": "\"attachment/fieldId/450/recordId/\".concat(e, \"/moduleId/1\")"
+  },
+  {
+    "method": "GET",
+    "path": "/attachment/fieldId/{param}/recordId/{param}/moduleId/{param}",
+    "line": 254944,
+    "source": "url_config",
+    "raw": "\"/attachment/fieldId/\".concat(null === a || void 0 === a ? void 0 : a.id, \"/recordId/\").concat(t, \"/moduleId/\").concat(null === a || void 0 === a ? void 0 : a.moduleId)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/attachment?id={param}&productId={param}",
+    "line": 12009,
+    "source": "url_config",
+    "raw": "\"attachment?id=\".concat(t, \"&productId=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/audit?recordId={param}&moduleId={param}&parentModuleId={param}&storeIds={param}",
+    "line": 41278,
+    "source": "url_config",
+    "raw": "\"/audit?recordId=\".concat(null === u || void 0 === u ? void 0 : u.recordId, \"&moduleId=\").concat(null === f || void 0 === f ? void 0 : f.id, \"&parentModuleId=\").concat(null === g || void 0 === g ? voi"
+  },
+  {
+    "method": "GET",
+    "path": "/audit?recordId={param}&moduleId={param}&storeIds={param}",
+    "line": 41475,
+    "source": "url_config",
+    "raw": "\"/audit?recordId=\".concat(a, \"&moduleId=\").concat(null === o || void 0 === o ? void 0 : o.id, \"&storeIds=\").concat(n)"
+  },
+  {
+    "method": "POST",
+    "path": "/authenticate",
+    "line": 436,
+    "source": "url_config",
+    "raw": "\"/authenticate\""
+  },
+  {
+    "method": "POST",
+    "path": "/authenticate/onBehalfOfCustomer/{param}",
+    "line": 62355,
+    "source": "direct_call",
+    "raw": "\"/authenticate/onBehalfOfCustomer/\".concat(null === n || void 0 === n ? void 0 : n.customerId)"
+  },
+  {
+    "method": "POST",
+    "path": "/authoriseDotNet/customerProfile?customerId={param}",
+    "line": 256325,
+    "source": "url_config",
+    "raw": "\"/authoriseDotNet/customerProfile?customerId=\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/authoriseDotNet/paymentProfile",
+    "line": 256332,
+    "source": "url_config",
+    "raw": "\"/authoriseDotNet/paymentProfile\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/authoriseDotNet/paymentProfile?customerProfileId={param}&customerPaymentProfileId={param}",
+    "line": 256342,
+    "source": "url_config",
+    "raw": "\"/authoriseDotNet/paymentProfile?customerProfileId=\".concat(t, \"&customerPaymentProfileId=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/balanceSheet?storeIds={param}",
+    "line": 11116,
+    "source": "url_config",
+    "raw": "\"/balanceSheet?storeIds=\".concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/bill/dueBills/vendorId/{param}?storeIds={param}",
+    "line": 238829,
+    "source": "url_config",
+    "raw": "\"/bill/dueBills/vendorId/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/bill/negativeBalance/vendorId/{param}?storeIds={param}",
+    "line": 238915,
+    "source": "url_config",
+    "raw": "\"/bill/negativeBalance/vendorId/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PUT",
+    "path": "/bill/payment/bulk",
+    "line": 238873,
+    "source": "url_config",
+    "raw": "\"/bill/payment/bulk\""
+  },
+  {
+    "method": "PUT",
+    "path": "/bill/payment/id/{param}?storeIds={param}",
+    "line": 238867,
+    "source": "url_config",
+    "raw": "\"/bill/payment/id/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/bill/payment/{param}/voidPayment",
+    "line": 50155,
+    "source": "url_config",
+    "raw": "\"/bill/payment/\".concat(t, \"/voidPayment\")"
+  },
+  {
+    "method": "GET",
+    "path": "/brainTree/clientTokenForErp?orderId={param}",
+    "line": 63185,
+    "source": "direct_call",
+    "raw": "\"/brainTree/clientTokenForErp?orderId=\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/brand/list",
+    "line": 42927,
+    "source": "url_config",
+    "raw": "\"/brand/list\""
+  },
+  {
+    "method": "GET",
+    "path": "/brand/list?size=99999",
+    "line": 236218,
+    "source": "url_config",
+    "raw": "\"/brand/list?size=99999\""
+  },
+  {
+    "method": "POST",
+    "path": "/category",
+    "line": 244810,
+    "source": "url_config",
+    "raw": "\"/category\""
+  },
+  {
+    "method": "PUT",
+    "path": "/category",
+    "line": 244824,
+    "source": "url_config",
+    "raw": "\"/category\""
+  },
+  {
+    "method": "GET",
+    "path": "/category/all",
+    "line": 236210,
+    "source": "url_config",
+    "raw": "\"/category/all\""
+  },
+  {
+    "method": "POST",
+    "path": "/category/bulk/export",
+    "line": 41638,
+    "source": "url_config",
+    "raw": "\"/category/bulk/export\""
+  },
+  {
+    "method": "GET",
+    "path": "/category/bulk/list?storeIds={param}",
+    "line": 41657,
+    "source": "url_config",
+    "raw": "\"/category/bulk/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/category/bulk/update",
+    "line": 41663,
+    "source": "direct_call",
+    "raw": "\"/category/bulk/update\""
+  },
+  {
+    "method": "PUT",
+    "path": "/category/list",
+    "line": 244856,
+    "source": "url_config",
+    "raw": "\"/category/list\""
+  },
+  {
+    "method": "PUT",
+    "path": "/category/multiple",
+    "line": 244837,
+    "source": "url_config",
+    "raw": "\"/category/multiple\""
+  },
+  {
+    "method": "PUT",
+    "path": "/category/product/sequenceNumber",
+    "line": 244882,
+    "source": "url_config",
+    "raw": "\"/category/product/sequenceNumber\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/category/{param}",
+    "line": 244843,
+    "source": "url_config",
+    "raw": "\"/category/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/category/{param}/product/{param}/sequenceNumber",
+    "line": 244891,
+    "source": "url_config",
+    "raw": "\"/category/\".concat(t, \"/product/\").concat(a, \"/sequenceNumber\")"
+  },
+  {
+    "method": "DELETE",
+    "path": "/chartOfAccount",
+    "line": 239851,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount\""
+  },
+  {
+    "method": "POST",
+    "path": "/chartOfAccount",
+    "line": 239774,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount\""
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount",
+    "line": 239784,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount\""
+  },
+  {
+    "method": "GET",
+    "path": "/chartOfAccount/byTypes",
+    "line": 239733,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/byTypes\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/chartOfAccount/journal",
+    "line": 239840,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/journal\""
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount/journal",
+    "line": 239830,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/journal\""
+  },
+  {
+    "method": "GET",
+    "path": "/chartOfAccount/journal/list",
+    "line": 239815,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/journal/list\""
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount/journal/{param}",
+    "line": 239823,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/journal/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount/list",
+    "line": 239794,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/list\""
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount/reconcile",
+    "line": 239755,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/reconcile\""
+  },
+  {
+    "method": "GET",
+    "path": "/chartOfAccount/summary",
+    "line": 239723,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/summary\""
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount/transfer",
+    "line": 239805,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/transfer\""
+  },
+  {
+    "method": "POST",
+    "path": "/chartOfAccount/{param}",
+    "line": 239766,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/\".concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/chartOfAccount/{param}/summary",
+    "line": 239746,
+    "source": "url_config",
+    "raw": "\"/chartOfAccount/\".concat(n, \"/summary\")"
+  },
+  {
+    "method": "POST",
+    "path": "/city",
+    "line": 242998,
+    "source": "url_config",
+    "raw": "\"/city\""
+  },
+  {
+    "method": "GET",
+    "path": "/city/search",
+    "line": 236165,
+    "source": "url_config",
+    "raw": "\"/city/search\""
+  },
+  {
+    "method": "GET",
+    "path": "/city/stateId/{param}",
+    "line": 236183,
+    "source": "url_config",
+    "raw": "\"/city/stateId/\".concat(e)"
+  },
+  {
+    "method": "GET",
+    "path": "/country/all",
+    "line": 236151,
+    "source": "url_config",
+    "raw": "\"/country/all\""
+  },
+  {
+    "method": "GET",
+    "path": "/country/{param}/allState",
+    "line": 236159,
+    "source": "url_config",
+    "raw": "\"/country/\".concat(e, \"/allState\")"
+  },
+  {
+    "method": "POST",
+    "path": "/county",
+    "line": 243067,
+    "source": "url_config",
+    "raw": "\"/county\""
+  },
+  {
+    "method": "GET",
+    "path": "/county/search",
+    "line": 236174,
+    "source": "url_config",
+    "raw": "\"/county/search\""
+  },
+  {
+    "method": "GET",
+    "path": "/county/stateId/{param}",
+    "line": 236191,
+    "source": "url_config",
+    "raw": "\"/county/stateId/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/crmCustomerNotes",
+    "line": 238534,
+    "source": "url_config",
+    "raw": "\"/crmCustomerNotes\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/crmCustomerNotes/list",
+    "line": 238524,
+    "source": "url_config",
+    "raw": "\"/crmCustomerNotes/list\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/crmCustomerNotes?id={param}",
+    "line": 238544,
+    "source": "url_config",
+    "raw": "\"/crmCustomerNotes?id=\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/customer",
+    "line": 238307,
+    "source": "url_config",
+    "raw": "\"/customer\""
+  },
+  {
+    "method": "PUT",
+    "path": "/customer",
+    "line": 238313,
+    "source": "url_config",
+    "raw": "\"/customer\""
+  },
+  {
+    "method": "GET",
+    "path": "/customer-tiers",
+    "line": 47529,
+    "source": "url_config",
+    "raw": "\"/customer-tiers\""
+  },
+  {
+    "method": "POST",
+    "path": "/customer-tiers",
+    "line": 47522,
+    "source": "direct_call",
+    "raw": "\"/customer-tiers\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer-tiers/{param}",
+    "line": 47547,
+    "source": "url_config",
+    "raw": "\"/customer-tiers/\".concat(t)"
+  },
+  {
+    "method": "PATCH",
+    "path": "/customer-tiers/{param}",
+    "line": 47552,
+    "source": "direct_call",
+    "raw": "\"/customer-tiers/\".concat(null === e || void 0 === e ? void 0 : e.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/customer/accountSummary",
+    "line": 249845,
+    "source": "url_config",
+    "raw": "\"/customer/accountSummary\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer/address",
+    "line": 238326,
+    "source": "url_config",
+    "raw": "\"/customer/address\""
+  },
+  {
+    "method": "PUT",
+    "path": "/customer/bulk",
+    "line": 238292,
+    "source": "url_config",
+    "raw": "\"/customer/bulk\""
+  },
+  {
+    "method": "PUT",
+    "path": "/customer/list?storeIds={param}",
+    "line": 238284,
+    "source": "url_config",
+    "raw": "\"/customer/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/customer/password",
+    "line": 238388,
+    "source": "url_config",
+    "raw": "\"/customer/password\""
+  },
+  {
+    "method": "GET",
+    "path": "/customer/paymentDetails?storeIds={param}",
+    "line": 66835,
+    "source": "url_config",
+    "raw": "\"/customer/paymentDetails?storeIds=\".concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/customer/paymentDetails?storeIds={param}&parentPaymentId={param}&page=0&size=9999",
+    "line": 66796,
+    "source": "url_config",
+    "raw": "\"/customer/paymentDetails?storeIds=\".concat(a, \"&parentPaymentId=\").concat(t, \"&page=0&size=9999\")"
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer/paymentPreference",
+    "line": 238512,
+    "source": "url_config",
+    "raw": "\"/customer/paymentPreference\""
+  },
+  {
+    "method": "GET",
+    "path": "/customer/paymentPreference",
+    "line": 238493,
+    "source": "url_config",
+    "raw": "\"/customer/paymentPreference\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer/productPriceMap/byCustomer",
+    "line": 248690,
+    "source": "url_config",
+    "raw": "\"/customer/productPriceMap/byCustomer\""
+  },
+  {
+    "method": "POST",
+    "path": "/customer/productPriceMap/cloneCustomerProductPriceMap",
+    "line": 238553,
+    "source": "url_config",
+    "raw": "\"/customer/productPriceMap/cloneCustomerProductPriceMap\""
+  },
+  {
+    "method": "GET",
+    "path": "/customer/productPriceMap/customerId/{param}",
+    "line": 249017,
+    "source": "url_config",
+    "raw": "\"/customer/productPriceMap/customerId/\".concat(r)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer/productPriceMap/customerProductPriceMapId",
+    "line": 248671,
+    "source": "url_config",
+    "raw": "\"/customer/productPriceMap/customerProductPriceMapId\""
+  },
+  {
+    "method": "POST",
+    "path": "/customer/productPriceMap?isUpdateAllChildProductPrice={param}",
+    "line": 248763,
+    "source": "url_config",
+    "raw": "\"/customer/productPriceMap?isUpdateAllChildProductPrice=\".concat(d)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer/storeCredit",
+    "line": 238379,
+    "source": "url_config",
+    "raw": "\"/customer/storeCredit\""
+  },
+  {
+    "method": "GET",
+    "path": "/customer/storeCredit/list/{param}",
+    "line": 238479,
+    "source": "direct_call",
+    "raw": "\"/customer/storeCredit/list/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/customer/syncForACH/{param}",
+    "line": 254721,
+    "source": "url_config",
+    "raw": "\"/customer/syncForACH/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/customer/transactions/export/csv",
+    "line": 247935,
+    "source": "url_config",
+    "raw": "\"/customer/transactions/export/csv\""
+  },
+  {
+    "method": "PUT",
+    "path": "/customer/transactions?storeIds={param}",
+    "line": 238401,
+    "source": "url_config",
+    "raw": "\"/customer/transactions?storeIds=\".concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/customer/{param}",
+    "line": 46147,
+    "source": "url_config",
+    "raw": "\"/customer/\".concat(l.customerId)"
+  },
+  {
+    "method": "POST",
+    "path": "/customer/{param}",
+    "line": 238302,
+    "source": "url_config",
+    "raw": "\"/customer/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/customer/{param}/cartDetails?customerTier={param}&storeIds={param}",
+    "line": 246784,
+    "source": "url_config",
+    "raw": "\"/customer/\".concat(r, \"/cartDetails?customerTier=\").concat(d, \"&storeIds=\").concat(Object(u.g)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer/{param}/creditCardDetails",
+    "line": 238336,
+    "source": "url_config",
+    "raw": "\"/customer/\".concat(e.customerId, \"/creditCardDetails\")"
+  },
+  {
+    "method": "GET",
+    "path": "/customer/{param}/creditCardDetails",
+    "line": 246512,
+    "source": "url_config",
+    "raw": "\"/customer/\".concat(t, \"/creditCardDetails\")"
+  },
+  {
+    "method": "PUT",
+    "path": "/customer/{param}/creditCardId/{param}",
+    "line": 238345,
+    "source": "url_config",
+    "raw": "\"/customer/\".concat(e.customerId, \"/creditCardId/\").concat(e.id)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/customer?customerId={param}",
+    "line": 238320,
+    "source": "url_config",
+    "raw": "\"/customer?customerId=\".concat(e)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/customerContactPerson",
+    "line": 238359,
+    "source": "url_config",
+    "raw": "\"/customerContactPerson\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/customerContactPerson/customerId/{param}",
+    "line": 238353,
+    "source": "url_config",
+    "raw": "\"/customerContactPerson/customerId/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/customerContactPerson/customerId/{param}",
+    "line": 49652,
+    "source": "url_config",
+    "raw": "\"/customerContactPerson/customerId/\".concat(null === a || void 0 === a ? void 0 : a.customerId)"
+  },
+  {
+    "method": "GET",
+    "path": "/customerGroup/list",
+    "line": 238486,
+    "source": "url_config",
+    "raw": "\"/customerGroup/list\""
+  },
+  {
+    "method": "POST",
+    "path": "/database/truncate-module-wise",
+    "line": 236230,
+    "source": "url_config",
+    "raw": "\"/database/truncate-module-wise\""
+  },
+  {
+    "method": "POST",
+    "path": "/discount",
+    "line": 251873,
+    "source": "url_config",
+    "raw": "\"/discount\""
+  },
+  {
+    "method": "PUT",
+    "path": "/discount",
+    "line": 251883,
+    "source": "url_config",
+    "raw": "\"/discount\""
+  },
+  {
+    "method": "PUT",
+    "path": "/discount/bulk",
+    "line": 251863,
+    "source": "url_config",
+    "raw": "\"/discount/bulk\""
+  },
+  {
+    "method": "GET",
+    "path": "/discount/list",
+    "line": 60748,
+    "source": "url_config",
+    "raw": "\"/discount/list\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/discount/{param}",
+    "line": 251893,
+    "source": "url_config",
+    "raw": "\"/discount/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/discount/{param}",
+    "line": 251842,
+    "source": "url_config",
+    "raw": "\"/discount/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/dropDownValue",
+    "line": 236274,
+    "source": "url_config",
+    "raw": "\"/dropDownValue\""
+  },
+  {
+    "method": "GET",
+    "path": "/dropDownValue/byFieldId/{param}",
+    "line": 236264,
+    "source": "url_config",
+    "raw": "\"/dropDownValue/byFieldId/\".concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/employee",
+    "line": 2881,
+    "source": "url_config",
+    "raw": "\"/employee\""
+  },
+  {
+    "method": "POST",
+    "path": "/employee",
+    "line": 239256,
+    "source": "url_config",
+    "raw": "\"/employee\""
+  },
+  {
+    "method": "PUT",
+    "path": "/employee",
+    "line": 239249,
+    "source": "url_config",
+    "raw": "\"/employee\""
+  },
+  {
+    "method": "PUT",
+    "path": "/employee/basicInfo",
+    "line": 239321,
+    "source": "url_config",
+    "raw": "\"/employee/basicInfo\""
+  },
+  {
+    "method": "PUT",
+    "path": "/employee/brandCommission/bulk",
+    "line": 239386,
+    "source": "url_config",
+    "raw": "\"/employee/brandCommission/bulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/employee/brandCommission/{param}",
+    "line": 239377,
+    "source": "url_config",
+    "raw": "\"/employee/brandCommission/\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/employee/brandCommission?employeeBrandCommissionId={param}",
+    "line": 239395,
+    "source": "url_config",
+    "raw": "\"/employee/brandCommission?employeeBrandCommissionId=\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/employee/clockIn",
+    "line": 239307,
+    "source": "url_config",
+    "raw": "\"/employee/clockIn\""
+  },
+  {
+    "method": "PUT",
+    "path": "/employee/clockIn",
+    "line": 239314,
+    "source": "url_config",
+    "raw": "\"/employee/clockIn\""
+  },
+  {
+    "method": "GET",
+    "path": "/employee/clockIn/{param}",
+    "line": 239342,
+    "source": "url_config",
+    "raw": "\"/employee/clockIn/\".concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/employee/commission/bulk",
+    "line": 239359,
+    "source": "url_config",
+    "raw": "\"/employee/commission/bulk\""
+  },
+  {
+    "method": "PUT",
+    "path": "/employee/commission/{param}",
+    "line": 239350,
+    "source": "url_config",
+    "raw": "\"/employee/commission/\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/employee/commission?employeeCommissionId={param}",
+    "line": 239368,
+    "source": "url_config",
+    "raw": "\"/employee/commission?employeeCommissionId=\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/employee/list",
+    "line": 239329,
+    "source": "url_config",
+    "raw": "\"/employee/list\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/employee/{param}",
+    "line": 239273,
+    "source": "url_config",
+    "raw": "\"/employee/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/employee/{param}/accessSchedule",
+    "line": 239404,
+    "source": "url_config",
+    "raw": "\"/employee/\".concat(t, \"/accessSchedule\")"
+  },
+  {
+    "method": "DELETE",
+    "path": "/employee?employeeId={param}",
+    "line": 239264,
+    "source": "url_config",
+    "raw": "\"/employee?employeeId=\".concat(e)"
+  },
+  {
+    "method": "GET",
+    "path": "/expense",
+    "line": 255302,
+    "source": "url_config",
+    "raw": "\"/expense\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/expense/{param}",
+    "line": 255327,
+    "source": "url_config",
+    "raw": "\"/expense/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/expense/{param}?itemised=false&storeIds={param}",
+    "line": 255317,
+    "source": "url_config",
+    "raw": "\"/expense/\".concat(t, \"?itemised=false&storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/expenseAccount/all",
+    "line": 255321,
+    "source": "direct_call",
+    "raw": "\"/expenseAccount/all\""
+  },
+  {
+    "method": "GET",
+    "path": "/globalSearch?storeIds={param}",
+    "line": 258159,
+    "source": "url_config",
+    "raw": "\"/globalSearch?storeIds=\".concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/home/sliderImages",
+    "line": 16262,
+    "source": "url_config",
+    "raw": "\"/home/sliderImages\""
+  },
+  {
+    "method": "GET",
+    "path": "/home/sliderTypes",
+    "line": 16192,
+    "source": "url_config",
+    "raw": "\"/home/sliderTypes\""
+  },
+  {
+    "method": "POST",
+    "path": "/imageConfiguration",
+    "line": 257622,
+    "source": "url_config",
+    "raw": "\"/imageConfiguration\""
+  },
+  {
+    "method": "PUT",
+    "path": "/imageConfiguration",
+    "line": 257636,
+    "source": "url_config",
+    "raw": "\"/imageConfiguration\""
+  },
+  {
+    "method": "GET",
+    "path": "/imageConfiguration/configTypeId/{param}",
+    "line": 262268,
+    "source": "url_config",
+    "raw": "\"/imageConfiguration/configTypeId/\".concat(f)"
+  },
+  {
+    "method": "PUT",
+    "path": "/imageConfiguration/updateSequenceNumberInBulk",
+    "line": 257651,
+    "source": "url_config",
+    "raw": "\"/imageConfiguration/updateSequenceNumberInBulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/imageConfiguration?id={param}",
+    "line": 257597,
+    "source": "url_config",
+    "raw": "\"/imageConfiguration?id=\".concat(e)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/adjustment/export/downloadBulkInventoryAdjustmentTemplate",
+    "line": 43895,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment/export/downloadBulkInventoryAdjustmentTemplate\""
+  },
+  {
+    "method": "POST",
+    "path": "/inventory/adjustment/fromQuotation/{param}?storeIds={param}",
+    "line": 46190,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment/fromQuotation/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/adjustment/import/downloadBulkInventoryAdjustmentTemplate",
+    "line": 43863,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment/import/downloadBulkInventoryAdjustmentTemplate\""
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/adjustment/list?storeIds={param}",
+    "line": 40871,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment/list?storeIds=\".concat(w)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/inventory/adjustment/{param}",
+    "line": 12183,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/adjustment/{param}?storeIds={param}",
+    "line": 12148,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "POST",
+    "path": "/inventory/adjustment?storeIds={param}",
+    "line": 12163,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/inventory/adjustment?storeIds={param}",
+    "line": 12174,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustment?storeIds=\".concat(o)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/adjustmentLineItem/adjustmentId/{param}",
+    "line": 41054,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustmentLineItem/adjustmentId/\".concat(null === D || void 0 === D || null === (e = D.inventoryAdjustmentDto)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/adjustmentLineItem/adjustmentId/{param}?storeIds={param}",
+    "line": 12152,
+    "source": "url_config",
+    "raw": "\"/inventory/adjustmentLineItem/adjustmentId/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/committedQuantity/{param}?wareHouseIdList={param}",
+    "line": 260817,
+    "source": "url_config",
+    "raw": "\"/inventory/committedQuantity/\".concat(y, \"?wareHouseIdList=\").concat(null === c || void 0 === c ? void 0 : c.wareHouseId)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/customerRmaQuantity/{param}?storeIds={param}&wareHouseIdList={param}",
+    "line": 260825,
+    "source": "url_config",
+    "raw": "\"/inventory/customerRmaQuantity/\".concat(y, \"?storeIds=\").concat(E, \"&wareHouseIdList=\").concat(null === c || void 0 === c ? void 0 : c.wareHouseId)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/details/{param}?storeIds={param}",
+    "line": 12047,
+    "source": "url_config",
+    "raw": "\"/inventory/details/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/detailsToUpdate/{param}?storeIds={param}",
+    "line": 12060,
+    "source": "direct_call",
+    "raw": "\"/inventory/detailsToUpdate/\".concat(e, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/inventory/history/{param}?storeIds={param}",
+    "line": 12039,
+    "source": "url_config",
+    "raw": "\"inventory/history/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/incomingFromPO/{param}?storeIds={param}&wareHouseIdList={param}",
+    "line": 260813,
+    "source": "url_config",
+    "raw": "\"/inventory/incomingFromPO/\".concat(y, \"?storeIds=\").concat(E, \"&wareHouseIdList=\").concat(null === c || void 0 === c ? void 0 : c.wareHouseId)"
+  },
+  {
+    "method": "POST",
+    "path": "/inventory/location",
+    "line": 251150,
+    "source": "url_config",
+    "raw": "\"/inventory/location\""
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/location/byProductId/{param}",
+    "line": 251144,
+    "source": "url_config",
+    "raw": "\"/inventory/location/byProductId/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/inventory/location?locationId={param}",
+    "line": 251160,
+    "source": "url_config",
+    "raw": "\"inventory/location?locationId=\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/recentCostPrice/{param}?storeIds={param}",
+    "line": 12073,
+    "source": "direct_call",
+    "raw": "\"/inventory/recentCostPrice/\".concat(e, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/transferOrderQuantity/{param}?storeIds={param}&wareHouseIdList={param}",
+    "line": 260829,
+    "source": "url_config",
+    "raw": "\"/inventory/transferOrderQuantity/\".concat(y, \"?storeIds=\").concat(E, \"&wareHouseIdList=\").concat(null === c || void 0 === c ? void 0 : c.wareHouseId)"
+  },
+  {
+    "method": "POST",
+    "path": "/inventory/v2",
+    "line": 11969,
+    "source": "url_config",
+    "raw": "\"/inventory/v2\""
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/v2/detailsToUpdate/{param}?storeIds={param}",
+    "line": 12053,
+    "source": "direct_call",
+    "raw": "\"/inventory/v2/detailsToUpdate/\".concat(e, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/v2/history/{param}?storeIds={param}",
+    "line": 12067,
+    "source": "url_config",
+    "raw": "\"/inventory/v2/history/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "POST",
+    "path": "/inventory/v2/imei",
+    "line": 11978,
+    "source": "url_config",
+    "raw": "\"/inventory/v2/imei\""
+  },
+  {
+    "method": "GET",
+    "path": "/inventory/vendorRmaQuantity/{param}?storeIds={param}&wareHouseIdList={param}",
+    "line": 260821,
+    "source": "url_config",
+    "raw": "\"/inventory/vendorRmaQuantity/\".concat(y, \"?storeIds=\").concat(E, \"&wareHouseIdList=\").concat(null === c || void 0 === c ? void 0 : c.wareHouseId)"
+  },
+  {
+    "method": "PUT",
+    "path": "/lot/inventory/audit/{param}?storeIds={param}",
+    "line": 12217,
+    "source": "url_config",
+    "raw": "\"/lot/inventory/audit/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/lot/inventory/list?storeIds={param}",
+    "line": 255862,
+    "source": "url_config",
+    "raw": "\"/lot/inventory/list?storeIds=\".concat(r)"
+  },
+  {
+    "method": "POST",
+    "path": "/lot/inventory?storeIds={param}",
+    "line": 255874,
+    "source": "url_config",
+    "raw": "\"/lot/inventory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/lot/inventory?storeIds={param}",
+    "line": 255885,
+    "source": "url_config",
+    "raw": "\"/lot/inventory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/lot/location/list?storeIds={param}",
+    "line": 255821,
+    "source": "url_config",
+    "raw": "\"/lot/location/list?storeIds=\".concat(r)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/lot/location/{param}",
+    "line": 255853,
+    "source": "url_config",
+    "raw": "\"/lot/location/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/lot/location?storeIds={param}",
+    "line": 255833,
+    "source": "url_config",
+    "raw": "\"/lot/location?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/lot/location?storeIds={param}",
+    "line": 255844,
+    "source": "url_config",
+    "raw": "\"/lot/location?storeIds=\".concat(n)"
+  },
+  {
+    "method": "POST",
+    "path": "/module/all",
+    "line": 236223,
+    "source": "url_config",
+    "raw": "\"/module/all\""
+  },
+  {
+    "method": "GET",
+    "path": "/module/allFieldByModuleId/{param}",
+    "line": 236257,
+    "source": "url_config",
+    "raw": "\"/module/allFieldByModuleId/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/order",
+    "line": 46429,
+    "source": "url_config",
+    "raw": "\"/order\""
+  },
+  {
+    "method": "PUT",
+    "path": "/order/bulk",
+    "line": 46399,
+    "source": "url_config",
+    "raw": "\"/order/bulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/cancelled/bulk",
+    "line": 46409,
+    "source": "url_config",
+    "raw": "\"/order/cancelled/bulk\""
+  },
+  {
+    "method": "GET",
+    "path": "/order/dueOrders/customer/{param}?storeIds={param}",
+    "line": 238472,
+    "source": "url_config",
+    "raw": "\"/order/dueOrders/customer/\".concat(o, \"?storeIds=\").concat(v)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/email/types",
+    "line": 47520,
+    "source": "url_config",
+    "raw": "\"/order/email/types\""
+  },
+  {
+    "method": "GET",
+    "path": "/order/email/{param}?storeIds={param}",
+    "line": 62248,
+    "source": "url_config",
+    "raw": "\"/order/email/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/email/{param}?storeIds={param}",
+    "line": 46648,
+    "source": "direct_call",
+    "raw": "\"/order/email/\".concat(e.orderId, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/from/quotation?storeIds={param}",
+    "line": 46439,
+    "source": "url_config",
+    "raw": "\"/order/from/quotation?storeIds=\".concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/fromPO?storeIds={param}",
+    "line": 46496,
+    "source": "url_config",
+    "raw": "\"/order/fromPO?storeIds=\".concat(l)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/fromRMA/{param}",
+    "line": 48322,
+    "source": "url_config",
+    "raw": "\"/order/fromRMA/\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/fulfilment/bulk?fulfilmentIds={param}&storeIds={param}",
+    "line": 48610,
+    "source": "url_config",
+    "raw": "\"/order/fulfilment/bulk?fulfilmentIds=\".concat(e, \"&storeIds=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/import/csv",
+    "line": 64815,
+    "source": "url_config",
+    "raw": "\"/order/import/csv\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/lineItem/bulk?lineItemIds={param}&orderId={param}",
+    "line": 46483,
+    "source": "url_config",
+    "raw": "\"/order/lineItem/bulk?lineItemIds=\".concat(t, \"&orderId=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/lineItem/byMasterChildMapping/{param}?sortedByProductName=true&storeIds={param}",
+    "line": 62042,
+    "source": "url_config",
+    "raw": "\"/order/lineItem/byMasterChildMapping/\".concat(null === n || void 0 === n ? void 0 : n.id, \"?sortedByProductName=true&storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/lineItem/byMasterChildMapping/{param}?sortedByProductName=true&storeIds={param}&masterProductId={param}",
+    "line": 62020,
+    "source": "url_config",
+    "raw": "\"/order/lineItem/byMasterChildMapping/\".concat(null === n || void 0 === n ? void 0 : n.id, \"?sortedByProductName=true&storeIds=\").concat(l, \"&masterProductId=\").concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/lineItem/{param}?storeIds={param}",
+    "line": 46697,
+    "source": "url_config",
+    "raw": "\"/order/lineItem/\".concat(e, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/list?storeIds={param}",
+    "line": 46390,
+    "source": "url_config",
+    "raw": "\"/order/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/negativeBalance/customer/{param}?storeIds={param}",
+    "line": 238459,
+    "source": "url_config",
+    "raw": "\"/order/negativeBalance/customer/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/notes?storeIds={param}",
+    "line": 46525,
+    "source": "url_config",
+    "raw": "\"/order/notes?storeIds=\".concat(i)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/onBehalfOfCustomer?storeIds={param}&storeId={param}",
+    "line": 247488,
+    "source": "url_config",
+    "raw": "\"/order/onBehalfOfCustomer?storeIds=\".concat(i, \"&storeId=\").concat(null === n || void 0 === n ? void 0 : n.storeId)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/payment/bulk",
+    "line": 46619,
+    "source": "url_config",
+    "raw": "\"/order/payment/bulk\""
+  },
+  {
+    "method": "PUT",
+    "path": "/order/payment/bulk",
+    "line": 46898,
+    "source": "url_config",
+    "raw": "\"/order/payment/bulk\""
+  },
+  {
+    "method": "GET",
+    "path": "/order/payment/card/{param}",
+    "line": 46802,
+    "source": "url_config",
+    "raw": "\"/order/payment/card/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/payment/id/{param}?storeIds={param}",
+    "line": 46892,
+    "source": "url_config",
+    "raw": "\"/order/payment/id/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/payment/{param}/voidPayment",
+    "line": 46908,
+    "source": "url_config",
+    "raw": "\"/order/payment/\".concat(t, \"/voidPayment\")"
+  },
+  {
+    "method": "GET",
+    "path": "/order/payment/{param}?storeIds={param}",
+    "line": 62914,
+    "source": "url_config",
+    "raw": "\"/order/payment/\".concat(n, \"?storeIds=\").concat(m)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/payment?storeIds={param}",
+    "line": 46602,
+    "source": "direct_call",
+    "raw": "\"/order/payment?storeIds=\".concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/payment?storeIds={param}",
+    "line": 46610,
+    "source": "direct_call",
+    "raw": "\"/order/payment?storeIds=\".concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/profitDetailOnOrderAndLineItem/{param}?storeIds={param}",
+    "line": 64340,
+    "source": "url_config",
+    "raw": "\"/order/profitDetailOnOrderAndLineItem/\".concat(a.id, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/schedule/payment",
+    "line": 46637,
+    "source": "url_config",
+    "raw": "\"/order/schedule/payment\""
+  },
+  {
+    "method": "PUT",
+    "path": "/order/schedule/payment/bulk",
+    "line": 46934,
+    "source": "url_config",
+    "raw": "\"/order/schedule/payment/bulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/schedule/payment/list?storeIds={param}",
+    "line": 46918,
+    "source": "url_config",
+    "raw": "\"/order/schedule/payment/list?storeIds=\".concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/schedule/payment/order/{param}?storeIds={param}",
+    "line": 46630,
+    "source": "url_config",
+    "raw": "\"/order/schedule/payment/order/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/schedule/payment/{param}",
+    "line": 46944,
+    "source": "url_config",
+    "raw": "\"/order/schedule/payment/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/schedule/payment/{param}?storeIds={param}",
+    "line": 46928,
+    "source": "url_config",
+    "raw": "\"/order/schedule/payment/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/shipment",
+    "line": 48565,
+    "source": "url_config",
+    "raw": "\"/order/shipment\""
+  },
+  {
+    "method": "POST",
+    "path": "/order/shipment",
+    "line": 48520,
+    "source": "direct_call",
+    "raw": "\"/order/shipment\""
+  },
+  {
+    "method": "PUT",
+    "path": "/order/shipment",
+    "line": 48524,
+    "source": "direct_call",
+    "raw": "\"/order/shipment\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/shipment/{param}",
+    "line": 48542,
+    "source": "url_config",
+    "raw": "\"/order/shipment/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/status/{param}",
+    "line": 46421,
+    "source": "url_config",
+    "raw": "\"/order/status/\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/tag/config",
+    "line": 47517,
+    "source": "url_config",
+    "raw": "\"/order/tag/config\""
+  },
+  {
+    "method": "PUT",
+    "path": "/order/tag/config",
+    "line": 47496,
+    "source": "url_config",
+    "raw": "\"/order/tag/config\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/order/tag/config?configOrderTagId={param}",
+    "line": 47511,
+    "source": "url_config",
+    "raw": "\"/order/tag/config?configOrderTagId=\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/tag/{param}/timeLine?storeIds={param}",
+    "line": 64530,
+    "source": "url_config",
+    "raw": "\"/order/tag/\".concat(a, \"/timeLine?storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/tag/{param}?storeIds={param}",
+    "line": 46798,
+    "source": "url_config",
+    "raw": "\"/order/tag/\".concat(e, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/order/tag/{param}?storeIds={param}",
+    "line": 46583,
+    "source": "direct_call",
+    "raw": "\"/order/tag/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/{param}/export/csv?storeIds={param}",
+    "line": 61203,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(c.id, \"/export/csv?storeIds=\").concat(w)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/{param}/statusTimeLine?storeIds={param}",
+    "line": 64508,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(a.id, \"/statusTimeLine?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/{param}/transferOrder",
+    "line": 46573,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(e.orderDto.id, \"/transferOrder\")"
+  },
+  {
+    "method": "PUT",
+    "path": "/order/{param}/updatePriceOnPercentage?storeIds={param}",
+    "line": 46556,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(t, \"/updatePriceOnPercentage?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PATCH",
+    "path": "/order/{param}/updatePriceWithCustomerTier?storeIds={param}",
+    "line": 46543,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(e.orderDto.id, \"/updatePriceWithCustomerTier?storeIds=\").concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/order/{param}/withCustomer?storeIds={param}",
+    "line": 46735,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(t, \"/withCustomer?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PATCH",
+    "path": "/order/{param}?storeIds={param}",
+    "line": 47082,
+    "source": "url_config",
+    "raw": "\"/order/\".concat(e.orderDto.id, \"?storeIds=\").concat(d)"
+  },
+  {
+    "method": "PUT",
+    "path": "/order?storeIds={param}",
+    "line": 46473,
+    "source": "url_config",
+    "raw": "\"/order?storeIds=\".concat(i)"
+  },
+  {
+    "method": "PUT",
+    "path": "/orginfo",
+    "line": 15378,
+    "source": "url_config",
+    "raw": "\"/orginfo\""
+  },
+  {
+    "method": "PUT",
+    "path": "/orginfo/2fa/email/update",
+    "line": 15392,
+    "source": "url_config",
+    "raw": "\"/orginfo/2fa/email/update\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/price/rule",
+    "line": 47536,
+    "source": "direct_call",
+    "raw": "\"/price/rule\""
+  },
+  {
+    "method": "POST",
+    "path": "/price/rule",
+    "line": 47523,
+    "source": "direct_call",
+    "raw": "\"/price/rule\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/price/rule/tier/{param}",
+    "line": 47540,
+    "source": "url_config",
+    "raw": "\"/price/rule/tier/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/price/rule/{param}",
+    "line": 47533,
+    "source": "direct_call",
+    "raw": "\"/price/rule/\".concat(e.customerTierId)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/autoGenerateSKU",
+    "line": 261778,
+    "source": "url_config",
+    "raw": "\"product/autoGenerateSKU\""
+  },
+  {
+    "method": "GET",
+    "path": "/product/autoGenerateUPC",
+    "line": 261583,
+    "source": "url_config",
+    "raw": "\"product/autoGenerateUPC\""
+  },
+  {
+    "method": "PUT",
+    "path": "/product/bulk",
+    "line": 12075,
+    "source": "direct_call",
+    "raw": "\"/product/bulk\""
+  },
+  {
+    "method": "POST",
+    "path": "/product/bulk/export",
+    "line": 43561,
+    "source": "url_config",
+    "raw": "\"/product/bulk/export\""
+  },
+  {
+    "method": "GET",
+    "path": "/product/bulk/list?storeIds={param}",
+    "line": 43581,
+    "source": "url_config",
+    "raw": "\"/product/bulk/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/product/bulk/update",
+    "line": 43587,
+    "source": "direct_call",
+    "raw": "\"/product/bulk/update\""
+  },
+  {
+    "method": "PUT",
+    "path": "/product/category/{param}",
+    "line": 244864,
+    "source": "url_config",
+    "raw": "\"/product/category/\".concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/product/clone?productId={param}",
+    "line": 11933,
+    "source": "url_config",
+    "raw": "\"/product/clone?productId=\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/product/export/csv?storeIds={param}",
+    "line": 45005,
+    "source": "url_config",
+    "raw": "\"/product/export/csv?storeIds=\".concat(V)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/product/image?productImageAttachmentId={param}&productId={param}",
+    "line": 12000,
+    "source": "url_config",
+    "raw": "\"product/image?productImageAttachmentId=\".concat(t, \"&productId=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/imei/productInventoryId/{param}?storeIds={param}",
+    "line": 11988,
+    "source": "url_config",
+    "raw": "\"/product/imei/productInventoryId/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/import/downloadBulkProductTemplate",
+    "line": 44431,
+    "source": "url_config",
+    "raw": "\"/product/import/downloadBulkProductTemplate\""
+  },
+  {
+    "method": "GET",
+    "path": "/product/list/forTransferOrder?storeIds={param}",
+    "line": 251703,
+    "source": "url_config",
+    "raw": "\"/product/list/forTransferOrder?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/list?storeIds={param}",
+    "line": 11884,
+    "source": "url_config",
+    "raw": "\"/product/list?storeIds=\".concat(o)"
+  },
+  {
+    "method": "POST",
+    "path": "/product/price/{param}",
+    "line": 263109,
+    "source": "url_config",
+    "raw": "\"/product/price/\".concat(c)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/product/productId/{param}/compositeProductId/{param}",
+    "line": 261433,
+    "source": "url_config",
+    "raw": "\"/product/productId/\".concat(r, \"/compositeProductId/\").concat(null === e || void 0 === e ? void 0 : e.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/quick/salesByPurchaseHistory?storeIds={param}",
+    "line": 12208,
+    "source": "url_config",
+    "raw": "\"/product/quick/salesByPurchaseHistory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/search?storeIds={param}",
+    "line": 12093,
+    "source": "url_config",
+    "raw": "\"/product/search?storeIds=\".concat((null === c || void 0 === c ? void 0 : c.storeIdList)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/searchByCategory",
+    "line": 42282,
+    "source": "url_config",
+    "raw": "\"/product/searchByCategory\""
+  },
+  {
+    "method": "PUT",
+    "path": "/product/searchByCategory",
+    "line": 244873,
+    "source": "url_config",
+    "raw": "\"/product/searchByCategory\""
+  },
+  {
+    "method": "GET",
+    "path": "/product/searchForReport?storeIds={param}",
+    "line": 11199,
+    "source": "url_config",
+    "raw": "\"/product/searchForReport?storeIds=\".concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/searchForTransferOrder?storeIds={param}",
+    "line": 251713,
+    "source": "url_config",
+    "raw": "\"/product/searchForTransferOrder?storeIds=\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/product/tag?id={param}",
+    "line": 12030,
+    "source": "url_config",
+    "raw": "\"product/tag?id=\".concat(e)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/product/upc/{param}",
+    "line": 12235,
+    "source": "url_config",
+    "raw": "\"/product/upc/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/product/upc/{param}",
+    "line": 12221,
+    "source": "url_config",
+    "raw": "\"/product/upc/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/product/updateAllChildProductsPriceFromMasterProductPrice/{param}",
+    "line": 263166,
+    "source": "url_config",
+    "raw": "\"/product/updateAllChildProductsPriceFromMasterProductPrice/\".concat(c)"
+  },
+  {
+    "method": "GET",
+    "path": "/product/v1/export/downloadBulkProductTemplate",
+    "line": 43636,
+    "source": "url_config",
+    "raw": "\"/product/v1/export/downloadBulkProductTemplate\""
+  },
+  {
+    "method": "GET",
+    "path": "/product/v1/import/downloadBulkProductTemplate",
+    "line": 43603,
+    "source": "url_config",
+    "raw": "\"/product/v1/import/downloadBulkProductTemplate\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/product/{param}",
+    "line": 11923,
+    "source": "url_config",
+    "raw": "\"/product/\".concat(e)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/product/{param}/priceHistory",
+    "line": 12194,
+    "source": "url_config",
+    "raw": "\"/product/\".concat(t, \"/priceHistory\")"
+  },
+  {
+    "method": "GET",
+    "path": "/product/{param}?storeIds={param}",
+    "line": 11895,
+    "source": "url_config",
+    "raw": "\"/product/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/product?storeIds={param}",
+    "line": 11910,
+    "source": "url_config",
+    "raw": "\"/product?storeIds=\".concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/purchaseOrder",
+    "line": 50122,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder\""
+  },
+  {
+    "method": "POST",
+    "path": "/purchaseOrder",
+    "line": 50128,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder\""
+  },
+  {
+    "method": "POST",
+    "path": "/purchaseOrder/createPOFromVendorsInvoice/vendorId/{param}/vendorInvoiceNumber/{param}",
+    "line": 252934,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/createPOFromVendorsInvoice/vendorId/\".concat(l, \"/vendorInvoiceNumber/\").concat(g)"
+  },
+  {
+    "method": "POST",
+    "path": "/purchaseOrder/fromOrder",
+    "line": 46507,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/fromOrder\""
+  },
+  {
+    "method": "POST",
+    "path": "/purchaseOrder/fromSalesOrder",
+    "line": 45614,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/fromSalesOrder\""
+  },
+  {
+    "method": "POST",
+    "path": "/purchaseOrder/insertNewProductAfterVerificationToCreatePOFromVendorsInvoice/vendorId/{param}/vendorInvoiceNumber/{param}",
+    "line": 252964,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/insertNewProductAfterVerificationToCreatePOFromVendorsInvoice/vendorId/\".concat(l, \"/vendorInvoiceNumber/\").concat(g)"
+  },
+  {
+    "method": "GET",
+    "path": "/purchaseOrder/verifyProductBeforeCreatePOFromVendorsInvoice/vendorId/{param}/vendorInvoiceNumber/{param}",
+    "line": 252916,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/verifyProductBeforeCreatePOFromVendorsInvoice/vendorId/\".concat(l, \"/vendorInvoiceNumber/\").concat(g)"
+  },
+  {
+    "method": "PUT",
+    "path": "/purchaseOrder/{param}/transferPurchaseOrder",
+    "line": 50135,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/\".concat(e.id, \"/transferPurchaseOrder\")"
+  },
+  {
+    "method": "GET",
+    "path": "/purchaseOrder/{param}?storeIds={param}",
+    "line": 50096,
+    "source": "url_config",
+    "raw": "\"/purchaseOrder/\".concat(t, \"?storeIds=\").concat(Object(l.g)"
+  },
+  {
+    "method": "POST",
+    "path": "/purchaseOrderLineItem/bulk?lineItemIds={param}",
+    "line": 50115,
+    "source": "url_config",
+    "raw": "\"/purchaseOrderLineItem/bulk?lineItemIds=\".concat(e)"
+  },
+  {
+    "method": "POST",
+    "path": "/quotation",
+    "line": 45949,
+    "source": "url_config",
+    "raw": "\"/quotation\""
+  },
+  {
+    "method": "PUT",
+    "path": "/quotation",
+    "line": 46078,
+    "source": "url_config",
+    "raw": "\"/quotation\""
+  },
+  {
+    "method": "PUT",
+    "path": "/quotation/bulk",
+    "line": 45941,
+    "source": "url_config",
+    "raw": "\"/quotation/bulk\""
+  },
+  {
+    "method": "POST",
+    "path": "/quotation/salesOrder?storeIds={param}",
+    "line": 45958,
+    "source": "url_config",
+    "raw": "\"/quotation/salesOrder?storeIds=\".concat(a)"
+  },
+  {
+    "method": "PATCH",
+    "path": "/quotation/status/quotationId/{param}/quotationStatusId/{param}",
+    "line": 46034,
+    "source": "url_config",
+    "raw": "\"/quotation/status/quotationId//\".concat(a, \"/quotationStatusId/\").concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/quotation/tag/{param}/timeLine?storeIds={param}",
+    "line": 53583,
+    "source": "url_config",
+    "raw": "\"/quotation/tag/\".concat(a, \"/timeLine?storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/quotation/tag/{param}?storeIds={param}",
+    "line": 46163,
+    "source": "url_config",
+    "raw": "\"/quotation/tag/\".concat(e, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/quotation/tag/{param}?storeIds={param}",
+    "line": 46169,
+    "source": "direct_call",
+    "raw": "\"/quotation/tag/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/quotation/{param}/export/csv?storeIds={param}",
+    "line": 53025,
+    "source": "url_config",
+    "raw": "\"/quotation/\".concat(r.id, \"/export/csv?storeIds=\").concat(v)"
+  },
+  {
+    "method": "PUT",
+    "path": "/quotation/{param}/transferQuotation",
+    "line": 46044,
+    "source": "url_config",
+    "raw": "\"/quotation/\".concat(e.id, \"/transferQuotation\")"
+  },
+  {
+    "method": "PATCH",
+    "path": "/quotation/{param}/updatePriceWithCustomerTier?storeIds={param}",
+    "line": 46100,
+    "source": "url_config",
+    "raw": "\"/quotation/\".concat(e.orderDto.id, \"/updatePriceWithCustomerTier?storeIds=\").concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/quotation/{param}/withCustomer?storeIds={param}",
+    "line": 45967,
+    "source": "url_config",
+    "raw": "\"/quotation/\".concat(e.id, \"/withCustomer?storeIds=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/quotationLineItem/quotationId/{param}?storeIds={param}",
+    "line": 46001,
+    "source": "url_config",
+    "raw": "\"/quotationLineItem/quotationId/\".concat(e, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/recordUnderEditMode",
+    "line": 236356,
+    "source": "url_config",
+    "raw": "\"/recordUnderEditMode\""
+  },
+  {
+    "method": "PUT",
+    "path": "/recordUnderEditMode",
+    "line": 236334,
+    "source": "url_config",
+    "raw": "\"/recordUnderEditMode\""
+  },
+  {
+    "method": "GET",
+    "path": "/recordUnderEditMode?moduleId={param}&recordId={param}",
+    "line": 236290,
+    "source": "url_config",
+    "raw": "\"/recordUnderEditMode?moduleId=\".concat(t, \"&recordId=\").concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/recurring",
+    "line": 238605,
+    "source": "url_config",
+    "raw": "\"/recurring\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/recurring/line-item/{param}",
+    "line": 238596,
+    "source": "url_config",
+    "raw": "\"/recurring/line-item/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/recurring/list?storeIds={param}",
+    "line": 238581,
+    "source": "url_config",
+    "raw": "\"/recurring/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/recurring/{param}",
+    "line": 238589,
+    "source": "url_config",
+    "raw": "\"/recurring/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/refreshToken",
+    "line": 3295,
+    "source": "url_config",
+    "raw": "\"/refreshToken\""
+  },
+  {
+    "method": "GET",
+    "path": "/report/audit?storeIds={param}",
+    "line": 11582,
+    "source": "url_config",
+    "raw": "\"/report/audit?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/closingSummary?storeIds={param}",
+    "line": 11078,
+    "source": "url_config",
+    "raw": "\"/report/closingSummary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/dueBalance/byAging?storeIds={param}",
+    "line": 11311,
+    "source": "url_config",
+    "raw": "\"report/customer/dueBalance/byAging?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/dueBalance?storeIds={param}",
+    "line": 11299,
+    "source": "url_config",
+    "raw": "\"report/customer/dueBalance?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/excessPayment",
+    "line": 11321,
+    "source": "url_config",
+    "raw": "\"/report/customer/excessPayment\""
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/products/neverOrdered/csv",
+    "line": 258761,
+    "source": "url_config",
+    "raw": "\"/report/customer/products/neverOrdered/csv\""
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/products/neverOrdered?storeIds={param}",
+    "line": 258803,
+    "source": "url_config",
+    "raw": "\"/report/customer/products/neverOrdered?storeIds=\".concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/reward/statement/csv",
+    "line": 249137,
+    "source": "url_config",
+    "raw": "\"/report/customer/reward/statement/csv\""
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/reward/statement?storeIds={param}",
+    "line": 238423,
+    "source": "url_config",
+    "raw": "\"/report/customer/reward/statement?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/salesAndReturnCombined?storeIds={param}",
+    "line": 11128,
+    "source": "url_config",
+    "raw": "\"/report/customer/salesAndReturnCombined?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/customer/statement?storeIds={param}",
+    "line": 238412,
+    "source": "url_config",
+    "raw": "\"/report/customer/statement?storeIds=\".concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/employee/commission/byBrand?storeIds={param}",
+    "line": 11170,
+    "source": "url_config",
+    "raw": "\"/report/employee/commission/byBrand?storeIds=\".concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/employee/commission/byCategory?storeIds={param}",
+    "line": 11153,
+    "source": "url_config",
+    "raw": "\"/report/employee/commission/byCategory?storeIds=\".concat(d)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/employee/dueBySalesRep?storeIds={param}",
+    "line": 11395,
+    "source": "url_config",
+    "raw": "\"report/employee/dueBySalesRep?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/employee/payrollSummary?storeIds={param}",
+    "line": 11141,
+    "source": "url_config",
+    "raw": "\"/report/employee/payrollSummary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/grossSales?storeIds={param}",
+    "line": 10980,
+    "source": "url_config",
+    "raw": "\"/report/grossSales?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/inventory/log?storeIds={param}",
+    "line": 11286,
+    "source": "url_config",
+    "raw": "\"/report/inventory/log?storeIds=\".concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/inventory/lowStockReportDetails?storeIds={param}",
+    "line": 11244,
+    "source": "url_config",
+    "raw": "\"/report/inventory/lowStockReportDetails?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/inventory/valuation/byCategory?storeIds={param}",
+    "line": 11256,
+    "source": "url_config",
+    "raw": "\"/report/inventory/valuation/byCategory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/inventory/valuation/byVendor?storeIds={param}",
+    "line": 11268,
+    "source": "url_config",
+    "raw": "\"/report/inventory/valuation/byVendor?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/inventory/valuation?storeIds={param}",
+    "line": 11232,
+    "source": "url_config",
+    "raw": "\"/report/inventory/valuation?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/payment/details?storeIds={param}",
+    "line": 11371,
+    "source": "url_config",
+    "raw": "\"report/payment/details?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/product/salesByIMEI?storeIds={param}",
+    "line": 11533,
+    "source": "url_config",
+    "raw": "\"/report/product/salesByIMEI?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/product/salesVsPurchase?storeIds={param}",
+    "line": 11219,
+    "source": "url_config",
+    "raw": "\"/report/product/salesVsPurchase?storeIds=\".concat(o)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/product/summary?storeIds={param}",
+    "line": 11443,
+    "source": "url_config",
+    "raw": "\"/report/product/summary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/product/withoutCategory?storeIds={param}",
+    "line": 11570,
+    "source": "url_config",
+    "raw": "\"/report/product/withoutCategory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/profitAndLoss?storeIds={param}",
+    "line": 11545,
+    "source": "url_config",
+    "raw": "\"/report/profitAndLoss?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/purchase/byCustomer?storeIds={param}",
+    "line": 245943,
+    "source": "url_config",
+    "raw": "\"/report/purchase/byCustomer?storeIds=\".concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/purchase/byProduct/export/csv",
+    "line": 260079,
+    "source": "url_config",
+    "raw": "\"/report/purchase/byProduct/export/csv\""
+  },
+  {
+    "method": "GET",
+    "path": "/report/purchase/byProduct?productId={param}&storeIds={param}",
+    "line": 12134,
+    "source": "url_config",
+    "raw": "\"/report/purchase/byProduct?productId=\".concat(a, \"&storeIds=\").concat(o)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/purchase/byProduct?storeIds={param}",
+    "line": 11507,
+    "source": "url_config",
+    "raw": "\"/report/purchase/byProduct?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/purchase/byVendor?storeIds={param}",
+    "line": 11520,
+    "source": "url_config",
+    "raw": "\"/report/purchase/byVendor?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/purchase/product?storeIds={param}",
+    "line": 11186,
+    "source": "url_config",
+    "raw": "\"/report/purchase/product?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/returns/byCustomer?storeIds={param}",
+    "line": 11495,
+    "source": "url_config",
+    "raw": "\"report/returns/byCustomer?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/returns/lineItem/summary?storeIds={param}",
+    "line": 11557,
+    "source": "url_config",
+    "raw": "\"/report/returns/lineItem/summary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byCategory?storeIds={param}",
+    "line": 10891,
+    "source": "url_config",
+    "raw": "\"/report/sales/byCategory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byCustomer?storeIds={param}",
+    "line": 11104,
+    "source": "url_config",
+    "raw": "\"/report/sales/byCustomer?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byMasterAndChildCategory?storeIds={param}",
+    "line": 10967,
+    "source": "url_config",
+    "raw": "\"/report/sales/byMasterAndChildCategory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byProductSummary/product/{param}?storeIds={param}",
+    "line": 12119,
+    "source": "url_config",
+    "raw": "\"/report/sales/byProductSummary/product/\".concat(a, \"?storeIds=\").concat(o)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byProductSummary?storeIds={param}",
+    "line": 11426,
+    "source": "url_config",
+    "raw": "\"/report/sales/byProductSummary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byRepByCategory?storeIds={param}",
+    "line": 10929,
+    "source": "url_config",
+    "raw": "\"/report/sales/byRepByCategory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/bySalesRep?storeIds={param}",
+    "line": 10916,
+    "source": "url_config",
+    "raw": "\"/report/sales/bySalesRep?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/byVendor?storeIds={param}",
+    "line": 10904,
+    "source": "url_config",
+    "raw": "\"/report/sales/byVendor?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/county/byCategory?storeIds={param}",
+    "line": 10942,
+    "source": "url_config",
+    "raw": "\"/report/sales/county/byCategory?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/customer/byCategorySummary?storeIds={param}",
+    "line": 10955,
+    "source": "url_config",
+    "raw": "\"/report/sales/customer/byCategorySummary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/customer/byProductSummary?storeIds={param}",
+    "line": 11409,
+    "source": "url_config",
+    "raw": "\"/report/sales/customer/byProductSummary?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/lostSalesReportByReportType?storeIds={param}",
+    "line": 11594,
+    "source": "url_config",
+    "raw": "\"/report/sales/lostSalesReportByReportType?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/orderShipmentTracking?storeIds={param}",
+    "line": 11028,
+    "source": "url_config",
+    "raw": "\"/report/sales/orderShipmentTracking?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/product/profitMargin?storeIds={param}",
+    "line": 11016,
+    "source": "url_config",
+    "raw": "\"/report/sales/product/profitMargin?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/sales/productByCategoryForTaxation?storeIds={param}",
+    "line": 11459,
+    "source": "url_config",
+    "raw": "\"report/sales/productByCategoryForTaxation?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/tax/exciseTaxByLineItem?storeIds={param}",
+    "line": 11064,
+    "source": "url_config",
+    "raw": "\"/report/tax/exciseTaxByLineItem?storeIds=\".concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/tax/msa?storeIds={param}",
+    "line": 10992,
+    "source": "url_config",
+    "raw": "\"/report/tax/msa?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/tax/purchase/byTaxClassIdAndStateId/{param}/stateId/{param}?storeIds={param}",
+    "line": 11052,
+    "source": "url_config",
+    "raw": "\"/report/tax/purchase/byTaxClassIdAndStateId/\".concat(t.taxTypeId, \"/stateId/\").concat(t.stateId, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/tax?storeIds={param}",
+    "line": 11040,
+    "source": "url_config",
+    "raw": "\"/report/tax?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/vendor/dueBalance/byAging?storeIds={param}",
+    "line": 11347,
+    "source": "url_config",
+    "raw": "\"/report/vendor/dueBalance/byAging?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/vendor/excessPayment",
+    "line": 11358,
+    "source": "url_config",
+    "raw": "\"/report/vendor/excessPayment\""
+  },
+  {
+    "method": "GET",
+    "path": "/report/vendor/payableAmount?storeIds={param}",
+    "line": 11334,
+    "source": "url_config",
+    "raw": "\"report/vendor/payableAmount?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/report/vendor/statement/vendorId/{param}?storeIds={param}",
+    "line": 238849,
+    "source": "url_config",
+    "raw": "\"/report/vendor/statement/vendorId/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "POST",
+    "path": "/returnOrder",
+    "line": 47025,
+    "source": "direct_call",
+    "raw": "\"/returnOrder\""
+  },
+  {
+    "method": "PUT",
+    "path": "/returnOrder",
+    "line": 47042,
+    "source": "direct_call",
+    "raw": "\"/returnOrder\""
+  },
+  {
+    "method": "PUT",
+    "path": "/returnOrder/bulk",
+    "line": 47051,
+    "source": "url_config",
+    "raw": "\"/returnOrder/bulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/returnOrder/cancelled/{param}",
+    "line": 47061,
+    "source": "url_config",
+    "raw": "\"/returnOrder/cancelled/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/returnOrder/clone/{param}?storeIds={param}",
+    "line": 47034,
+    "source": "url_config",
+    "raw": "\"/returnOrder/clone/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/erp/statusTimeLine/{param}?storeIds={param}",
+    "line": 55357,
+    "source": "url_config",
+    "raw": "\"returnOrder/erp/statusTimeLine/\".concat(a.id, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "POST",
+    "path": "/returnOrder/fromOrder/creditMemo/{param}?storeIds={param}",
+    "line": 47095,
+    "source": "url_config",
+    "raw": "\"/returnOrder/fromOrder/creditMemo/\".concat(a, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PUT",
+    "path": "/returnOrder/lineItem",
+    "line": 47159,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem\""
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/lineItem/by-master-child-mapping/{param}?sortedByProductName=true&storeIds={param}",
+    "line": 55168,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem/by-master-child-mapping/\".concat(null === n || void 0 === n ? void 0 : n.id, \"?sortedByProductName=true&storeIds=\").concat(d)"
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/lineItem/by-master-child-mapping/{param}?sortedByProductName=true&storeIds={param}&masterProductId={param}",
+    "line": 55146,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem/by-master-child-mapping/\".concat(null === n || void 0 === n ? void 0 : n.id, \"?sortedByProductName=true&storeIds=\").concat(d, \"&masterProductId=\").concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/returnOrder/lineItem/withPayment",
+    "line": 47183,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem/withPayment\""
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/lineItem/{param}/export/csv",
+    "line": 54756,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem/\".concat(p.id, \"/export/csv\")"
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/lineItem/{param}/export/csv?storeIds={param}",
+    "line": 54746,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem/\".concat(p.id, \"/export/csv?storeIds=\").concat(Y)"
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/lineItem/{param}?storeIds={param}",
+    "line": 47136,
+    "source": "url_config",
+    "raw": "\"/returnOrder/lineItem/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/list?storeIds={param}",
+    "line": 60180,
+    "source": "url_config",
+    "raw": "\"/returnOrder/list?storeIds=\".concat(P)"
+  },
+  {
+    "method": "PUT",
+    "path": "/returnOrder/notes?storeIds={param}",
+    "line": 47209,
+    "source": "url_config",
+    "raw": "\"/returnOrder/notes?storeIds=\".concat(i)"
+  },
+  {
+    "method": "PATCH",
+    "path": "/returnOrder/status/{param}?status={param}",
+    "line": 47198,
+    "source": "direct_call",
+    "raw": "\"/returnOrder/status/\".concat(t, \"?status=\").concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/returnOrder/transferReturnOrder",
+    "line": 47105,
+    "source": "url_config",
+    "raw": "\"/returnOrder/transferReturnOrder\""
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/{param}/image/product/{param}",
+    "line": 48334,
+    "source": "url_config",
+    "raw": "\"/returnOrder/\".concat(t, \"/image/product/\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/returnOrder/{param}/image/product/{param}",
+    "line": 48343,
+    "source": "url_config",
+    "raw": "\"/returnOrder/\".concat(t, \"/image/product/\").concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/returnOrder/{param}/image/{param}",
+    "line": 48354,
+    "source": "url_config",
+    "raw": "\"/returnOrder/\".concat(a, \"/image/\").concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/returnOrder/{param}/withCustomer?storeIds={param}",
+    "line": 47116,
+    "source": "direct_call",
+    "raw": "\"/returnOrder/\".concat(t, \"/withCustomer?storeIds=\").concat(n)"
+  },
+  {
+    "method": "POST",
+    "path": "/role",
+    "line": 5952,
+    "source": "url_config",
+    "raw": "\"/role\""
+  },
+  {
+    "method": "POST",
+    "path": "/role/clone/{param}?roleName={param}",
+    "line": 5990,
+    "source": "url_config",
+    "raw": "\"/role/clone/\".concat(t, \"?roleName=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/role/list?type=Employee",
+    "line": 239278,
+    "source": "url_config",
+    "raw": "\"/role/list?type=Employee\""
+  },
+  {
+    "method": "PUT",
+    "path": "/role/user/fieldAuthority",
+    "line": 6020,
+    "source": "url_config",
+    "raw": "\"/role/user/fieldAuthority\""
+  },
+  {
+    "method": "PUT",
+    "path": "/role/user/fieldAuthority/{param}",
+    "line": 6011,
+    "source": "url_config",
+    "raw": "\"/role/user/fieldAuthority/\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/role/{param}",
+    "line": 5959,
+    "source": "url_config",
+    "raw": "\"/role/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/role/{param}/updateAuthorities",
+    "line": 5944,
+    "source": "url_config",
+    "raw": "\"/role/\".concat(t, \"/updateAuthorities\")"
+  },
+  {
+    "method": "POST",
+    "path": "/role/{param}/{param}",
+    "line": 6001,
+    "source": "url_config",
+    "raw": "\"/role/\".concat(t, \"/\").concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/role/{param}/{param}",
+    "line": 5974,
+    "source": "url_config",
+    "raw": "\"/role/\".concat(t, \"/\").concat(a)"
+  },
+  {
+    "method": "PUT",
+    "path": "/role/{param}/{param}/updateFieldAuthorities",
+    "line": 5981,
+    "source": "url_config",
+    "raw": "\"/role/\".concat(t, \"/\").concat(a, \"/updateFieldAuthorities\")"
+  },
+  {
+    "method": "POST",
+    "path": "/salesOrder",
+    "line": 45558,
+    "source": "url_config",
+    "raw": "\"/salesOrder\""
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/bulk",
+    "line": 45528,
+    "source": "url_config",
+    "raw": "\"/salesOrder/bulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/salesOrder/cancelled/bulk",
+    "line": 45538,
+    "source": "url_config",
+    "raw": "\"/salesOrder/cancelled/bulk\""
+  },
+  {
+    "method": "POST",
+    "path": "/salesOrder/from/quotation?storeIds={param}",
+    "line": 46450,
+    "source": "url_config",
+    "raw": "\"/salesOrder/from/quotation?storeIds=\".concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/salesOrder/fromPO?storeIds={param}",
+    "line": 45603,
+    "source": "url_config",
+    "raw": "\"/salesOrder/fromPO?storeIds=\".concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/fulfilment/{param}?storeIds={param}",
+    "line": 51638,
+    "source": "url_config",
+    "raw": "\"/salesOrder/fulfilment/\".concat(a, \"?storeIds=\").concat(r)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/salesOrder/lineItem/bulk?lineItemIds={param}&salesOrderId={param}",
+    "line": 45590,
+    "source": "url_config",
+    "raw": "\"/salesOrder/lineItem/bulk?lineItemIds=\".concat(t, \"&salesOrderId=\").concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/lineItem/byMasterChildMapping/{param}?sortedByProductName=true&storeIds={param}",
+    "line": 51817,
+    "source": "url_config",
+    "raw": "\"/salesOrder/lineItem/byMasterChildMapping/\".concat(null === n || void 0 === n ? void 0 : n.id, \"?sortedByProductName=true&storeIds=\").concat(r)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/lineItem/byMasterChildMapping/{param}?sortedByProductName=true&storeIds={param}&masterProductId={param}",
+    "line": 51795,
+    "source": "url_config",
+    "raw": "\"/salesOrder/lineItem/byMasterChildMapping/\".concat(null === n || void 0 === n ? void 0 : n.id, \"?sortedByProductName=true&storeIds=\").concat(r, \"&masterProductId=\").concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/lineItem/{param}?storeIds={param}",
+    "line": 45752,
+    "source": "url_config",
+    "raw": "\"/salesOrder/lineItem/\".concat(e, \"?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/list?storeIds={param}",
+    "line": 45519,
+    "source": "url_config",
+    "raw": "\"/salesOrder/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/notes?storeIds={param}",
+    "line": 45632,
+    "source": "url_config",
+    "raw": "\"/salesOrder/notes?storeIds=\".concat(i)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/salesOrder/payment/{param}/voidPayment",
+    "line": 45856,
+    "source": "url_config",
+    "raw": "\"/salesOrder/payment/\".concat(t, \"/voidPayment\")"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/payment/{param}?storeIds={param}",
+    "line": 52313,
+    "source": "url_config",
+    "raw": "\"/salesOrder/payment/\".concat(n, \"?storeIds=\").concat(y)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/profitDetailOnSalesOrderAndLineItem/{param}?storeIds={param}",
+    "line": 52506,
+    "source": "url_config",
+    "raw": "\"/salesOrder/profitDetailOnSalesOrderAndLineItem/\".concat(a.id, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/salesOrder/shipment",
+    "line": 48552,
+    "source": "url_config",
+    "raw": "\"/salesOrder/shipment\""
+  },
+  {
+    "method": "POST",
+    "path": "/salesOrder/shipment",
+    "line": 48512,
+    "source": "direct_call",
+    "raw": "\"/salesOrder/shipment\""
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/shipment",
+    "line": 48516,
+    "source": "direct_call",
+    "raw": "\"/salesOrder/shipment\""
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/shipment/{param}",
+    "line": 48533,
+    "source": "url_config",
+    "raw": "\"/salesOrder/shipment/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/status/{param}",
+    "line": 45550,
+    "source": "url_config",
+    "raw": "\"/salesOrder/status/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/tag/{param}/timeLine?storeIds={param}",
+    "line": 52619,
+    "source": "url_config",
+    "raw": "\"/salesOrder/tag/\".concat(a, \"/timeLine?storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/tag/{param}?storeIds={param}",
+    "line": 45850,
+    "source": "url_config",
+    "raw": "\"/salesOrder/tag/\".concat(e, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/salesOrder/tag/{param}?storeIds={param}",
+    "line": 45691,
+    "source": "direct_call",
+    "raw": "\"/salesOrder/tag/\".concat(t, \"?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/{param}",
+    "line": 45681,
+    "source": "url_config",
+    "raw": "\"/salesOrder/\".concat(null === (t = e)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/{param}/export/csv?storeIds={param}",
+    "line": 50872,
+    "source": "url_config",
+    "raw": "\"/salesOrder/\".concat(s.id, \"/export/csv?storeIds=\").concat(w)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/{param}/order/list?storeIds={param}",
+    "line": 51736,
+    "source": "url_config",
+    "raw": "\"/salesOrder/\".concat(t, \"/order/list?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder/{param}/updatePriceOnPercentage?storeIds={param}",
+    "line": 45663,
+    "source": "url_config",
+    "raw": "\"/salesOrder/\".concat(t, \"/updatePriceOnPercentage?storeIds=\").concat(l)"
+  },
+  {
+    "method": "PATCH",
+    "path": "/salesOrder/{param}/updatePriceWithCustomerTier?storeIds={param}",
+    "line": 45650,
+    "source": "url_config",
+    "raw": "\"/salesOrder/\".concat(e.salesOrderDto.id, \"/updatePriceWithCustomerTier?storeIds=\").concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/salesOrder/{param}/withCustomer?storeIds={param}",
+    "line": 45787,
+    "source": "url_config",
+    "raw": "\"/salesOrder/\".concat(t, \"/withCustomer?storeIds=\").concat(n)"
+  },
+  {
+    "method": "PUT",
+    "path": "/salesOrder?storeIds={param}",
+    "line": 45580,
+    "source": "url_config",
+    "raw": "\"/salesOrder?storeIds=\".concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/cusomter/payment-reminder",
+    "line": 249314,
+    "source": "url_config",
+    "raw": "\"/services/pdf/cusomter/payment-reminder\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/cusomter/statement",
+    "line": 249359,
+    "source": "url_config",
+    "raw": "\"/services/pdf/cusomter/statement\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/customer/due-invoice",
+    "line": 245548,
+    "source": "url_config",
+    "raw": "\"/services/pdf/customer/due-invoice\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/customer/transaction",
+    "line": 247916,
+    "source": "url_config",
+    "raw": "\"/services/pdf/customer/transaction\""
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/cusomter/due-invoice",
+    "line": 245505,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/cusomter/due-invoice\""
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/cusomter/payment-reminder",
+    "line": 249274,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/cusomter/payment-reminder\""
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/cusomter/statement",
+    "line": 249246,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/cusomter/statement\""
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/customer/transaction",
+    "line": 247867,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/customer/transaction\""
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/payment/invoice/{param}",
+    "line": 46838,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/payment/invoice/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/email/quotation/invoice/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 46060,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/quotation/invoice/\".concat(a, \"?storeIdList=\").concat(i, \"&defaultStoreId=\").concat(r)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/email/rma/product/invoice/{param}?storeIdList={param}",
+    "line": 48226,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/rma/product/invoice/\".concat(t, \"?storeIdList=\").concat(o)"
+  },
+  {
+    "method": "PUT",
+    "path": "/services/pdf/email/rma/product/invoice/{param}?storeIdList={param}",
+    "line": 47171,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/rma/product/invoice/\".concat(t, \"?storeIdList=\").concat(l)"
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/sales-order/attached/invoice/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 46816,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/sales-order/attached/invoice/\".concat(a, \"?storeIdList=\").concat(c, \"&defaultStoreId=\").concat(s)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/email/sales-order/invoice/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 46772,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/sales-order/invoice/\".concat(a, \"?storeIdList=\").concat(d, \"&defaultStoreId=\").concat(c)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/email/sales-order/packing-slip",
+    "line": 61130,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/sales-order/packing-slip\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/email/salesOrder/invoice/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 45824,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/salesOrder/invoice/\".concat(a, \"?storeIdList=\").concat(d, \"&defaultStoreId=\").concat(c)"
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/shipping/invoice/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 46862,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/shipping/invoice/\".concat(t, \"?storeIdList=\").concat(s, \"&defaultStoreId=\").concat(u)"
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/vendor/statement",
+    "line": 253382,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/vendor/statement\""
+  },
+  {
+    "method": "POST",
+    "path": "/services/pdf/email/vendor/transaction",
+    "line": 253571,
+    "source": "url_config",
+    "raw": "\"/services/pdf/email/vendor/transaction\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/expense/checkInvoice/{param}",
+    "line": 265625,
+    "source": "url_config",
+    "raw": "\"/services/pdf/expense/checkInvoice/\".concat(i)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/payment/checkInvoice/{param}",
+    "line": 59272,
+    "source": "url_config",
+    "raw": "\"/services/pdf/payment/checkInvoice/\".concat(t || a)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/payment/invoice/{param}",
+    "line": 59139,
+    "source": "url_config",
+    "raw": "\"/services/pdf/payment/invoice/\".concat(t || a)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/product/barcode",
+    "line": 259658,
+    "source": "url_config",
+    "raw": "\"/services/pdf/product/barcode\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/products/details",
+    "line": 45022,
+    "source": "url_config",
+    "raw": "\"/services/pdf/products/details\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/quotation/invoice/{param}",
+    "line": 52960,
+    "source": "url_config",
+    "raw": "\"/services/pdf/quotation/invoice/\".concat(r.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/quotation/packing-slip/{param}",
+    "line": 52998,
+    "source": "url_config",
+    "raw": "\"/services/pdf/quotation/packing-slip/\".concat(r.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/report/purchase/purchase-by-product",
+    "line": 260067,
+    "source": "url_config",
+    "raw": "\"/services/pdf/report/purchase/purchase-by-product\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/reports/customer/never-ordered-products",
+    "line": 258744,
+    "source": "url_config",
+    "raw": "\"/services/pdf/reports/customer/never-ordered-products\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/rma/label/{param}",
+    "line": 54729,
+    "source": "url_config",
+    "raw": "\"/services/pdf/rma/label/\".concat(p.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/rma/packing-slip/invoice/{param}",
+    "line": 54717,
+    "source": "url_config",
+    "raw": "\"/services/pdf/rma/packing-slip/invoice/\".concat(p.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/rma/product/invoice/{param}",
+    "line": 54704,
+    "source": "url_config",
+    "raw": "\"/services/pdf/rma/product/invoice/\".concat(p.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/gate-pass",
+    "line": 65426,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/gate-pass\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/invoice",
+    "line": 65260,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/invoice\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/invoice-edi/{param}",
+    "line": 61213,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/invoice-edi/\".concat(c.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/invoice/{param}",
+    "line": 60943,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/invoice/\".concat(c.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/label",
+    "line": 65398,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/label\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/label/{param}",
+    "line": 61060,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/label/\".concat(c.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/packing-slip",
+    "line": 65319,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/packing-slip\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/sales-order/packing-slip/{param}",
+    "line": 60985,
+    "source": "url_config",
+    "raw": "\"/services/pdf/sales-order/packing-slip/\".concat(c.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/salesOrder/gate-pass/{param}",
+    "line": 50813,
+    "source": "url_config",
+    "raw": "\"/services/pdf/salesOrder/gate-pass/\".concat(s.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/salesOrder/invoice/{param}",
+    "line": 50650,
+    "source": "url_config",
+    "raw": "\"/services/pdf/salesOrder/invoice/\".concat(s.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/salesOrder/label/{param}",
+    "line": 50801,
+    "source": "url_config",
+    "raw": "\"/services/pdf/salesOrder/label/\".concat(s.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/salesOrder/packing-slip-after-picking/{param}",
+    "line": 50762,
+    "source": "url_config",
+    "raw": "\"/services/pdf/salesOrder/packing-slip-after-picking/\".concat(s.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/salesOrder/packing-slip/{param}",
+    "line": 50693,
+    "source": "url_config",
+    "raw": "\"/services/pdf/salesOrder/packing-slip/\".concat(s.id)"
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/test/testDynamicPdf",
+    "line": 60929,
+    "source": "url_config",
+    "raw": "\"/services/pdf/test/testDynamicPdf\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/vendor/statement",
+    "line": 253413,
+    "source": "url_config",
+    "raw": "\"/services/pdf/vendor/statement\""
+  },
+  {
+    "method": "GET",
+    "path": "/services/pdf/vendor/transaction",
+    "line": 253610,
+    "source": "url_config",
+    "raw": "\"/services/pdf/vendor/transaction\""
+  },
+  {
+    "method": "POST",
+    "path": "/shiphero/syncSalesOrder",
+    "line": 48587,
+    "source": "url_config",
+    "raw": "\"/shiphero/syncSalesOrder\""
+  },
+  {
+    "method": "GET",
+    "path": "/shipping/options",
+    "line": 47466,
+    "source": "url_config",
+    "raw": "\"/shipping/options\""
+  },
+  {
+    "method": "POST",
+    "path": "/shipping/options",
+    "line": 47470,
+    "source": "direct_call",
+    "raw": "\"/shipping/options\""
+  },
+  {
+    "method": "PUT",
+    "path": "/shipping/options",
+    "line": 47477,
+    "source": "direct_call",
+    "raw": "\"/shipping/options\""
+  },
+  {
+    "method": "PUT",
+    "path": "/shipping/options/bulk",
+    "line": 47491,
+    "source": "direct_call",
+    "raw": "\"/shipping/options/bulk\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/shipping/options?shippingId={param}",
+    "line": 47485,
+    "source": "url_config",
+    "raw": "\"/shipping/options?shippingId=\".concat(e)"
+  },
+  {
+    "method": "POST",
+    "path": "/shipstation/createOrder",
+    "line": 48575,
+    "source": "url_config",
+    "raw": "\"/shipstation/createOrder\""
+  },
+  {
+    "method": "POST",
+    "path": "/shipstation/importCarriers",
+    "line": 48597,
+    "source": "url_config",
+    "raw": "\"/shipstation/importCarriers\""
+  },
+  {
+    "method": "GET",
+    "path": "/state",
+    "line": 236155,
+    "source": "url_config",
+    "raw": "\"/state\""
+  },
+  {
+    "method": "GET",
+    "path": "/store",
+    "line": 2920,
+    "source": "direct_call",
+    "raw": "\"/store\""
+  },
+  {
+    "method": "PUT",
+    "path": "/store",
+    "line": 251446,
+    "source": "url_config",
+    "raw": "\"/store\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/businessType",
+    "line": 236197,
+    "source": "url_config",
+    "raw": "\"/store/businessType\""
+  },
+  {
+    "method": "PUT",
+    "path": "/store/configuration",
+    "line": 251485,
+    "source": "url_config",
+    "raw": "\"/store/configuration\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/configuration/list?storeIds={param}",
+    "line": 251477,
+    "source": "url_config",
+    "raw": "\"/store/configuration/list?storeIds=\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/store/configuration/storeId/{param}",
+    "line": 251495,
+    "source": "url_config",
+    "raw": "\"/store/configuration/storeId/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/store/feature",
+    "line": 251472,
+    "source": "url_config",
+    "raw": "\"/store/feature\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/governmentStateCategory",
+    "line": 251115,
+    "source": "url_config",
+    "raw": "\"/store/governmentStateCategory\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/governmentStateCategory/stateId/{param}/governmentCategoryId/{param}",
+    "line": 251111,
+    "source": "url_config",
+    "raw": "\"/store/governmentStateCategory/stateId/\".concat(e, \"/governmentCategoryId/\").concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/store/governmentStateCategory?id={param}",
+    "line": 251121,
+    "source": "url_config",
+    "raw": "\"/store/governmentStateCategory?id=\".concat(e)"
+  },
+  {
+    "method": "GET",
+    "path": "/store/governmentStateCategory?stateId={param}",
+    "line": 251106,
+    "source": "url_config",
+    "raw": "\"/store/governmentStateCategory?stateId=\".concat(e)"
+  },
+  {
+    "method": "GET",
+    "path": "/store/msaCategory",
+    "line": 251097,
+    "source": "url_config",
+    "raw": "\"/store/msaCategory\""
+  },
+  {
+    "method": "PUT",
+    "path": "/store/paymentMode",
+    "line": 239932,
+    "source": "url_config",
+    "raw": "\"/store/paymentMode\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/paymentMode/v1",
+    "line": 239899,
+    "source": "url_config",
+    "raw": "\"/store/paymentMode/v1\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/store/paymentMode?paymentModeId={param}",
+    "line": 239923,
+    "source": "url_config",
+    "raw": "\"/store/paymentMode?paymentModeId=\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/store/paymentTerms",
+    "line": 251799,
+    "source": "url_config",
+    "raw": "\"/store/paymentTerms\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/taxClass",
+    "line": 251102,
+    "source": "url_config",
+    "raw": "\"/store/taxClass\""
+  },
+  {
+    "method": "GET",
+    "path": "/store/withStoreIds?storeIdList={param}",
+    "line": 251462,
+    "source": "url_config",
+    "raw": "\"/store/withStoreIds?storeIdList=\".concat(e)"
+  },
+  {
+    "method": "POST",
+    "path": "/support/ticket",
+    "line": 241276,
+    "source": "url_config",
+    "raw": "\"/support/ticket\""
+  },
+  {
+    "method": "PUT",
+    "path": "/system/feature",
+    "line": 15208,
+    "source": "url_config",
+    "raw": "\"/system/feature\""
+  },
+  {
+    "method": "GET",
+    "path": "/system/feature/module/list",
+    "line": 15195,
+    "source": "url_config",
+    "raw": "\"/system/feature/module/list\""
+  },
+  {
+    "method": "PUT",
+    "path": "/system/feature/module/{param}",
+    "line": 15201,
+    "source": "url_config",
+    "raw": "\"/system/feature/module/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/system/feature/options",
+    "line": 15222,
+    "source": "url_config",
+    "raw": "\"/system/feature/options\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/tag",
+    "line": 40687,
+    "source": "url_config",
+    "raw": "\"/tag\""
+  },
+  {
+    "method": "GET",
+    "path": "/tag",
+    "line": 250051,
+    "source": "url_config",
+    "raw": "\"/tag\""
+  },
+  {
+    "method": "PUT",
+    "path": "/tag",
+    "line": 40662,
+    "source": "url_config",
+    "raw": "\"/tag\""
+  },
+  {
+    "method": "GET",
+    "path": "/transferOrder",
+    "line": 251678,
+    "source": "url_config",
+    "raw": "\"/transferOrder\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/transferOrder/fulfillment/bulk?storeIds={param}",
+    "line": 251776,
+    "source": "url_config",
+    "raw": "\"/transferOrder/fulfillment/bulk?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/transferOrder/fulfillment/history/{param}?storeIds={param}",
+    "line": 251735,
+    "source": "url_config",
+    "raw": "\"/transferOrder/fulfillment/history/\".concat(e, \"?storeIds=\").concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/transferOrder/fulfillment/unfulfilled/{param}?storeIds={param}",
+    "line": 251745,
+    "source": "url_config",
+    "raw": "\"/transferOrder/fulfillment/unfulfilled/\".concat(t, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/transferOrder/fulfillment/{param}?storeIds={param}",
+    "line": 251758,
+    "source": "url_config",
+    "raw": "\"/transferOrder/fulfillment/\".concat(t, \"?storeIds=\").concat(a)"
+  },
+  {
+    "method": "POST",
+    "path": "/transferOrder/fulfillment?storeIds={param}",
+    "line": 251765,
+    "source": "url_config",
+    "raw": "\"/transferOrder/fulfillment?storeIds=\".concat(a)"
+  },
+  {
+    "method": "GET",
+    "path": "/transferOrder/{param}",
+    "line": 251687,
+    "source": "url_config",
+    "raw": "\"/transferOrder/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/transferOrderLineItem/byTransferOrderId/{param}",
+    "line": 251690,
+    "source": "url_config",
+    "raw": "\"/transferOrderLineItem/byTransferOrderId/\".concat(t)"
+  },
+  {
+    "method": "PUT",
+    "path": "/user",
+    "line": 239283,
+    "source": "url_config",
+    "raw": "\"/user\""
+  },
+  {
+    "method": "PUT",
+    "path": "/user/logout-all",
+    "line": 239418,
+    "source": "url_config",
+    "raw": "\"/user/logout-all\""
+  },
+  {
+    "method": "PUT",
+    "path": "/user/logout/{param}",
+    "line": 239424,
+    "source": "url_config",
+    "raw": "\"/user/logout/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/user/password/{param}",
+    "line": 239293,
+    "source": "url_config",
+    "raw": "\"/user/password/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/user/{param}",
+    "line": 239303,
+    "source": "url_config",
+    "raw": "\"/user/\".concat(t)"
+  },
+  {
+    "method": "POST",
+    "path": "/userLoginDevice/sendOTP",
+    "line": 2957,
+    "source": "url_config",
+    "raw": "\"/userLoginDevice/sendOTP\""
+  },
+  {
+    "method": "GET",
+    "path": "/userLoginDevice/tempToGetDeviceId?deviceId={param}",
+    "line": 236315,
+    "source": "url_config",
+    "raw": "\"/userLoginDevice/tempToGetDeviceId?deviceId=\".concat(null === e || void 0 === e ? void 0 : e.deviceId)"
+  },
+  {
+    "method": "POST",
+    "path": "/userLoginDevice/validateOTP",
+    "line": 2969,
+    "source": "url_config",
+    "raw": "\"/userLoginDevice/validateOTP\""
+  },
+  {
+    "method": "POST",
+    "path": "/variantLabel",
+    "line": 11963,
+    "source": "url_config",
+    "raw": "\"/variantLabel\""
+  },
+  {
+    "method": "GET",
+    "path": "/variantLabelValue/allByValue",
+    "line": 268056,
+    "source": "url_config",
+    "raw": "\"/variantLabelValue/allByValue\""
+  },
+  {
+    "method": "POST",
+    "path": "/vendor",
+    "line": 238777,
+    "source": "url_config",
+    "raw": "\"/vendor\""
+  },
+  {
+    "method": "PUT",
+    "path": "/vendor",
+    "line": 238805,
+    "source": "url_config",
+    "raw": "\"/vendor\""
+  },
+  {
+    "method": "POST",
+    "path": "/vendor/list?storeIds={param}",
+    "line": 238787,
+    "source": "url_config",
+    "raw": "\"/vendor/list?storeIds=\".concat(n)"
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/paymentMade?vendorId={param}&storeIds={param}",
+    "line": 238858,
+    "source": "url_config",
+    "raw": "\"/vendor/paymentMade?vendorId=\".concat(a, \"&storeIds=\").concat(l)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/vendor/paymentPreference",
+    "line": 238942,
+    "source": "url_config",
+    "raw": "\"/vendor/paymentPreference\""
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/paymentPreference",
+    "line": 238923,
+    "source": "url_config",
+    "raw": "\"/vendor/paymentPreference\""
+  },
+  {
+    "method": "POST",
+    "path": "/vendor/portal/register",
+    "line": 238896,
+    "source": "url_config",
+    "raw": "\"/vendor/portal/register\""
+  },
+  {
+    "method": "PUT",
+    "path": "/vendor/portal/register",
+    "line": 238903,
+    "source": "url_config",
+    "raw": "\"/vendor/portal/register\""
+  },
+  {
+    "method": "POST",
+    "path": "/vendor/storeCredit",
+    "line": 238888,
+    "source": "url_config",
+    "raw": "\"/vendor/storeCredit\""
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/storeCredit/list/vendorId/{param}",
+    "line": 238882,
+    "source": "direct_call",
+    "raw": "\"/vendor/storeCredit/list/vendorId/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/transactions/export/csv",
+    "line": 253628,
+    "source": "url_config",
+    "raw": "\"/vendor/transactions/export/csv\""
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/transactions?storeIds={param}",
+    "line": 238840,
+    "source": "url_config",
+    "raw": "\"/vendor/transactions?storeIds=\".concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/{param}",
+    "line": 59161,
+    "source": "url_config",
+    "raw": "\"/vendor/\".concat(e)"
+  },
+  {
+    "method": "PUT",
+    "path": "/vendor/{param}",
+    "line": 238813,
+    "source": "url_config",
+    "raw": "\"/vendor/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/{param}/accountSummary?storeIds={param}",
+    "line": 253838,
+    "source": "url_config",
+    "raw": "\"/vendor/\".concat(t, \"/accountSummary?storeIds=\").concat(l)"
+  },
+  {
+    "method": "GET",
+    "path": "/vendor/{param}/allInvoice",
+    "line": 253003,
+    "source": "url_config",
+    "raw": "\"/vendor/\".concat(l, \"/allInvoice\")"
+  },
+  {
+    "method": "DELETE",
+    "path": "/vendor?vendorId={param}",
+    "line": 238819,
+    "source": "url_config",
+    "raw": "\"/vendor?vendorId=\".concat(t)"
+  },
+  {
+    "method": "DELETE",
+    "path": "/vendorContactPerson",
+    "line": 238970,
+    "source": "url_config",
+    "raw": "\"/vendorContactPerson\""
+  },
+  {
+    "method": "GET",
+    "path": "/vendorContactPerson",
+    "line": 238960,
+    "source": "url_config",
+    "raw": "\"/vendorContactPerson\""
+  },
+  {
+    "method": "DELETE",
+    "path": "/vendorContactPerson/vendorId/{param}",
+    "line": 238954,
+    "source": "url_config",
+    "raw": "\"/vendorContactPerson/vendorId/\".concat(t)"
+  },
+  {
+    "method": "GET",
+    "path": "/whatsapp/order/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 46786,
+    "source": "url_config",
+    "raw": "\"/whatsapp/order/\".concat(a, \"?storeIdList=\").concat(i, \"&defaultStoreId=\").concat(o)"
+  },
+  {
+    "method": "GET",
+    "path": "/whatsapp/salesOrder/{param}?storeIdList={param}&defaultStoreId={param}",
+    "line": 45838,
+    "source": "url_config",
+    "raw": "\"/whatsapp/salesOrder/\".concat(a, \"?storeIdList=\").concat(i, \"&defaultStoreId=\").concat(r)"
+  },
+  {
+    "method": "GET",
+    "path": "/whatsapp/statement",
+    "line": 249403,
+    "source": "url_config",
+    "raw": "\"/whatsapp/statement\""
+  }
+]

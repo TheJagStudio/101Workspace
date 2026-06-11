@@ -785,12 +785,18 @@ def syncInvoices(token):
         "Sec-Fetch-Site": "same-origin",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
     }
+    print("[Invoices] Starting invoice sync...")
     totalPages = 10
     page = 0
     while page <= totalPages:
+        print(f"[Invoices] Fetching page {page} (totalPages={totalPages})...")
+        fetch_start = time.time()
         response = requests.get(
-            f"https://erp.101distributorsga.com/api/order/list?storeIds=1,2&page={page}&size=10000&showEmployeeSpecificData=false",
+            f"https://erp.101distributorsga.com/api/order/list?storeIds=1,2&page={page}&size=1000&showEmployeeSpecificData=false",
             headers=headers,
+        )
+        print(
+            f"[Invoices] Page {page} HTTP {response.status_code} received in {time.time() - fetch_start:.1f}s"
         )
         try:
             data = response.json()
@@ -802,10 +808,14 @@ def syncInvoices(token):
                 )
             totalPages = data["result"]["totalPages"]
             content = data["result"]["content"]
+            print(
+                f"[Invoices] Page {page}: {len(content)} invoices in payload, totalPages now {totalPages}"
+            )
             invoices_to_create = []
             invoices_to_update = []
 
             # Get existing invoice IDs from database
+            lookup_start = time.time()
             existing_invoice_ids = set(
                 Invoice.objects.values_list("id", flat=True)
             )
@@ -814,6 +824,9 @@ def syncInvoices(token):
             customer_id_map = {
                 customer.id: customer for customer in Customer.objects.all()
             }
+            print(
+                f"[Invoices] Page {page}: loaded {len(existing_invoice_ids)} existing ids + {len(customer_id_map)} customers in {time.time() - lookup_start:.1f}s"
+            )
 
             for invoice in content:
                 # Convert timestamps
@@ -839,22 +852,22 @@ def syncInvoices(token):
 
                 invoice_obj = Invoice(
                     id=invoice["id"],
-                    totalQuantity=invoice.get("totalQuantity", 0),
-                    discount=invoice.get("discount", 0),
-                    totalAmount=invoice.get("totalAmount", 0),
-                    status=invoice.get("status", ""),
+                    totalQuantity=invoice.get("totalQuantity") or 0,
+                    discount=invoice.get("discount") or 0,
+                    totalAmount=invoice.get("totalAmount") or 0,
+                    status=invoice.get("status") or "",
                     insertedTimestamp=inserted_timestamp,
                     customerId=customer_id_map.get(invoice.get("customerId")),
-                    customerName=invoice.get("customerName", ""),
-                    companyName=invoice.get("companyName", ""),
+                    customerName=invoice.get("customerName") or "",
+                    companyName=invoice.get("companyName") or "",
                     email=invoice.get("email"),
-                    storeName=invoice.get("storeName", ""),
+                    storeName=invoice.get("storeName") or "",
                     orderTags=invoice.get("orderTags"),
-                    dueAmount=invoice.get("dueAmount", 0),
+                    dueAmount=invoice.get("dueAmount") or 0,
                     dueDate=due_date,
                     orderNotes=invoice.get("orderNotes"),
                     salesRepId=invoice.get("salesRepId"),
-                    salesRepName=invoice.get("salesRepName", ""),
+                    salesRepName=invoice.get("salesRepName") or "",
                     pickerId=invoice.get("pickerId"),
                     pickerName=invoice.get("pickerName"),
                     trackingUrl=invoice.get("trackingUrl"),
@@ -862,10 +875,10 @@ def syncInvoices(token):
                     salesOrderId=invoice.get("salesOrderId"),
                     quotationId=invoice.get("quotationId"),
                     shippingStatusId=invoice.get("shippingStatusId"),
-                    shippingStatusName=invoice.get("shippingStatusName", ""),
+                    shippingStatusName=invoice.get("shippingStatusName") or "",
                     stateId=invoice.get("stateId"),
-                    state=invoice.get("state", ""),
-                    city=invoice.get("city", ""),
+                    state=invoice.get("state") or "",
+                    city=invoice.get("city") or "",
                     county=invoice.get("county"),
                     dbaName=invoice.get("dbaName"),
                     lastSyncTimestamp=timezone.now(),
@@ -876,53 +889,77 @@ def syncInvoices(token):
                 else:
                     invoices_to_create.append(invoice_obj)
 
-            # Bulk create new invoices
-            if invoices_to_create:
-                Invoice.objects.bulk_create(invoices_to_create, batch_size=1000)
+            print(
+                f"[Invoices] Page {page}: writing {len(invoices_to_create)} new + {len(invoices_to_update)} updated invoices to DB..."
+            )
+            update_fields = [
+                "totalQuantity",
+                "discount",
+                "totalAmount",
+                "status",
+                "insertedTimestamp",
+                "customerName",
+                "companyName",
+                "email",
+                "storeName",
+                "orderTags",
+                "dueAmount",
+                "dueDate",
+                "orderNotes",
+                "salesRepId",
+                "salesRepName",
+                "pickerId",
+                "pickerName",
+                "trackingUrl",
+                "trackingNumber",
+                "salesOrderId",
+                "quotationId",
+                "shippingStatusId",
+                "shippingStatusName",
+                "stateId",
+                "state",
+                "city",
+                "county",
+                "dbaName",
+                "lastSyncTimestamp",
+            ]
 
-            # Bulk update existing invoices
+            db_start = time.time()
+            chunk_size = 100
+
+            # Bulk create new invoices (in chunks, with progress)
+            if invoices_to_create:
+                total_create = len(invoices_to_create)
+                for start in range(0, total_create, chunk_size):
+                    chunk = invoices_to_create[start : start + chunk_size]
+                    c_start = time.time()
+                    Invoice.objects.bulk_create(chunk)
+                    print(
+                        f"[Invoices] Page {page}: created {min(start + chunk_size, total_create)}/{total_create} ({time.time() - c_start:.1f}s)"
+                    )
+
+            # Bulk update existing invoices (in chunks, with progress)
             if invoices_to_update:
-                Invoice.objects.bulk_update(
-                    invoices_to_update,
-                    fields=[
-                        "totalQuantity",
-                        "discount",
-                        "totalAmount",
-                        "status",
-                        "insertedTimestamp",
-                        "customerName",
-                        "companyName",
-                        "email",
-                        "storeName",
-                        "orderTags",
-                        "dueAmount",
-                        "dueDate",
-                        "orderNotes",
-                        "salesRepId",
-                        "salesRepName",
-                        "pickerId",
-                        "pickerName",
-                        "trackingUrl",
-                        "trackingNumber",
-                        "salesOrderId",
-                        "quotationId",
-                        "shippingStatusId",
-                        "shippingStatusName",
-                        "stateId",
-                        "state",
-                        "city",
-                        "county",
-                        "dbaName",
-                        "lastSyncTimestamp",
-                    ],
-                    batch_size=1000,
-                )
+                total_update = len(invoices_to_update)
+                for start in range(0, total_update, chunk_size):
+                    chunk = invoices_to_update[start : start + chunk_size]
+                    c_start = time.time()
+                    Invoice.objects.bulk_update(chunk, fields=update_fields)
+                    print(
+                        f"[Invoices] Page {page}: updated {min(start + chunk_size, total_update)}/{total_update} ({time.time() - c_start:.1f}s)"
+                    )
+            print(
+                f"[Invoices] Page {page}: DB write done in {time.time() - db_start:.1f}s"
+            )
 
             page += 1
+            print(f"[Invoices] Progress: {(page * 100) / totalPages:.1f}%")
             yield (page * 100) / totalPages
         except Exception as e:
+            print(f"[Invoices] ERROR on page {page}: {e}")
             notifyMe("Sync Error : " + str(e), "101-error")
             return Response({"status": "error", "message": str(e)}, status=400)
+    print("[Invoices] Sync complete.")
     yield 100
 
 
@@ -992,21 +1029,30 @@ def purchaseHistory(productId, token):
 def fetch_product_data(product, token):
     try:
         product_id = product.productId
+        history_dir = "./dataHistory"
+        os.makedirs(history_dir, exist_ok=True)
+        history_path = os.path.join(
+            history_dir, f"product_{product_id}_sales.json"
+        )
         # check if file exists
-        if os.path.exists(f"./dataHistory/product_{product_id}_sales.json"):
-            with open(
-                f"./dataHistory/product_{product_id}_sales.json", "r"
-            ) as f:
+        if os.path.exists(history_path):
+            with open(history_path, "r") as f:
                 data = json.load(f)
                 sales_data = data.get("sales_data", [])
                 purchase_data = data.get("purchase_data", [])
                 skip = True
         else:
+            dl_start = time.time()
+            print(f"[History] Downloading sales for product {product_id}...")
             sales_data = productSales(product_id, token)
+            print(
+                f"[History] Downloading purchases for product {product_id} (sales took {time.time() - dl_start:.1f}s)..."
+            )
             purchase_data = purchaseHistory(product_id, token)
-            with open(
-                f"./dataHistory/product_{product_id}_sales.json", "w"
-            ) as f:
+            print(
+                f"[History] Product {product_id} download finished in {time.time() - dl_start:.1f}s"
+            )
+            with open(history_path, "w") as f:
                 data = {
                     "sales_data": sales_data,
                     "purchase_data": purchase_data,
@@ -1035,9 +1081,12 @@ def fetch_product_data(product, token):
 
 
 def syncProductHistory(token):
+    history_dir = "./dataHistory"
+    os.makedirs(history_dir, exist_ok=True)
+
     # get all ids from ./dataHistory/
     existing_ids = set()
-    for filename in os.listdir("./dataHistory"):
+    for filename in os.listdir(history_dir):
         if filename.startswith("product_") and filename.endswith("_sales.json"):
             product_id = filename.split("_")[1]
             existing_ids.add(product_id)
@@ -1054,52 +1103,21 @@ def syncProductHistory(token):
         yield 100
         return
 
-    batch_size = 16
     processed_count = 0
+    fetched_count = 0
     fullBatch = []
-    for i in range(0, product_count, batch_size):
-        product_batch = products[i : i + batch_size]
-
-        # Use a ThreadPoolExecutor to fetch data for the current batch in parallel
-        # with ThreadPoolExecutor(max_workers=batch_size) as executor:
-        #     # Submit the fetch_product_data function for each product in the batch
-        #     future_to_product = {
-        #         executor.submit(fetch_product_data, product, token): product
-        #         for product in product_batch
-        #     }
-
-        #     # This list will hold the results from the threads
-        #     batch_results = []
-        #     for future in as_completed(future_to_product):
-        #         try:
-        #             data = future.result()
-        #             if data["skip"]:
-        #                 continue
-        #             batch_results.append(data)
-        #         except Exception as exc:
-        #             product = future_to_product[future]
-        #             print(
-        #                 f"Product {product.productId} generated an exception: {exc}"
-        #             )
-        #     fullBatch.extend(batch_results)
-
-        for product in product_batch:
-            with open(
-                f"./dataHistory/product_{product.productId}_sales.json", "r"
-            ) as f:
-                data = json.load(f)
-                sales_data = data.get("sales_data", [])
-                purchase_data = data.get("purchase_data", [])
-            fullBatch.append(
-                {
-                    "product": product,
-                    "sales_data": sales_data,
-                    "purchase_data": purchase_data,
-                    "error": None,
-                }
-            )
+    for product in products:
+        fetched_count += 1
+        print(
+            f"[History] ({fetched_count}/{product_count}) Handling product {product.productId}, buffer={len(fullBatch)}"
+        )
+        try:
+            fullBatch.append(fetch_product_data(product, token))
+        except Exception as exc:
+            print(f"Product {product.productId} generated an exception: {exc}")
 
         if len(fullBatch) > 200:
+            print(f"[History] Buffer reached {len(fullBatch)}, flushing to DB...")
             # Now that all data for the batch is fetched, process it for DB operations
             for result in fullBatch:
                 if result["error"]:
@@ -1110,6 +1128,7 @@ def syncProductHistory(token):
                 product = result["product"]
                 sales_data = result["sales_data"]
                 purchase_data = result["purchase_data"]
+                print(f"Processing product {product.productId} with {len(sales_data)} sales records and {len(purchase_data)} purchase records.")
 
                 # --- Process Sales Data in Bulk (for one product) ---
                 if sales_data:
@@ -1304,8 +1323,10 @@ def syncProductHistory(token):
                 # Update and yield progress after each product is fully processed
                 processed_count += 1
                 yield (processed_count * 100) / product_count
+            print(f"[History] Flush complete. processed={processed_count}/{product_count}")
             fullBatch = []  # Clear the batch after processing
     if len(fullBatch) > 0:
+        print(f"[History] Final flush of {len(fullBatch)} remaining products...")
         for result in fullBatch:
             if result["error"]:
                 # Skip products that had fetching errors
@@ -1489,6 +1510,7 @@ def syncProductHistory(token):
                             purchases_to_update, update_fields
                         )
 
+    print("[History] Sync complete.")
     yield 100
 
 
