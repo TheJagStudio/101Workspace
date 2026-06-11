@@ -2,7 +2,7 @@
 
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from api.models import SalesgentToken
@@ -38,7 +38,7 @@ def erp_headers(referer_path="/"):
     }
 
 
-def _unwrap_erp_response(payload: Any) -> tuple[Any, str | None]:
+def _unwrap_erp_response(payload: Any) -> Tuple[Any, Optional[str]]:
     if payload is None:
         return None, "Empty ERP response"
     if isinstance(payload, dict):
@@ -86,7 +86,7 @@ def erp_put(path, json_data=None, params=None, referer="/"):
     return erp_request("PUT", path, params=params, json_data=json_data, referer=referer)
 
 
-def erp_fetch_many(specs: list[dict], max_workers=4) -> dict[str, dict]:
+def erp_fetch_many(specs: List[dict], max_workers=4) -> Dict[str, dict]:
     """
     Fetch multiple ERP endpoints concurrently.
     Each spec: {"key": str, "method": "GET"|"PUT", "path": str, "params": {}, "json": {}, "referer": "/", "timeout": 60}

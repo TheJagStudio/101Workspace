@@ -1,5 +1,7 @@
 """Weekly cache for multi-state tax compliance — heavy ERP fetches run once per week."""
 
+from typing import List, Optional
+
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -67,7 +69,7 @@ def build_tax_compliance(
     store_ids: str,
     tax_type_id: int = 1,
     state_id: int = 10,
-    state_ids: list[int] | None = None,
+    state_ids: Optional[List[int]] = None,
 ) -> dict:
     """Fetch all ERP tax sources and return a cacheable snapshot."""
     state_ids = list(state_ids or DEFAULT_TAX_STATE_IDS)
@@ -167,7 +169,7 @@ def get_tax_compliance(
     store_ids: str,
     tax_type_id: int = 1,
     state_id: int = 10,
-    state_ids: list[int] | None = None,
+    state_ids: Optional[List[int]] = None,
     force_refresh: bool = False,
     use_cache: bool = True,
 ) -> dict:
@@ -211,7 +213,7 @@ def refresh_tax_compliance_cache(
     store_ids: str = "1,2",
     tax_type_id: int = 1,
     state_id: int = 10,
-    state_ids: list[int] | None = None,
+    state_ids: Optional[List[int]] = None,
 ) -> dict:
     """Pre-warm cache for scheduled weekend refresh."""
     state_ids = list(state_ids or DEFAULT_TAX_STATE_IDS)

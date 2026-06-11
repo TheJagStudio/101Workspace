@@ -1,6 +1,7 @@
 """Weekly cache for dusty inventory — full dataset computed once, paginated from memory."""
 
 from datetime import timedelta
+from typing import List, Optional
 
 from django.core.cache import cache
 from django.db.models import DateTimeField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
@@ -204,7 +205,7 @@ def get_dusty_inventory(
     }
 
 
-def refresh_dusty_inventory_cache(store_ids: str = "1,2", days_thresholds: list[int] | None = None) -> list[dict]:
+def refresh_dusty_inventory_cache(store_ids: str = "1,2", days_thresholds: Optional[List[int]] = None) -> List[dict]:
     """Pre-warm cache for scheduled weekend refresh."""
     thresholds = days_thresholds or [60, 90, 120, 180]
     results = []

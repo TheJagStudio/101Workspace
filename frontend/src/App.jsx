@@ -201,26 +201,24 @@ function App() {
 					{user?.permissions?.accounts_invoice && (<Route path="invoice" element={<Invoice />} />)}
 					{user?.permissions?.accounts_invoice && (<Route path="stamp-invoice" element={<StampInvoice />} />)}
 				</Route>
-				{user?.permissions?.supplychain && (
-					<Route path="/supply-chain" element={user?.is_active ? <SupplyChainOutlet logout={logout} /> : <Navigate to="/login" replace />}>
-						<Route index element={<SupplyChainDashboard />} />
-						<Route path="dusty-inventory" element={<SCDustyInventory />} />
-						<Route path="shrinkage-audit" element={<SCShrinkageAudit />} />
-						<Route path="demand-forecast" element={<SCDemandForecast />} />
-						<Route path="vendor-scorecard" element={<SCVendorScorecard />} />
-						<Route path="ap-aging" element={<SCAPAging />} />
-						<Route path="quotation-pipeline" element={<SCQuotationPipeline />} />
-						<Route path="margin-pricing" element={<SCMarginPricing />} />
-						<Route path="ar-risk" element={<SCARRisk />} />
-						<Route path="financial-pl" element={<SCFinancialPL />} />
-						<Route path="tax-compliance" element={<SCTaxCompliance />} />
-						<Route path="sales-rep-roi" element={<SCSalesRepROI />} />
-						<Route path="labor-allocation" element={<SCLaborAllocation />} />
-						<Route path="edit-friction" element={<SCEditFriction />} />
-						<Route path="rma-analysis" element={<SCRMAAnalysis />} />
-						<Route path="customer-churn" element={<SCCustomerChurn />} />
-					</Route>
-				)}
+				<Route path="/supply-chain" element={user?.is_active ? <SupplyChainOutlet logout={logout} /> : <Navigate to="/login" replace />}>
+					{user?.permissions?.supplychain && (<Route index element={<SupplyChainDashboard />} />)}
+					{user?.permissions?.supplychain && (<Route path="dusty-inventory" element={<SCDustyInventory />} />)}
+					{user?.permissions?.supplychain && (<Route path="shrinkage-audit" element={<SCShrinkageAudit />} />)}
+					{user?.permissions?.supplychain && (<Route path="demand-forecast" element={<SCDemandForecast />} />)}
+					{user?.permissions?.supplychain && (<Route path="vendor-scorecard" element={<SCVendorScorecard />} />)}
+					{user?.permissions?.supplychain && (<Route path="ap-aging" element={<SCAPAging />} />)}
+					{user?.permissions?.supplychain && (<Route path="quotation-pipeline" element={<SCQuotationPipeline />} />)}
+					{user?.permissions?.supplychain && (<Route path="margin-pricing" element={<SCMarginPricing />} />)}
+					{user?.permissions?.supplychain && (<Route path="ar-risk" element={<SCARRisk />} />)}
+					{user?.permissions?.supplychain && (<Route path="financial-pl" element={<SCFinancialPL />} />)}
+					{user?.permissions?.supplychain && (<Route path="tax-compliance" element={<SCTaxCompliance />} />)}
+					{user?.permissions?.supplychain && (<Route path="sales-rep-roi" element={<SCSalesRepROI />} />)}
+					{user?.permissions?.supplychain && (<Route path="labor-allocation" element={<SCLaborAllocation />} />)}
+					{user?.permissions?.supplychain && (<Route path="edit-friction" element={<SCEditFriction />} />)}
+					{user?.permissions?.supplychain && (<Route path="rma-analysis" element={<SCRMAAnalysis />} />)}
+					{user?.permissions?.supplychain && (<Route path="customer-churn" element={<SCCustomerChurn />} />)}
+				</Route>
 				<Route path="*" element={<Navigate to="/404" replace />} />
 				<Route path="/404" element={<NotFound />} />
 			</Routes>

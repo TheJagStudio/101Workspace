@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from api.models import SalesgentToken
+from api.models import Product, SalesgentToken
 from rest_framework.permissions import IsAuthenticated
 import json
 import csv
@@ -152,3 +152,87 @@ class SyncProductsView(APIView):
                 yield json.dumps({"error": str(e), "status": "error"}) + "\n"
 
         return StreamingHttpResponse(generate_progress(), content_type="text/event-stream")
+
+
+def _serialize_sticker_product(product):
+    return {
+        "productId": product.productId,
+        "id": product.productId,
+        "productName": product.productName,
+        "upc": product.upc,
+        "sku": product.sku,
+        "standardPrice": float(product.standardPrice or 0),
+        "tierPrice": float(product.tierPrice or 0) if product.tierPrice is not None else None,
+        "imageUrl": product.imageUrl,
+        "masterProductId": product.masterProductId,
+        "masterProductName": product.masterProductName,
+        "availableQuantity": product.availableQuantity,
+    }
+
+
+class StickerHealthView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        count = Product.objects.filter(active=True).count()
+        return Response({"ok": True, "active_product_count": count})
+
+
+class StickerProductSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from django.db.models import Q
+
+        upc = request.GET.get("upc", "").strip()
+        name = request.GET.get("name", "").strip()
+        search = request.GET.get("search", "").strip()
+        limit = min(int(request.GET.get("limit", 20)), 50)
+
+        qs = Product.objects.filter(active=True)
+
+        if upc:
+            qs = qs.filter(upc__iexact=upc)
+        elif name:
+            qs = qs.filter(productName__icontains=name)
+        elif search:
+            qs = qs.filter(
+                Q(productName__icontains=search)
+                | Q(upc__icontains=search)
+                | Q(sku__icontains=search)
+            )
+        else:
+            return Response({"error": "Provide upc, name, or search query"}, status=400)
+
+        products = [_serialize_sticker_product(p) for p in qs[:limit]]
+        return Response({"products": products, "count": len(products)})
+
+
+class StickerBulkUpcView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        upcs = request.data.get("upcs", [])
+        if not upcs:
+            return Response({"error": "upcs required"}, status=400)
+
+        normalized = []
+        seen = set()
+        for raw in upcs:
+            upc = str(raw).strip()
+            if upc and upc not in seen:
+                seen.add(upc)
+                normalized.append(upc)
+
+        found_products = Product.objects.filter(active=True, upc__in=normalized)
+        found_map = {p.upc: p for p in found_products}
+        products = [_serialize_sticker_product(found_map[u]) for u in normalized if u in found_map]
+        not_found = [u for u in normalized if u not in found_map]
+
+        return Response(
+            {
+                "products": products,
+                "notFoundUPCs": not_found,
+                "found_count": len(products),
+            }
+        )

@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+from typing import Optional
 
 import requests
 from django.http import HttpResponse, JsonResponse
@@ -17,7 +18,7 @@ ERP_BASE = "https://erp.101distributorsga.com"
 FORWARD_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
 
 
-def _extract_api_key(request) -> str | None:
+def _extract_api_key(request) -> Optional[str]:
     header = request.headers.get("X-API-Key", "").strip()
     if header:
         return header
