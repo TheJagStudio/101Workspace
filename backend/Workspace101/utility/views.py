@@ -115,7 +115,7 @@ class SyncProductsView(APIView):
                 all_products = []
                 while page <= totalPages:
                     response = requests.get(
-                        f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=1000",
+                        f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2,3,4,5&page={page}&size=1000",
                         headers=headers,
                     )
                     products = []

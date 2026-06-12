@@ -2,24 +2,36 @@ version: '3.8'
 
 services:
   frontend:
-    build: 
+    build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
+      args:
+        VITE_SERVER_URL: https://workspace.101distributors.com/backend
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_SUPABASE_URL_SECOND: ${VITE_SUPABASE_URL_SECOND}
+        VITE_SUPABASE_ANON_KEY_SECOND: ${VITE_SUPABASE_ANON_KEY_SECOND}
+    expose:
+      - "5173"
     depends_on:
-      - backend
-    environment:
-      - VITE_SERVER_URL=http://backend:8000
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
     networks:
       - app_network
 
   backend:
-    build: 
+    build:
       context: ./backend/Workspace101
       dockerfile: Dockerfile
-    ports:
-      - "9876:9876"
+    expose:
+      - "9876"
     environment:
       - DEBUG=1
       - POSTGRES_DB=postgres
@@ -30,11 +42,40 @@ services:
       - TYPESENSE_API_KEY=Hu52dwsas2AdxdE
       - GEMINI_API_KEY=AIzaSyBvDQUjI3s8KB6Atfk0i5s4uPA4ZX27z_s
       - GOOGLE_MAPS_API_KEY=AIzaSyBxBKKw8qRbooHIASvS0gkhiGa4EIr8pA4
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9876/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
     networks:
       - app_network
     volumes:
       - ./backend/Workspace101:/app/Workspace101
 
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./nginx/workspace.conf:/etc/nginx/conf.d/workspace.conf:ro
+      - nginx-certs:/etc/nginx/ssl:ro
+    restart: unless-stopped
+    networks:
+      - app_network
+
 networks:
   app_network:
     driver: bridge
+
+volumes:
+  nginx-certs:

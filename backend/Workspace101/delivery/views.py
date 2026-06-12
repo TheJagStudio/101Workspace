@@ -1,10 +1,16 @@
 from django.shortcuts import render
-from django.http import JsonResponse
 import requests
 from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status as http_status
 from api.models import SalesgentToken, Customer, Invoice, ModulePermissions
 from .models import DeliveryDriver, DeliveryTruck, DeliverySheet
+from .serializers import (
+    DeliveryTruckSerializer, DeliveryDriverSerializer, DeliveryUserSerializer,
+    DeliveryEntryItemSerializer, DeliveryTruckGroupSerializer, DashboardStatsSerializer,
+    InvoiceDetailSerializer,
+)
 from datetime import datetime
 from django.contrib.auth.models import User, Group
 from django.db.models.expressions import RawSQL
@@ -40,14 +46,14 @@ class ScanInvoice(APIView):
             "sec-ch-ua-platform": '"Windows"',
         }
         try:
-            response = requests.get("https://erp.101distributorsga.com/api/order/" + str(invoiceId) + "/withCustomer?storeIds=1,2", headers=headers)
+            response = requests.get("https://erp.101distributorsga.com/api/order/" + str(invoiceId) + "/withCustomer?storeIds=1,2,3,4,5", headers=headers)
             data = response.json()
             if data["hasError"]:
-                return JsonResponse({"error": data["error"]})
+                return Response({"error": data["error"]}, status=http_status.HTTP_200_OK)
             else:
-                return JsonResponse(data["result"], safe=False)
+                return Response(data["result"], status=http_status.HTTP_200_OK)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class TruckInfo(APIView):
@@ -57,26 +63,10 @@ class TruckInfo(APIView):
         """
         deliveryDriver = DeliveryDriver.objects.all()
         deliveryTruck = DeliveryTruck.objects.all()
-        data = {}
-        data["trucks"] = []
-        data["drivers"] = []
+        trucks_data = DeliveryTruckSerializer(deliveryTruck, many=True).data
+        drivers_data = DeliveryDriverSerializer(deliveryDriver, many=True).data
 
-        for truck in deliveryTruck:
-            data["trucks"].append(
-                {
-                    "truckNo": truck.truckNo,
-                    "truckName": truck.truckName,
-                }
-            )
-        for driver in deliveryDriver:
-            data["drivers"].append(
-                {
-                    "driverName": driver.driverName,
-                    "driverLicense": driver.driverLicense,
-                }
-            )
-
-        return JsonResponse(data)
+        return Response({"trucks": trucks_data, "drivers": drivers_data})
 
 
 class UploadDeliveryEntry(APIView):
@@ -104,7 +94,7 @@ class UploadDeliveryEntry(APIView):
                 customer, created = Customer.objects.get_or_create(name=customer_name, defaults={"name": customer_name})
 
             if not customer:
-                return JsonResponse({"error": "Customer information is required"}, status=400)
+                return Response({"error": "Customer information is required"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Get or create invoice - using invoice number as the ID
             invoice_number = data.get("invoiceNumber")
@@ -120,14 +110,14 @@ class UploadDeliveryEntry(APIView):
                     invoice = Invoice.objects.create(id=invoice_number, customerId=customer, customerName=customer_name, status=data.get("status", "Pending"))
 
             if not invoice:
-                return JsonResponse({"error": "Invoice information is required"}, status=400)
+                return Response({"error": "Invoice information is required"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Get truck
             truck_no = data.get("truckNo")
             try:
                 truck = DeliveryTruck.objects.get(truckNo=truck_no)
             except DeliveryTruck.DoesNotExist:
-                return JsonResponse({"error": f"Truck with number {truck_no} not found"}, status=400)
+                return Response({"error": f"Truck with number {truck_no} not found"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Get driver (optional)
             driver = None
@@ -136,7 +126,7 @@ class UploadDeliveryEntry(APIView):
                 try:
                     driver = DeliveryDriver.objects.get(driverLicense=driver_license)
                 except DeliveryDriver.DoesNotExist:
-                    return JsonResponse({"error": f"Driver with license {driver_license} not found"}, status=400)
+                    return Response({"error": f"Driver with license {driver_license} not found"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Parse date
             try:
@@ -151,15 +141,15 @@ class UploadDeliveryEntry(APIView):
             # Create delivery sheet entry
             delivery_entry = DeliverySheet.objects.create(invoice=invoice, customer=customer, box=data.get("caseCount", 1), checkAmount=data.get("checkAmount"), cashAmount=data.get("cashAmount"), payment_status=data.get("paymentStatus") == "paid", status=False, date=date_obj, truck=truck, driver=driver)  # Not delivered yet
 
-            return JsonResponse({"success": True, "message": f"Delivery entry for invoice {invoice_number} created successfully", "delivery_id": delivery_entry.id})
+            return Response({"success": True, "message": f"Delivery entry for invoice {invoice_number} created successfully", "delivery_id": delivery_entry.id})
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ListDeliveries(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         """
         Returns all DeliverySheet entries for a given date, grouped by truck.
@@ -167,11 +157,11 @@ class ListDeliveries(APIView):
         """
         date_str = request.GET.get("date")
         if not date_str:
-            return JsonResponse({"error": "date query parameter is required (YYYY-MM-DD)"}, status=400)
+            return Response({"error": "date query parameter is required (YYYY-MM-DD)"}, status=http_status.HTTP_400_BAD_REQUEST)
         try:
             date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
-            return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=http_status.HTTP_400_BAD_REQUEST)
 
         deliveries_data = DeliverySheet.objects.filter(date=date_obj).values(
             'id', 'invoice__id', 'customer__id', 'customer__name', 'customer__company', 'box', 'checkAmount',
@@ -205,10 +195,10 @@ class ListDeliveries(APIView):
                 'deliveryTimestamp': delivery['deliveryTimestamp'].isoformat() if delivery['deliveryTimestamp'] else None
             })
 
-        return JsonResponse({"trucks": list(grouped.values())}, safe=False)
+        return Response({"trucks": list(grouped.values())}, status=http_status.HTTP_200_OK)
 
 
-    
+
 class DashboardStats(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -225,7 +215,7 @@ class DashboardStats(APIView):
             try:
                 date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
-                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=http_status.HTTP_400_BAD_REQUEST)
 
         deliveries_data = DeliverySheet.objects.filter(date=date_obj).values(
             'id', 'invoice__id', 'customer__id', 'customer__name','customer__company', 'box', 'checkAmount',
@@ -281,7 +271,7 @@ class DashboardStats(APIView):
             "trucks": list(grouped.values())
         }
 
-        return JsonResponse(response_data, safe=False)
+        return Response(response_data, status=http_status.HTTP_200_OK)
 
 
 class InvoiceDetail(APIView):
@@ -296,14 +286,14 @@ class InvoiceDetail(APIView):
             delivery = DeliverySheet.objects.filter(invoice__id=invoice_id).first()
 
             if not delivery:
-                return JsonResponse({"error": "Invoice not found"}, status=404)
+                return Response({"error": "Invoice not found"}, status=http_status.HTTP_404_NOT_FOUND)
 
             invoice_data = {"id": str(delivery.invoice.id), "invoiceNumber": str(delivery.invoice.id), "customerId": str(delivery.customer.id) if delivery.customer else None, "customerName": str(delivery.customer) if delivery.customer else None, "caseCount": delivery.box, "checkAmount": float(delivery.checkAmount) if delivery.checkAmount is not None else None, "cashAmount": float(delivery.cashAmount) if delivery.cashAmount is not None else None, "paymentStatus": "paid" if delivery.payment_status else "not_paid", "dateCreated": delivery.insertedTimestamp.isoformat() if delivery.insertedTimestamp else None, "dateUpdated": delivery.deliveryTimestamp.isoformat() if delivery.deliveryTimestamp else None, "status": "delivered" if delivery.status else "pending"}
 
-            return JsonResponse(invoice_data)
+            return Response(invoice_data)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request, invoice_id):
         """
@@ -314,7 +304,7 @@ class InvoiceDetail(APIView):
             delivery = DeliverySheet.objects.filter(invoice_id=invoice_id).first()
 
             if not delivery:
-                return JsonResponse({"error": "Invoice not found"}, status=404)
+                return Response({"error": "Invoice not found"}, status=http_status.HTTP_404_NOT_FOUND)
 
             # Update payment information
             data = request.data
@@ -334,10 +324,10 @@ class InvoiceDetail(APIView):
 
             delivery.save()
 
-            return JsonResponse({"success": True, "message": f"Payment for invoice {invoice_id} updated successfully"})
+            return Response({"success": True, "message": f"Payment for invoice {invoice_id} updated successfully"})
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # CRUD Operations for Trucks
@@ -351,29 +341,15 @@ class TruckCRUD(APIView):
         try:
             if truck_id:
                 truck = DeliveryTruck.objects.get(id=truck_id)
-                return JsonResponse(
-                    {
-                        "id": truck.id,
-                        "truckNo": truck.truckNo,
-                        "truckName": truck.truckName,
-                    }
-                )
+                return Response(DeliveryTruckSerializer(truck).data)
             else:
                 trucks = DeliveryTruck.objects.all()
-                trucks_data = []
-                for truck in trucks:
-                    trucks_data.append(
-                        {
-                            "id": truck.id,
-                            "truckNo": truck.truckNo,
-                            "truckName": truck.truckName,
-                        }
-                    )
-                return JsonResponse({"trucks": trucks_data})
+                trucks_data = DeliveryTruckSerializer(trucks, many=True).data
+                return Response({"trucks": trucks_data})
         except DeliveryTruck.DoesNotExist:
-            return JsonResponse({"error": "Truck not found"}, status=404)
+            return Response({"error": "Truck not found"}, status=http_status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         """
@@ -385,27 +361,21 @@ class TruckCRUD(APIView):
             truck_name = data.get("truckName")
 
             if not truck_no or not truck_name:
-                return JsonResponse({"error": "truckNo and truckName are required"}, status=400)
+                return Response({"error": "truckNo and truckName are required"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Check if truck number already exists
             if DeliveryTruck.objects.filter(truckNo=truck_no).exists():
-                return JsonResponse({"error": "Truck number already exists"}, status=400)
+                return Response({"error": "Truck number already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             truck = DeliveryTruck.objects.create(truckNo=truck_no, truckName=truck_name)
 
-            return JsonResponse(
-                {
+            return Response({
                     "success": True,
                     "message": "Truck created successfully",
-                    "truck": {
-                        "id": truck.id,
-                        "truckNo": truck.truckNo,
-                        "truckName": truck.truckName,
-                    },
-                }
-            )
+                    "truck": DeliveryTruckSerializer(truck).data,
+                })
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def put(self, request, truck_id):
         """
@@ -418,7 +388,7 @@ class TruckCRUD(APIView):
             if "truckNo" in data:
                 # Check if new truck number already exists for other trucks
                 if DeliveryTruck.objects.filter(truckNo=data["truckNo"]).exclude(id=truck_id).exists():
-                    return JsonResponse({"error": "Truck number already exists"}, status=400)
+                    return Response({"error": "Truck number already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
                 truck.truckNo = data["truckNo"]
 
             if "truckName" in data:
@@ -426,21 +396,15 @@ class TruckCRUD(APIView):
 
             truck.save()
 
-            return JsonResponse(
-                {
+            return Response({
                     "success": True,
                     "message": "Truck updated successfully",
-                    "truck": {
-                        "id": truck.id,
-                        "truckNo": truck.truckNo,
-                        "truckName": truck.truckName,
-                    },
-                }
-            )
+                    "truck": DeliveryTruckSerializer(truck).data,
+                })
         except DeliveryTruck.DoesNotExist:
-            return JsonResponse({"error": "Truck not found"}, status=404)
+            return Response({"error": "Truck not found"}, status=http_status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, truck_id):
         """
@@ -451,15 +415,15 @@ class TruckCRUD(APIView):
 
             # Check if truck is being used in any delivery sheet
             if DeliverySheet.objects.filter(truck=truck).exists():
-                return JsonResponse({"error": "Cannot delete truck as it is being used in delivery sheets"}, status=400)
+                return Response({"error": "Cannot delete truck as it is being used in delivery sheets"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             truck.delete()
 
-            return JsonResponse({"success": True, "message": "Truck deleted successfully"})
+            return Response({"success": True, "message": "Truck deleted successfully"})
         except DeliveryTruck.DoesNotExist:
-            return JsonResponse({"error": "Truck not found"}, status=404)
+            return Response({"error": "Truck not found"}, status=http_status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # CRUD Operations for Drivers
@@ -473,53 +437,15 @@ class DriverCRUD(APIView):
         try:
             if driver_id:
                 driver = DeliveryDriver.objects.get(id=driver_id)
-                return JsonResponse(
-                    {
-                        "id": driver.id,
-                        "driverLicense": driver.driverLicense,
-                        "driverName": driver.driverName,
-                        "user": (
-                            {
-                                "id": driver.user.id if driver.user else None,
-                                "username": driver.user.username if driver.user else None,
-                                "email": driver.user.email if driver.user else None,
-                                "first_name": driver.user.first_name if driver.user else None,
-                                "last_name": driver.user.last_name if driver.user else None,
-                                "is_active": driver.user.is_active if driver.user else None,
-                            }
-                            if driver.user
-                            else None
-                        ),
-                    }
-                )
+                return Response(DeliveryDriverSerializer(driver).data)
             else:
                 drivers = DeliveryDriver.objects.all()
-                drivers_data = []
-                for driver in drivers:
-                    drivers_data.append(
-                        {
-                            "id": driver.id,
-                            "driverLicense": driver.driverLicense,
-                            "driverName": driver.driverName,
-                            "user": (
-                                {
-                                    "id": driver.user.id if driver.user else None,
-                                    "username": driver.user.username if driver.user else None,
-                                    "email": driver.user.email if driver.user else None,
-                                    "first_name": driver.user.first_name if driver.user else None,
-                                    "last_name": driver.user.last_name if driver.user else None,
-                                    "is_active": driver.user.is_active if driver.user else None,
-                                }
-                                if driver.user
-                                else None
-                            ),
-                        }
-                    )
-                return JsonResponse({"drivers": drivers_data})
+                drivers_data = DeliveryDriverSerializer(drivers, many=True).data
+                return Response({"drivers": drivers_data})
         except DeliveryDriver.DoesNotExist:
-            return JsonResponse({"error": "Driver not found"}, status=404)
+            return Response({"error": "Driver not found"}, status=http_status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         """
@@ -535,19 +461,19 @@ class DriverCRUD(APIView):
             password = data.get("password")
 
             if not all([driver_license, username, email, first_name, last_name, password]):
-                return JsonResponse({"error": "All fields are required: driverLicense, username, email, first_name, last_name, password"}, status=400)
+                return Response({"error": "All fields are required: driverLicense, username, email, first_name, last_name, password"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Check if driver license already exists
             if DeliveryDriver.objects.filter(driverLicense=driver_license).exists():
-                return JsonResponse({"error": "Driver license already exists"}, status=400)
+                return Response({"error": "Driver license already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Check if username already exists
             if User.objects.filter(username=username).exists():
-                return JsonResponse({"error": "Username already exists"}, status=400)
+                return Response({"error": "Username already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             # Check if email already exists
             if User.objects.filter(email=email).exists():
-                return JsonResponse({"error": "Email already exists"}, status=400)
+                return Response({"error": "Email already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             with transaction.atomic():
                 # Create user
@@ -562,27 +488,13 @@ class DriverCRUD(APIView):
 
                 ModulePermissions.objects.create(user=user, delivery=True)
 
-                return JsonResponse(
-                    {
+                return Response({
                         "success": True,
                         "message": "Driver created successfully",
-                        "driver": {
-                            "id": driver.id,
-                            "driverLicense": driver.driverLicense,
-                            "driverName": driver.driverName,
-                            "user": {
-                                "id": user.id,
-                                "username": user.username,
-                                "email": user.email,
-                                "first_name": user.first_name,
-                                "last_name": user.last_name,
-                                "is_active": user.is_active,
-                            },
-                        },
-                    }
-                )
+                        "driver": DeliveryDriverSerializer(driver).data,
+                    })
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def put(self, request, driver_id):
         """
@@ -596,7 +508,7 @@ class DriverCRUD(APIView):
                 if "driverLicense" in data:
                     # Check if new driver license already exists for other drivers
                     if DeliveryDriver.objects.filter(driverLicense=data["driverLicense"]).exclude(id=driver_id).exists():
-                        return JsonResponse({"error": "Driver license already exists"}, status=400)
+                        return Response({"error": "Driver license already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
                     driver.driverLicense = data["driverLicense"]
 
                 # Update user information if provided
@@ -606,13 +518,13 @@ class DriverCRUD(APIView):
                     if "username" in data:
                         # Check if new username already exists for other users
                         if User.objects.filter(username=data["username"]).exclude(id=user.id).exists():
-                            return JsonResponse({"error": "Username already exists"}, status=400)
+                            return Response({"error": "Username already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
                         user.username = data["username"]
 
                     if "email" in data:
                         # Check if new email already exists for other users
                         if User.objects.filter(email=data["email"]).exclude(id=user.id).exists():
-                            return JsonResponse({"error": "Email already exists"}, status=400)
+                            return Response({"error": "Email already exists"}, status=http_status.HTTP_400_BAD_REQUEST)
                         user.email = data["email"]
 
                     if "first_name" in data:
@@ -631,33 +543,15 @@ class DriverCRUD(APIView):
 
                 driver.save()
 
-                return JsonResponse(
-                    {
+                return Response({
                         "success": True,
                         "message": "Driver updated successfully",
-                        "driver": {
-                            "id": driver.id,
-                            "driverLicense": driver.driverLicense,
-                            "driverName": driver.driverName,
-                            "user": (
-                                {
-                                    "id": driver.user.id if driver.user else None,
-                                    "username": driver.user.username if driver.user else None,
-                                    "email": driver.user.email if driver.user else None,
-                                    "first_name": driver.user.first_name if driver.user else None,
-                                    "last_name": driver.user.last_name if driver.user else None,
-                                    "is_active": driver.user.is_active if driver.user else None,
-                                }
-                                if driver.user
-                                else None
-                            ),
-                        },
-                    }
-                )
+                        "driver": DeliveryDriverSerializer(driver).data,
+                    })
         except DeliveryDriver.DoesNotExist:
-            return JsonResponse({"error": "Driver not found"}, status=404)
+            return Response({"error": "Driver not found"}, status=http_status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, driver_id):
         """
@@ -668,7 +562,7 @@ class DriverCRUD(APIView):
 
             # Check if driver is being used in any delivery sheet
             if DeliverySheet.objects.filter(driver=driver).exists():
-                return JsonResponse({"error": "Cannot delete driver as they are assigned to delivery sheets"}, status=400)
+                return Response({"error": "Cannot delete driver as they are assigned to delivery sheets"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             with transaction.atomic():
                 user = driver.user
@@ -678,8 +572,8 @@ class DriverCRUD(APIView):
                 if user:
                     user.delete()
 
-                return JsonResponse({"success": True, "message": "Driver deleted successfully"})
+                return Response({"success": True, "message": "Driver deleted successfully"})
         except DeliveryDriver.DoesNotExist:
-            return JsonResponse({"error": "Driver not found"}, status=404)
+            return Response({"error": "Driver not found"}, status=http_status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)

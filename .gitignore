@@ -1,0 +1,64 @@
+frontend/node_modules/*
+backend/.venv/*
+backend/Workspace101/backup.json
+
+backend/Workspace101/data.zip
+backend/Workspace101/productsId.txt
+backend/Workspace101/valuations.xls
+backend/Workspace101/db.sqlite3
+backend/Workspace101/PurchaseHistorydata.json
+backend/Workspace101/extra/invoiceData/*
+backend/Workspace101/Backend.zip
+frontend/Frontend.zip
+frontend/FInalDelivery.zip
+backend/Workspace101/extra/*
+backend/Workspace101/csvData/*
+backend/Workspace101/backup - Copy.json
+backend/Workspace101/sales_data.csv
+catalog/*
+whisk/*
+apps/tracker/TrackerApp.zip
+apps/tracker/android/*
+apps/tracker/ios/*
+apps/tracker/app-debug.apk
+frontend/.env
+apps/tracker/iosBuild/*
+apps/tracker/TrackerAppWorking.zip
+backend/Workspace101/prompt.txt
+apps/tracker/iosBuild.tar.gz
+apps/tracker/Tracker-app.zip
+apps/TrackerApp.zip
+apps/tracker/TrackerAppv2.zip
+final_output_movie/*
+apps/tracker/TrackerAppv3.zip
+del2.py
+del.py
+backend/Workspace101/.env
+backend/Workspace101/dataHistory/*
+del3.py
+tracks.html
+backend/Workspace101/media/zip/stamped_invoices.zip
+apps/authError.zip
+apps/TrackerAppv2.zip
+apps/TrackerAppv3.zip
+apps/TrackerAppInner.zip
+workspaceOut.zip
+frontend/frontend (2).zip
+backend/Workspace101/workspaceBackend.zip
+backend.zip
+full.zip
+frontend.zip
+backend/Workspace101/paymentDetails.json
+
+# Database files
+*.sqlite3
+*.db
+
+# Cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Archive files
+*.zip
+*.tar.gz

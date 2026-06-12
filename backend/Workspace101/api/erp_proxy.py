@@ -9,8 +9,9 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from rest_framework.permissions import BasePermission
 from rest_framework.views import APIView
-
 from api.models import ErpProxyApiKey, SalesgentToken
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def _erp_headers(referer_path: str = "/product") -> dict:
         "sec-ch-ua-platform": '"Windows"',
     }
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class ErpProxyView(APIView):
     """
     Pass-through proxy to Salesgent ERP.
@@ -97,6 +98,29 @@ class ErpProxyView(APIView):
 
     permission_classes = [ErpProxyApiKeyPermission]
     authentication_classes = []
+
+    def get_permissions(self):
+        if self.request.method == "OPTIONS":
+            return []
+        return super().get_permissions()
+
+    def _cors_origin(self, request) -> str:
+        origin = request.headers.get("Origin", "")
+        return origin or "*"
+
+    def _apply_cors(self, request, response):
+        response["Access-Control-Allow-Origin"] = self._cors_origin(request)
+        response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+        response["Access-Control-Allow-Headers"] = "X-API-Key, Authorization, Content-Type, X-ERP-Referer"
+        response["Access-Control-Allow-Credentials"] = "true"
+        response["Vary"] = "Origin"
+        return response
+
+    def handle_exception(self, exc):
+        response = super().handle_exception(exc)
+        if response is not None:
+            self._apply_cors(self.request, response)
+        return response
 
     def _proxy(self, request, route: str):
         if request.method not in FORWARD_METHODS:
@@ -136,8 +160,7 @@ class ErpProxyView(APIView):
             status=erp_response.status_code,
             content_type=content_type,
         )
-        response["Access-Control-Allow-Origin"] = "*"
-        return response
+        return self._apply_cors(request, response)
 
     def get(self, request, route):
         return self._proxy(request, route)
@@ -159,10 +182,8 @@ class ErpProxyView(APIView):
 
     def options(self, request, route):
         response = HttpResponse(status=204)
-        response["Access-Control-Allow-Origin"] = "*"
-        response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
-        response["Access-Control-Allow-Headers"] = "X-API-Key, Authorization, Content-Type, X-ERP-Referer"
-        return response
+        response["Access-Control-Max-Age"] = "86400"
+        return self._apply_cors(request, response)
 
 
 def generate_proxy_api_key() -> str:

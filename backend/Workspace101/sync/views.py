@@ -69,7 +69,7 @@ def syncProducts(token):
     while i <= totalPages:
         try:
             response = requests.get(
-                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page="
+                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2,3,4,5&page="
                 + str(i)
                 + "&size=1000",
                 headers=headers,
@@ -88,7 +88,7 @@ def syncProducts(token):
     while i <= totalPages:
         try:
             response = requests.get(
-                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page="
+                "https://erp.101distributorsga.com/api/product/list?storeIds=1,2,3,4,5&page="
                 + str(i)
                 + "&size=1000&active=false",
                 headers=headers,
@@ -547,7 +547,7 @@ def syncSearchData(token):
     # Fetch all products first
     all_products = []
     while page <= totalPages:
-        response = requests.request("GET", f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2&page={page}&size=1000", headers=headers)
+        response = requests.request("GET", f"https://erp.101distributorsga.com/api/product/list?storeIds=1,2,3,4,5&page={page}&size=1000", headers=headers)
         products = []
         try:
             products = response.json()["result"]["content"]
@@ -604,7 +604,7 @@ def syncCustomers(token):
     while i <= totalPages:
         try:
             response = requests.get(
-                f"https://erp.101distributorsga.com/api/customer/list?storeIds=1,2&page={i}&size=500&showEmployeeSpecificData=false",
+                f"https://erp.101distributorsga.com/api/customer/list?storeIds=1,2,3,4,5&page={i}&size=500&showEmployeeSpecificData=false",
                 headers=headers,
             )
             customers.extend(response.json()["result"]["content"])
@@ -620,7 +620,7 @@ def syncCustomers(token):
     while i <= totalPages:
         try:
             response = requests.get(
-                f"https://erp.101distributorsga.com/api/customer/list?storeIds=1,2&page={i}&size=500&showEmployeeSpecificData=false&active=false",
+                f"https://erp.101distributorsga.com/api/customer/list?storeIds=1,2,3,4,5&page={i}&size=500&showEmployeeSpecificData=false&active=false",
                 headers=headers,
             )
             customers.extend(response.json()["result"]["content"])
@@ -792,7 +792,7 @@ def syncInvoices(token):
         print(f"[Invoices] Fetching page {page} (totalPages={totalPages})...")
         fetch_start = time.time()
         response = requests.get(
-            f"https://erp.101distributorsga.com/api/order/list?storeIds=1,2&page={page}&size=1000&showEmployeeSpecificData=false",
+            f"https://erp.101distributorsga.com/api/order/list?storeIds=1,2,3,4,5&page={page}&size=1000&showEmployeeSpecificData=false",
             headers=headers,
         )
         print(
@@ -982,7 +982,7 @@ def productSales(productId, token):
     }
     today = timezone.now().strftime("%Y-%m-%d+%H:%M:%S")
     response = requests.get(
-        f"https://erp.101distributorsga.com/api/report/sales/byProductSummary/product/{productId}?storeIds=1,2&status=Pending+Payment,Partially+Paid,Paid,Completed&shippingStatusIds=664,665&startDate=2015-01-01+04:00:00&endDate={today}&page=0&size=90000000",
+        f"https://erp.101distributorsga.com/api/report/sales/byProductSummary/product/{productId}?storeIds=1,2,3,4,5&status=Pending+Payment,Partially+Paid,Paid,Completed&shippingStatusIds=664,665&startDate=2015-01-01+04:00:00&endDate={today}&page=0&size=90000000",
         headers=headers,
     )
     data = response.json()
@@ -1015,7 +1015,7 @@ def purchaseHistory(productId, token):
     }
     today = timezone.now().strftime("%Y-%m-%d+%H:%M:%S")
     response = requests.get(
-        f"https://erp.101distributorsga.com/api/report/purchase/byProduct?productId={productId}&storeIds=1,2&startDate=2019-01-01+05:00:00&endDate={today}&page=0&size=9000000",
+        f"https://erp.101distributorsga.com/api/report/purchase/byProduct?productId={productId}&storeIds=1,2,3,4,5&startDate=2019-01-01+05:00:00&endDate={today}&page=0&size=9000000",
         headers=headers,
     )
     data = response.json()

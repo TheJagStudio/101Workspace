@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers, default_methods
 
 load_dotenv()
 
@@ -29,10 +30,12 @@ SECRET_KEY = "django-insecure-0mk0!p468jvsr@i=rt=d(_etd$ej2hzk--vo1&cxrgd4-ex1!f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*","217.196.49.245","workspace.101distributors.com","101distributors.com","10.1.11.205"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*","217.196.49.245","workspace.101distributors.com","101distributors.com","10.1.11.205","orders.101distributors.com"]
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = ["null","http://localhost:5173","http://localhost:8000","http://127.0.0.1:8000","http://10.1.11.205:8000", "http://127.0.0.1:5173","http://217.196.49.245:5173","http://217.196.49.245:9876","http://workspace.101distributors.com","https://workspace.101distributors.com","https://101distributors.com"]
+CORS_ALLOWED_ORIGINS = ["null","http://localhost:5173","http://localhost:8000","http://127.0.0.1:8000","http://10.1.11.205:8000", "http://127.0.0.1:5173","http://217.196.49.245:5173","http://217.196.49.245:9876","http://workspace.101distributors.com","https://workspace.101distributors.com","https://101distributors.com","https://orders.101distributors.com"]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + ["x-api-key", "x-erp-referer"]
+CORS_ALLOW_METHODS = list(default_methods)
 
 
 # Application definition
@@ -61,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "Workspace101.security_headers.SecurityHeadersMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -191,6 +195,20 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
 }
+
+# Security settings
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = False  # Set True in production if nginx handles SSL termination
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Security settings
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = False  # Set True in production if nginx handles SSL termination
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 TYPESENSE_API_KEY = os.getenv("typesense_api_key", "")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")

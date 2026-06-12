@@ -1,6 +1,6 @@
 import os
 import time
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import StreamingHttpResponse
 from django.shortcuts import render
 from django.views import View
 from django.urls import path
@@ -13,13 +13,17 @@ from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status as http_status
 from rest_framework.permissions import IsAuthenticated
 import zipfile
 from django.http import FileResponse
 
 
 # Create your views here.
-class InvoicesView(View):
+class InvoicesView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         website = request.GET.get("website", "101GA")
@@ -45,14 +49,14 @@ class InvoicesView(View):
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Windows"',
         }
-        url = f"{url}/api/order/list?storeIds=1,2&page=" + str(page) + "&size=" + str(size) + "&showEmployeeSpecificData=false"
+        url = f"{url}/api/order/list?storeIds=1,2,3,4,5&page=" + str(page) + "&size=" + str(size) + "&showEmployeeSpecificData=false"
         if startDate and endDate:
             url += f"&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59"
         response = requests.get(
             url,
             headers=headers,
         )
-        return JsonResponse(response.json(), safe=False)
+        return Response(response.json(), status=http_status.HTTP_200_OK)
 
 
 def download_pdf(url, save_path):
@@ -206,7 +210,7 @@ def _process_payment_entry(entry, token, urlMain, count, total):
             "sec-ch-ua-platform": '"Windows"',
         }
         response = requests.get(
-            f"{urlMain}/api/customer/paymentDetails?storeIds=1,2&parentPaymentId={parentPaymentId}&page=0&size=999",
+            f"{urlMain}/api/customer/paymentDetails?storeIds=1,2,3,4,5&parentPaymentId={parentPaymentId}&page=0&size=999",
             headers=headers,
             timeout=30,
         )
@@ -319,13 +323,13 @@ def stampMaker(data, token, urlMain):
                     continue
                 yield json.dumps({"error": f"An error occurred while processing payment for customer: {customerId} and Parent Payment ID: {parentPaymentId} after {max_retries} attempts. Error: {str(e)}"}, indent=4)
         count += 1
-            
+
     # zip all stamped files from ./media/pdf/ and save it to ./media/zip/stamped_invoices.zip
     # and remove all stamped files from ./media/pdf/
     # and send the zip file as response
     zip_filename = "stamped_invoices.zip"
     zip_filepath = f"./media/zip/{zip_filename}"
-    
+
 
     with zipfile.ZipFile(zip_filepath, "w") as zipf:
         for root, dirs, files in os.walk("./media/pdf/"):
@@ -338,7 +342,8 @@ def stampMaker(data, token, urlMain):
     yield json.dumps({"zipUrl": f"/media/zip/{zip_filename}"}, indent=4)
 
 
-class StampInvoiceView(View):
+class StampInvoiceView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         website = request.GET.get("website", "101GA")
@@ -369,24 +374,26 @@ class StampInvoiceView(View):
         }
 
         response = requests.get(
-            f"{url}/api/customer/paymentDetails?storeIds=1,2&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000",
+            f"{url}/api/customer/paymentDetails?storeIds=1,2,3,4,5&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000",
             headers=headers,
         )
         if response.json().get("hasError", False):
             print("Error fetching payment details:", response.json())
-            return JsonResponse({"error": "Failed to fetch payment details"}, status=500)
+            return Response({"error": "Failed to fetch payment details"}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
         data = response.json()["result"]["content"]
 
-        response = StreamingHttpResponse(stampMaker(data, token, url), content_type="text/event-stream")
-        response["Cache-Control"] = "no-cache"
-        return response
+        streaming_response = StreamingHttpResponse(stampMaker(data, token, url), content_type="text/event-stream")
+        streaming_response["Cache-Control"] = "no-cache"
+        return streaming_response
 
-class DownloadStampedInvoicesView(View):
+class DownloadStampedInvoicesView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         zip_filename = "stamped_invoices.zip"
         zip_filepath = f"./media/zip/{zip_filename}"
         if os.path.exists(zip_filepath):
-            response = FileResponse(open(zip_filepath, "rb"), as_attachment=True, filename=zip_filename, content_type="application/zip")
-            return response
+            file_response = FileResponse(open(zip_filepath, "rb"), as_attachment=True, filename=zip_filename, content_type="application/zip")
+            return file_response
         else:
-            return JsonResponse({"error": "No stamped invoices available for download."}, status=404)
+            return Response({"error": "No stamped invoices available for download."}, status=http_status.HTTP_404_NOT_FOUND)

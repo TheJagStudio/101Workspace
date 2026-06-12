@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
-import { X, Printer, Loader } from 'lucide-react';
+import { X, Printer, Loader2, Search, Tags, Package, Palette, Upload, Minus, Plus } from 'lucide-react';
 import './Sticker.css';
 import Barcode from '../../Components/Utility/Barcode';
 import { apiRequest } from '../../utils/api';
@@ -33,6 +33,19 @@ const FIELD_LABELS = {
     barcode: 'Barcode',
     upc: 'UPC number',
 };
+
+const INPUT_CLASS = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500/75 focus:border-sky-500 transition-all placeholder-gray-400';
+const INPUT_SM_CLASS = 'w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500/75 focus:border-sky-500 transition-all';
+const INPUT_MONO_CLASS = 'w-full border border-gray-200 rounded-lg p-2 text-xs font-mono text-gray-800 resize-y focus:outline-none focus:ring-2 focus:ring-sky-500/75 focus:border-sky-500 transition-all leading-relaxed';
+const BTN_PRIMARY = 'bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const BTN_SECONDARY = 'bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50';
+const SECTION_LABEL = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2';
+
+const PageLoader = ({ size = 40 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" width={size} height={size} className="animate-spin">
+        <circle strokeDasharray="197.92033717615698 67.97344572538566" r={42} strokeWidth={13} stroke="#615fff" fill="none" cy={50} cx={50} />
+    </svg>
+);
 
 const DEFAULT_STYLE = {
     brand: { size: 24, color: '#cc2222', bold: true, italic: false },
@@ -198,11 +211,9 @@ const waitForNextFrame = () => new Promise((resolve) => requestAnimationFrame(re
 
 // ── Toggle ──
 const Toggle = ({ checked, onChange }) => (
-    <label className="relative inline-flex cursor-pointer">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only sticker-toggle-cb" />
-        <div className="sticker-toggle-track">
-            <div className="sticker-toggle-thumb" />
-        </div>
+    <label className="inline-flex items-center cursor-pointer">
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
+        <div className="relative w-9 h-5 bg-gray-200 peer-checked:bg-sky-600 rounded-full transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full after:shadow-sm" />
     </label>
 );
 
@@ -650,18 +661,32 @@ const Sticker = () => {
         : styleSettings.badge;
     const badgeColor = styleSettings.badge === '__custom__'
         ? styleSettings.customBadgeColor
-        : BADGE_COLORS[styleSettings.badge] || '#3b82f6';
+        : BADGE_COLORS[styleSettings.badge] || '#4f46e5';
+
+    const tabClass = (id) =>
+        `flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1 ${
+            activeTab === id
+                ? 'border-sky-600 text-sky-600 bg-sky-50/60'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+        }`;
+
+    const modeBtnClass = (mode) =>
+        `flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+            searchMode === mode
+                ? 'border-sky-500 bg-sky-50 text-sky-700'
+                : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+        }`;
 
     return (
-        <div className="sticker-app">
+        <div className="w-full flex flex-col xl:flex-row gap-6 min-h-[calc(100vh-5.5rem)]">
             {/* Price modal */}
             {priceModalIdx != null && (
-                <div className="sticker-modal-bg" onClick={() => setPriceModalIdx(null)}>
-                    <div className="sticker-modal w-80" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPriceModalIdx(null)}>
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
                         <div className="font-bold text-gray-800 mb-1">
                             {excelData[priceModalIdx]?.brand || excelData[priceModalIdx]?.productName}
                         </div>
-                        <div className="text-xs text-gray-400 mb-4">Override price for this label only (ERP price unchanged)</div>
+                        <div className="text-xs text-gray-500 mb-4">Override price for this label only (catalog price unchanged)</div>
                         <div className="flex items-center gap-2 mb-4">
                             <span className="text-2xl font-bold text-gray-400">$</span>
                             <input
@@ -670,7 +695,7 @@ const Sticker = () => {
                                 min="0"
                                 value={priceInput}
                                 onChange={(e) => setPriceInput(e.target.value)}
-                                className="flex-1 border-2 border-blue-400 rounded-xl px-3 py-2 text-2xl font-bold text-center focus:outline-none focus:border-blue-500"
+                                className="flex-1 border-2 border-sky-400 rounded-lg px-3 py-2 text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-sky-500/75"
                             />
                         </div>
                         <div className="flex gap-2">
@@ -680,7 +705,7 @@ const Sticker = () => {
                                     if (!isNaN(val) && val >= 0) setPriceOverride(priceModalIdx, val);
                                     setPriceModalIdx(null);
                                 }}
-                                className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold"
+                                className={`flex-1 py-2.5 ${BTN_PRIMARY}`}
                             >
                                 Apply
                             </button>
@@ -689,11 +714,11 @@ const Sticker = () => {
                                     setPriceOverride(priceModalIdx, null);
                                     setPriceModalIdx(null);
                                 }}
-                                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-semibold"
+                                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-md font-semibold transition-colors"
                             >
-                                Reset to ERP
+                                Reset
                             </button>
-                            <button onClick={() => setPriceModalIdx(null)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-500">✕</button>
+                            <button onClick={() => setPriceModalIdx(null)} className="px-4 py-2.5 border border-gray-200 rounded-md text-gray-500 hover:bg-gray-50">✕</button>
                         </div>
                     </div>
                 </div>
@@ -701,11 +726,13 @@ const Sticker = () => {
 
             {/* Edit modal */}
             {editModalIdx != null && (
-                <div className="sticker-modal-bg" onClick={() => setEditModalIdx(null)}>
-                    <div className="sticker-modal w-96" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setEditModalIdx(null)}>
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
-                            <div className="font-bold text-gray-800">✏️ Edit Label Text</div>
-                            <button onClick={() => setEditModalIdx(null)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+                            <div className="font-bold text-gray-800">Edit Label Text</div>
+                            <button onClick={() => setEditModalIdx(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100">
+                                <X className="h-5 w-5" />
+                            </button>
                         </div>
                         <div className="space-y-3">
                             {[
@@ -719,7 +746,7 @@ const Sticker = () => {
                                         type="text"
                                         value={editForm[key]}
                                         onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
-                                        className={`mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 ${className}`}
+                                        className={`mt-1 ${INPUT_CLASS} ${className}`}
                                     />
                                 </div>
                             ))}
@@ -733,7 +760,7 @@ const Sticker = () => {
                                         min="0"
                                         value={editForm.price}
                                         onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
-                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                                        className={INPUT_CLASS}
                                     />
                                 </div>
                             </div>
@@ -743,13 +770,13 @@ const Sticker = () => {
                                     type="text"
                                     value={editForm.upc}
                                     onChange={(e) => setEditForm((f) => ({ ...f, upc: e.target.value }))}
-                                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-400"
+                                    className={`mt-1 ${INPUT_CLASS} font-mono`}
                                 />
                             </div>
                         </div>
                         <div className="flex gap-2 mt-5">
-                            <button onClick={applyEditModal} className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold">Apply Changes</button>
-                            <button onClick={() => openEditModal(editModalIdx)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-500">Reset</button>
+                            <button onClick={applyEditModal} className={`flex-1 py-2.5 ${BTN_PRIMARY}`}>Apply Changes</button>
+                            <button onClick={() => openEditModal(editModalIdx)} className="px-4 py-2.5 border border-gray-200 rounded-md text-sm text-gray-500 hover:bg-gray-50">Reset</button>
                         </div>
                     </div>
                 </div>
@@ -757,50 +784,44 @@ const Sticker = () => {
 
             {/* Save set modal */}
             {saveSetModal && (
-                <div className="sticker-modal-bg" onClick={() => setSaveSetModal(false)}>
-                    <div className="sticker-modal w-80" onClick={(e) => e.stopPropagation()}>
-                        <div className="font-bold text-gray-800 mb-4">💾 Save Label Set</div>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSaveSetModal(false)}>
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="font-bold text-gray-800 mb-4">Save Label Set</div>
                         <input
                             type="text"
                             value={setNameInput}
                             onChange={(e) => setSetNameInput(e.target.value)}
                             placeholder="e.g. Aisle 5 or New Arrivals"
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 mb-4"
+                            className={`${INPUT_CLASS} mb-4`}
                         />
                         <div className="flex gap-2">
-                            <button onClick={confirmSaveSet} className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold">Save</button>
-                            <button onClick={() => setSaveSetModal(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-semibold">Cancel</button>
+                            <button onClick={confirmSaveSet} className={`flex-1 py-2.5 ${BTN_PRIMARY}`}>Save</button>
+                            <button onClick={() => setSaveSetModal(false)} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-md font-semibold">Cancel</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Sidebar */}
-            <div className="sticker-sidebar">
-                <div className="sticker-sidebar-header">
-                    <div className="sticker-sidebar-logo">101</div>
-                    <div>
-                        <div className="sticker-sidebar-title">Label Designer Pro</div>
-                        <div className="sticker-sidebar-subtitle">OL500WX · 4×3&quot; · Letter · 6/sheet</div>
+            {/* Controls panel */}
+            <div className="w-full xl:w-[320px] shrink-0 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden max-h-[calc(100vh-5.5rem)]">
+                <header className="px-5 pt-5 pb-4 border-b border-gray-200">
+                    <h1 className="text-xl font-bold text-gray-800">Label Designer</h1>
+                    <p className="text-gray-500 text-sm mt-1">OL500WX · 4×3&quot; labels · 6 per sheet</p>
+                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: statusDotColor }} />
+                        <span>{apiStatus.text}</span>
                     </div>
-                    <div className="ml-auto flex items-center gap-1.5" title="Connection status">
-                        <span className="sticker-status-dot" style={{ backgroundColor: statusDotColor }} />
-                        <span className="text-blue-100 text-xs">{apiStatus.text}</span>
-                    </div>
-                </div>
+                </header>
 
-                <div className="sticker-tabs">
+                <div className="flex border-b border-gray-200 bg-gray-50/80">
                     {[
-                        { id: 'api', label: '🔍 Search' },
-                        { id: 'labels', label: '🏷 Labels' },
-                        { id: 'sets', label: '📦 Sets' },
-                        { id: 'style', label: '🎨 Style' },
+                        { id: 'api', label: 'Search', icon: Search },
+                        { id: 'labels', label: 'Labels', icon: Tags },
+                        { id: 'sets', label: 'Sets', icon: Package },
+                        { id: 'style', label: 'Style', icon: Palette },
                     ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            className={`sticker-tab ${activeTab === tab.id ? 'active' : ''}`}
-                            onClick={() => setActiveTab(tab.id)}
-                        >
+                        <button key={tab.id} className={tabClass(tab.id)} onClick={() => setActiveTab(tab.id)}>
+                            <tab.icon className="h-3.5 w-3.5 shrink-0" />
                             {tab.label}
                         </button>
                     ))}
@@ -808,24 +829,18 @@ const Sticker = () => {
 
                 {/* Search tab */}
                 {activeTab === 'api' && (
-                    <div className="sticker-pane space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700 leading-relaxed">
-                            Product data is loaded from the <strong>101 Workspace database</strong> (synced product catalog). Search by UPC or product name.
+                    <div className="px-4 py-4 space-y-4 overflow-y-auto flex-1">
+                        <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-xs text-sky-800 leading-relaxed">
+                            Products are loaded from the <strong>Workspace catalog</strong>. Search by UPC or product name.
                         </div>
 
                         <div>
-                            <div className="sticker-section-label">Search Products</div>
+                            <div className={SECTION_LABEL}>Search Products</div>
                             <div className="flex gap-1.5 mb-2">
-                                <button
-                                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all sticker-mode-btn ${searchMode === 'upc' ? 'active' : 'border-gray-300 text-gray-500'}`}
-                                    onClick={() => setSearchMode('upc')}
-                                >
+                                <button className={modeBtnClass('upc')} onClick={() => setSearchMode('upc')}>
                                     By UPC
                                 </button>
-                                <button
-                                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all sticker-mode-btn ${searchMode === 'name' ? 'active' : 'border-gray-300 text-gray-500'}`}
-                                    onClick={() => setSearchMode('name')}
-                                >
+                                <button className={modeBtnClass('name')} onClick={() => setSearchMode('name')}>
                                     By Name
                                 </button>
                             </div>
@@ -838,9 +853,9 @@ const Sticker = () => {
                                             onChange={(e) => setSingleUpc(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && searchSingleUPC()}
                                             placeholder="Enter UPC..."
-                                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-blue-400"
+                                            className={INPUT_MONO_CLASS}
                                         />
-                                        <button onClick={searchSingleUPC} disabled={loading} className="px-3 py-2 bg-gray-800 hover:bg-blue-500 text-white rounded-lg text-xs font-bold">
+                                        <button onClick={searchSingleUPC} disabled={loading} className={`px-3 py-2 text-xs ${BTN_SECONDARY}`}>
                                             Go
                                         </button>
                                     </div>
@@ -849,14 +864,15 @@ const Sticker = () => {
                                         onChange={(e) => setBulkUpcs(e.target.value)}
                                         rows={5}
                                         placeholder="Paste multiple UPCs (one per line)..."
-                                        className="w-full border border-gray-300 rounded-lg p-2 text-xs font-mono resize-y focus:outline-none focus:border-blue-400 leading-relaxed"
+                                        className={INPUT_MONO_CLASS}
                                     />
                                     <button
                                         onClick={bulkAPISearch}
                                         disabled={loading}
-                                        className="mt-2 w-full py-2 bg-gray-800 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                                        className={`mt-2 w-full py-2.5 text-sm flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
                                     >
-                                        {loading ? <Loader className="animate-spin h-4 w-4" /> : '🔍'} Search All &amp; Generate Labels
+                                        {loading ? <Loader2 className="animate-spin h-4 w-4" /> : <Search className="h-4 w-4" />}
+                                        Search All &amp; Generate Labels
                                     </button>
                                 </>
                             ) : (
@@ -867,19 +883,15 @@ const Sticker = () => {
                                             onChange={(e) => setNameQuery(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && searchByName()}
                                             placeholder="e.g. Red Bull, Qweys..."
-                                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-400"
+                                            className={INPUT_SM_CLASS}
                                         />
-                                        <button
-                                            onClick={() => searchByName()}
-                                            disabled={loading}
-                                            className="px-3 py-2 bg-gray-800 hover:bg-blue-500 text-white rounded-lg text-xs font-bold"
-                                        >
+                                        <button onClick={() => searchByName()} disabled={loading} className={`px-3 py-2 text-xs ${BTN_SECONDARY}`}>
                                             Go
                                         </button>
                                     </div>
                                     <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
                                         {nameResults.map((prod) => (
-                                            <div key={prod.upc || prod.id} className="sticker-product-row">
+                                            <div key={prod.upc || prod.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-100 bg-white hover:border-sky-200 hover:bg-sky-50/50 transition-colors mb-1">
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-xs font-semibold text-gray-800 truncate">{prod.brand || prod.productName}</div>
                                                     <div className="text-xs text-gray-400 truncate">{prod.flavor || prod.name}</div>
@@ -887,7 +899,7 @@ const Sticker = () => {
                                                 <div className="text-xs font-bold text-green-600">${parseFloat(prod.standardPrice || 0).toFixed(2)}</div>
                                                 <button
                                                     onClick={() => addProducts([prod])}
-                                                    className="text-xs bg-blue-500 text-white px-2 py-1 rounded-md font-bold"
+                                                    className="text-xs bg-sky-600 hover:bg-sky-700 text-white px-2 py-1 rounded-md font-semibold transition-colors"
                                                 >
                                                     Add
                                                 </button>
@@ -910,16 +922,16 @@ const Sticker = () => {
                                     <span>{progress.label}</span>
                                     <span>{progress.pct}%</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${progress.pct}%` }} />
+                                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                    <div className="bg-sky-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress.pct}%` }} />
                                 </div>
                             </div>
                         )}
 
-                        <div className="pt-2 border-t border-gray-100">
-                            <div className="sticker-section-label">Or Upload Excel / CSV</div>
+                        <div className="pt-2 border-t border-gray-200">
+                            <div className={SECTION_LABEL}>Or Upload Excel / CSV</div>
                             <div
-                                className="sticker-dropzone"
+                                className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition-colors"
                                 onClick={() => fileInputRef.current?.click()}
                                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}
                                 onDragLeave={(e) => e.currentTarget.classList.remove('drag-over')}
@@ -930,10 +942,10 @@ const Sticker = () => {
                                 }}
                             >
                                 <input ref={fileInputRef} type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={(e) => handleFileSelect(e.target.files[0])} />
-                                <div className="text-xl text-gray-300 mb-1">📂</div>
-                                <div className="text-xs text-gray-400">
-                                    <span className="font-semibold text-gray-600">Click or drag</span> file<br />
-                                    <span className="text-gray-300">{fileName}</span>
+                                <Upload className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                                <div className="text-xs text-gray-500">
+                                    <span className="font-semibold text-gray-700">Click or drag</span> file<br />
+                                    <span className="text-gray-400">{fileName}</span>
                                 </div>
                             </div>
                         </div>
@@ -942,41 +954,45 @@ const Sticker = () => {
 
                 {/* Labels tab */}
                 {activeTab === 'labels' && (
-                    <div className="sticker-pane-labels flex-1 overflow-y-auto">
+                    <div className="px-3 py-4 overflow-y-auto flex-1">
                         <div className="flex items-center justify-between mb-3">
-                            <div className="sticker-section-label mb-0">Label Queue</div>
-                            <button onClick={clearAll} className="text-xs text-red-400 hover:text-red-600 font-semibold">Clear all</button>
+                            <div className={`${SECTION_LABEL} mb-0`}>Label Queue</div>
+                            <button onClick={clearAll} className="text-xs text-red-500 hover:text-red-700 font-semibold">Clear all</button>
                         </div>
                         {excelData.length === 0 ? (
-                            <div className="text-xs text-gray-300 text-center py-8">No labels yet — search products first</div>
+                            <div className="text-xs text-gray-400 text-center py-8">No labels yet — search products first</div>
                         ) : (
                             excelData.map((prod, idx) => {
                                 const { title, flavor } = parseProductNameParts(prod.productName);
                                 const displayPrice = prod.priceOverride != null ? prod.priceOverride : prod.standardPrice;
                                 const hasOverride = prod.priceOverride != null;
                                 return (
-                                    <div key={prod.upc || idx} className="sticker-product-row">
+                                    <div key={prod.upc || idx} className="flex items-center gap-2 p-2 rounded-lg border border-gray-100 bg-white hover:border-sky-200 hover:bg-sky-50/40 transition-colors mb-1">
                                         <div className="flex-1 min-w-0">
                                             <div className="text-xs font-bold text-red-600 truncate">{userEdits[idx]?.title || title}</div>
                                             <div className="text-xs text-gray-500 truncate">{userEdits[idx]?.flavor || flavor}</div>
                                             <button
                                                 onClick={() => openPriceModal(idx)}
-                                                className={`text-xs font-bold mt-0.5 hover:text-blue-500 ${hasOverride ? 'text-amber-600' : 'text-gray-700'}`}
+                                                className={`text-xs font-bold mt-0.5 hover:text-sky-600 ${hasOverride ? 'text-amber-600' : 'text-gray-700'}`}
                                             >
                                                 ${parseFloat(displayPrice || 0).toFixed(2)}{hasOverride ? ' ✏️' : ''}
                                             </button>
                                         </div>
                                         <div className="flex items-center gap-1.5">
-                                            <button className="sticker-qty-btn" onClick={() => changeQty(idx, -1)}>−</button>
+                                            <button type="button" className="w-7 h-7 rounded-md border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600" onClick={() => changeQty(idx, -1)}>
+                                                <Minus className="h-3.5 w-3.5" />
+                                            </button>
                                             <input
                                                 type="number"
                                                 min={1}
                                                 max={99}
                                                 value={prod.qty || 1}
                                                 onChange={(e) => setQty(idx, e.target.value)}
-                                                className="text-xs font-bold w-10 text-center border border-gray-200 rounded-md py-0.5"
+                                                className="text-xs font-bold w-10 text-center border border-gray-200 rounded-md py-0.5 focus:outline-none focus:ring-1 focus:ring-sky-500"
                                             />
-                                            <button className="sticker-qty-btn" onClick={() => changeQty(idx, 1)}>+</button>
+                                            <button type="button" className="w-7 h-7 rounded-md border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600" onClick={() => changeQty(idx, 1)}>
+                                                <Plus className="h-3.5 w-3.5" />
+                                            </button>
                                             <button onClick={() => removeProduct(idx)} className="text-gray-300 hover:text-red-400 text-sm">✕</button>
                                         </div>
                                     </div>
@@ -988,25 +1004,25 @@ const Sticker = () => {
 
                 {/* Sets tab */}
                 {activeTab === 'sets' && (
-                    <div className="sticker-pane space-y-3">
-                        <div className="sticker-section-label">Saved Label Sets</div>
+                    <div className="px-4 py-4 space-y-3 overflow-y-auto flex-1">
+                        <div className={SECTION_LABEL}>Saved Label Sets</div>
                         <p className="text-xs text-gray-500 leading-relaxed">Save your current labels as a named set to reprint later.</p>
                         <button
                             onClick={() => { if (excelData.length) setSaveSetModal(true); else setInfoMessage('Add labels first.'); }}
-                            className="w-full py-2 bg-gray-800 hover:bg-blue-500 text-white rounded-lg text-xs font-bold"
+                            className={`w-full py-2.5 text-sm ${BTN_PRIMARY}`}
                         >
-                            💾 Save Current Labels as Set
+                            Save Current Labels as Set
                         </button>
                         {savedSets.length === 0 ? (
-                            <div className="text-xs text-gray-300 text-center py-8">No saved sets yet</div>
+                            <div className="text-xs text-gray-400 text-center py-8">No saved sets yet</div>
                         ) : (
                             savedSets.map((set, i) => (
-                                <div key={i} className="sticker-set-item">
+                                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:border-sky-300 hover:bg-sky-50/50 transition-colors">
                                     <div className="flex-1 min-w-0">
                                         <div className="text-xs font-bold text-gray-800">{set.name}</div>
                                         <div className="text-xs text-gray-400">{set.count} labels · {set.date}</div>
                                     </div>
-                                    <button onClick={() => loadSet(i)} className="text-xs bg-blue-500 text-white px-2.5 py-1 rounded-lg font-bold">Load</button>
+                                    <button onClick={() => loadSet(i)} className="text-xs bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-md font-semibold transition-colors">Load</button>
                                     <button onClick={() => deleteSet(i)} className="text-xs text-red-300 hover:text-red-500 font-bold">✕</button>
                                 </div>
                             ))
@@ -1016,20 +1032,20 @@ const Sticker = () => {
 
                 {/* Style tab */}
                 {activeTab === 'style' && (
-                    <div className="sticker-pane space-y-4">
+                    <div className="px-4 py-4 space-y-4 overflow-y-auto flex-1">
                         {/* Logo */}
                         <div>
-                            <div className="sticker-section-label">Store Logo</div>
+                            <div className={SECTION_LABEL}>Store Logo</div>
                             <div className="flex gap-2 items-center">
                                 <div className="w-14 h-10 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden text-gray-300 text-xs">
                                     {styleSettings.logoUrl ? <img src={styleSettings.logoUrl} alt="Logo" className="w-full h-full object-contain" /> : 'None'}
                                 </div>
                                 <div className="flex-1">
                                     <input ref={logoInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e.target.files[0])} />
-                                    <button onClick={() => logoInputRef.current?.click()} className="w-full py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                                    <button onClick={() => logoInputRef.current?.click()} className="w-full py-1.5 border border-gray-200 rounded-md text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                                         Upload Logo
                                     </button>
-                                    <button onClick={() => updateStyle({ logoUrl: null })} className="mt-1 w-full py-1.5 border border-red-200 text-red-400 rounded-lg text-xs font-semibold hover:bg-red-50">
+                                    <button onClick={() => updateStyle({ logoUrl: null })} className="mt-1 w-full py-1.5 border border-red-200 text-red-500 rounded-md text-xs font-semibold hover:bg-red-50 transition-colors">
                                         Remove
                                     </button>
                                 </div>
@@ -1055,12 +1071,16 @@ const Sticker = () => {
 
                         {/* Badge */}
                         <div>
-                            <div className="sticker-section-label">Badge Overlay</div>
+                            <div className={SECTION_LABEL}>Badge Overlay</div>
                             <div className="flex gap-2 flex-wrap mb-2">
                                 {['', 'NEW', 'SALE', 'HOT', 'CLEARANCE'].map((b) => (
                                     <button
                                         key={b || 'none'}
-                                        className={`sticker-badge-btn ${styleSettings.badge === b ? 'active' : ''}`}
+                                        className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                                            styleSettings.badge === b
+                                                ? 'border-sky-600 bg-sky-600 text-white'
+                                                : 'border-gray-200 text-gray-600 hover:border-sky-300 hover:bg-sky-50'
+                                        }`}
                                         onClick={() => updateStyle({ badge: b, customBadgeText: b ? '' : styleSettings.customBadgeText })}
                                     >
                                         {b === '' ? 'None' : b === 'NEW' ? '🆕 NEW' : b === 'SALE' ? '🔥 SALE' : b === 'HOT' ? '⚡ HOT' : '💰 CLEARANCE'}
@@ -1101,12 +1121,14 @@ const Sticker = () => {
 
                         {/* Field editor */}
                         <div>
-                            <div className="sticker-section-label">Text Fields</div>
+                            <div className={SECTION_LABEL}>Text Fields</div>
                             <div className="space-y-2">
                                 {Object.entries(FIELD_META).map(([key, meta]) => (
                                     <div
                                         key={key}
-                                        className={`sticker-field-btn ${selectedField === key ? 'sticker-fbtn-active' : ''}`}
+                                        className={`flex items-center justify-between p-2.5 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                                            selectedField === key ? 'border-sky-500 bg-sky-50' : 'border-gray-200'
+                                        }`}
                                         onClick={() => setSelectedField(key)}
                                     >
                                         <div className="flex items-center gap-2">
@@ -1153,7 +1175,7 @@ const Sticker = () => {
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500 w-12">Style</span>
                                             <button
-                                                className={`px-3 py-1 border rounded-lg text-xs font-extrabold ${styleSettings[selectedField].bold ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-300 text-gray-600'}`}
+                                                className={`px-3 py-1 border rounded-md text-xs font-extrabold transition-colors ${styleSettings[selectedField].bold ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                                                 onClick={() => updateStyle({
                                                     [selectedField]: { ...styleSettings[selectedField], bold: !styleSettings[selectedField].bold },
                                                 })}
@@ -1161,7 +1183,7 @@ const Sticker = () => {
                                                 B
                                             </button>
                                             <button
-                                                className={`px-3 py-1 border rounded-lg text-xs italic ${styleSettings[selectedField].italic ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-300 text-gray-600'}`}
+                                                className={`px-3 py-1 border rounded-md text-xs italic transition-colors ${styleSettings[selectedField].italic ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                                                 onClick={() => updateStyle({
                                                     [selectedField]: { ...styleSettings[selectedField], italic: !styleSettings[selectedField].italic },
                                                 })}
@@ -1176,7 +1198,7 @@ const Sticker = () => {
 
                         {/* Barcode */}
                         <div>
-                            <div className="sticker-section-label">Barcode</div>
+                            <div className={SECTION_LABEL}>Barcode</div>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-gray-500 w-12">Height</span>
@@ -1193,7 +1215,7 @@ const Sticker = () => {
 
                         {/* Spacing */}
                         <div>
-                            <div className="sticker-section-label">Spacing</div>
+                            <div className={SECTION_LABEL}>Spacing</div>
                             <div className="space-y-2">
                                 {[
                                     { key: 'padTop', label: 'Top pad' },
@@ -1211,7 +1233,7 @@ const Sticker = () => {
 
                         {/* Show/hide + single line */}
                         <div>
-                            <div className="sticker-section-label">Show / Hide</div>
+                            <div className={SECTION_LABEL}>Show / Hide</div>
                             <div className="space-y-2">
                                 {FIELD_KEYS.map((k) => (
                                     <div key={k} className="flex items-center justify-between">
@@ -1238,67 +1260,76 @@ const Sticker = () => {
                 )}
 
                 {/* Bottom bar */}
-                <div className="sticker-bottom-bar">
-                    <div className="text-xs text-gray-400 flex justify-between items-center mb-2">
+                <div className="border-t border-gray-200 px-4 py-4 bg-gray-50/80 shrink-0">
+                    <div className="text-xs text-gray-500 flex justify-between items-center mb-3">
                         <span>{excelData.length} products</span>
-                        <span className="text-blue-500 font-semibold">
+                        <span className="text-sky-600 font-semibold">
                             {totalLabels} labels · {Math.ceil(totalLabels / STICKERS_PER_PAGE) || 0} pages
                         </span>
                     </div>
                     <button
                         onClick={generatePDF}
                         disabled={excelData.length === 0 || loading}
-                        className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                        className={`w-full py-2.5 text-sm flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
                     >
-                        {loading ? <Loader className="animate-spin h-4 w-4" /> : <Printer className="h-4 w-4" />}
+                        {loading ? <Loader2 className="animate-spin h-4 w-4" /> : <Printer className="h-4 w-4" />}
                         Export PDF (OL500WX)
                     </button>
                 </div>
             </div>
 
-            {/* Right panel */}
-            <div className="sticker-right-panel">
-                <div className="sticker-preview-header">
-                    <div className="text-sm font-semibold text-gray-700">
-                        Preview{totalLabels > 0 ? ` — ${totalLabels} labels on ${pages.length} pages` : ''}
+            {/* Preview panel */}
+            <div className="flex-1 flex flex-col min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden max-h-[calc(100vh-5.5rem)] relative">
+                <div className="px-5 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800">Preview</h2>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                            {totalLabels > 0
+                                ? `${totalLabels} labels on ${pages.length} page${pages.length !== 1 ? 's' : ''}`
+                                : 'Search products to generate label sheets'}
+                        </p>
                     </div>
-                    <div className="sticker-zoom-controls">
-                        <span className="text-xs text-gray-400">Zoom</span>
-                        <button className="sticker-zoom-btn" onClick={() => setPreviewZoom((z) => Math.max(0.2, z - 0.1))}>−</button>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Zoom</span>
+                        <button type="button" className="w-7 h-7 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold" onClick={() => setPreviewZoom((z) => Math.max(0.2, z - 0.1))}>
+                            <Minus className="h-3.5 w-3.5" />
+                        </button>
                         <input
                             type="range"
-                            className="sticker-zoom-slider"
+                            className="w-24 accent-sky-600"
                             min={20}
                             max={130}
                             step={5}
                             value={Math.round(previewZoom * 100)}
                             onChange={(e) => setPreviewZoom(+e.target.value / 100)}
                         />
-                        <button className="sticker-zoom-btn" onClick={() => setPreviewZoom((z) => Math.min(1.3, z + 0.1))}>+</button>
-                        <span className="text-xs font-bold text-gray-600 w-9 text-center">{Math.round(previewZoom * 100)}%</span>
-                        <button className="text-xs text-blue-500 hover:underline" onClick={() => setPreviewZoom(0.5)}>Reset</button>
+                        <button type="button" className="w-7 h-7 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold" onClick={() => setPreviewZoom((z) => Math.min(1.3, z + 0.1))}>
+                            <Plus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs font-semibold text-gray-600 w-9 text-center">{Math.round(previewZoom * 100)}%</span>
+                        <button type="button" className="text-xs text-sky-600 hover:text-sky-800 font-medium" onClick={() => setPreviewZoom(0.5)}>Reset</button>
                     </div>
                 </div>
 
-                {(loading || loadingMessage) && (
-                    <div className="text-center py-4 flex items-center justify-center gap-2">
-                        <Loader className="animate-spin h-5 w-5 text-blue-600" />
-                        <span className="text-gray-600 text-sm">{loadingMessage || 'Processing...'}</span>
-                    </div>
-                )}
-
-                <div ref={stickerPreviewAreaRef} className="previewArea">
+                <div className="relative flex-1 min-h-0 flex flex-col">
+                    {(loading || loadingMessage) && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center gap-3">
+                            <PageLoader size={48} />
+                            <span className="text-gray-600 text-sm font-medium">{loadingMessage || 'Processing...'}</span>
+                        </div>
+                    )}
+                    <div ref={stickerPreviewAreaRef} className="previewArea flex-1 min-h-0">
                     <div key={previewRefreshKey}>
                         {pages.length === 0 ? (
-                            <div className="sticker-empty-preview">
-                                <div className="sticker-empty-preview-icon">🏷️</div>
-                                <div className="font-semibold text-gray-400 mb-2">No labels yet</div>
-                                <div className="text-xs text-gray-300">Search products → generate labels</div>
+                            <div className="text-center py-16 px-6">
+                                <Tags className="h-14 w-14 text-gray-300 mx-auto mb-4" />
+                                <div className="font-semibold text-gray-500 mb-1">No labels yet</div>
+                                <div className="text-sm text-gray-400">Search products or upload a file to get started</div>
                             </div>
                         ) : (
                             pages.map((pageData, pageIndex) => (
                                 <div key={pageIndex}>
-                                    <div className="sticker-page-label">Page {pageIndex + 1} of {pages.length}</div>
+                                    <div className="text-xs text-gray-500 self-start mb-1">Page {pageIndex + 1} of {pages.length}</div>
                                     <StickerPage previewAreaRef={stickerPreviewAreaRef} userZoom={previewZoom}>
                                         {pageData.map(({ item, originalIndex }, itemIndex) => (
                                             <StickerItem
@@ -1318,6 +1349,7 @@ const Sticker = () => {
                                 </div>
                             ))
                         )}
+                    </div>
                     </div>
                 </div>
 

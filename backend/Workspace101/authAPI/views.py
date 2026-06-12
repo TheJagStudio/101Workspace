@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from tracker.models import Salesman, LocationPoint, DailyActivity, AdminSettings, PlannedRoute, RouteStop, SystemNotification
 from api.models import ModulePermissions
+from .serializers import ModulePermissionsSerializer, UserInfoSerializer
 
 # Store tokens temporarily (in production, use database)
 password_reset_tokens = {}
@@ -236,29 +237,7 @@ class UserInfoView(APIView):
 def get_user_info(user):
     permissions = ModulePermissions.objects.filter(user=user).first()
     if permissions:
-        userPermissions = {
-            "purchase": permissions.purchase,
-            "tracker": permissions.tracker,
-            "delivery": permissions.delivery,
-            "catalog": permissions.catalog,
-            "accounts": permissions.accounts,
-            "utility": permissions.utility,
-            "supplychain": permissions.supplychain,
-            "purchase_PO": permissions.purchase_PO,
-            "purchase_Inventory": permissions.purchase_Inventory,
-            "purchase_Settings": permissions.purchase_Settings,
-            "tracker_Map": permissions.tracker_Map,
-            "tracker_History": permissions.tracker_History,
-            "tracker_Salesmen_List": permissions.tracker_Salesmen_List,
-            "tracker_Global_View": permissions.tracker_Global_View,
-            "tracker_config": permissions.tracker_config,
-            "tracker_Admin_Profile": permissions.tracker_Admin_Profile,
-            "tracker_Profile": permissions.tracker_Profile,
-            "utility_sticker": permissions.utility_sticker,
-            "utility_product_sync": permissions.utility_product_sync,
-            "accounts_invoice": permissions.accounts_invoice,
-            "delivery_admin": permissions.delivery_admin,
-        }
+        userPermissions = ModulePermissionsSerializer(permissions).data
     else:
         userPermissions = {
             "purchase": False,
@@ -271,6 +250,24 @@ def get_user_info(user):
             "purchase_PO": False,
             "purchase_Inventory": False,
             "purchase_Settings": False,
+            "tracker_Map": False,
+            "tracker_History": False,
+            "tracker_Salesmen_List": False,
+            "tracker_Global_View": False,
+            "tracker_config": False,
+            "tracker_Admin_Profile": False,
+            "tracker_Profile": False,
+            "utility_sticker": False,
+            "utility_product_sync": False,
+            "accounts_invoice": False,
+            "delivery_admin": False,
         }
-    user_info = {"username": user.username, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "is_active": user.is_active, "permissions": userPermissions}
+    user_info = UserInfoSerializer({
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "is_active": user.is_active,
+        "permissions": userPermissions,
+    }).data
     return user_info

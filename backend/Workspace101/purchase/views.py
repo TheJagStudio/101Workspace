@@ -1,6 +1,6 @@
 import os
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
+from django.http import StreamingHttpResponse
 import typesense
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -151,7 +151,7 @@ class ProductListingView(APIView):
         elif order_by == "upc":
             products = products.order_by(order_by if direction == "asc" else f"-{order_by}")
         else:
-            return JsonResponse({"error": "Invalid order parameter"}, status=400)
+            return Response({"error": "Invalid order parameter"}, status=400)
 
         total_count = products.count()
         products = products[offset : offset + limit]
@@ -162,7 +162,7 @@ class ProductListingView(APIView):
             "limit": limit,
             "offset": offset,
         }
-        return JsonResponse(data, safe=False)
+        return Response(data)
 
 
 def _summary_measure_q(measure, prefix=""):
@@ -253,7 +253,7 @@ class InventorySummaryView(APIView):
 
         measure_q = _summary_measure_q(measure)
         if measure_q is None:
-            return JsonResponse({"error": "Invalid measure type"}, status=400)
+            return Response({"error": "Invalid measure type"}, status=400)
 
         products = Product.objects.filter(active=True)
         if search_term:
@@ -276,7 +276,7 @@ class InventorySummaryView(APIView):
 
         category_filter = _summary_category_product_filter(measure)
         if category_filter is None:
-            return JsonResponse({"error": "Invalid measure type"}, status=400)
+            return Response({"error": "Invalid measure type"}, status=400)
 
         sort_field_map = {
             "closing_inventory": "agg_closing_inventory",
@@ -305,7 +305,7 @@ class InventorySummaryView(APIView):
             order_field = sort_field_map.get(sort_by, "agg_closing_inventory")
             categories = categories.order_by(order_field if not reverse_sort else f"-{order_field}")
         elif report_type not in ("product", "category"):
-            return JsonResponse({"error": "Invalid report type"}, status=400)
+            return Response({"error": "Invalid report type"}, status=400)
 
         if data_type == "total":
             total_closing = (
@@ -330,7 +330,7 @@ class InventorySummaryView(APIView):
                 )["total"]
                 or 0
             )
-            return JsonResponse(
+            return Response(
                 {
                     "totalClosingInventory": total_closing,
                     "totalGrossMargin": totals["total_gross_margin"],
@@ -363,7 +363,7 @@ class InventorySummaryView(APIView):
                     }
                 )
                 row_index += 1
-            return JsonResponse(
+            return Response(
                 {"data": final_data, "totalPages": typesense_pages if search_term else total_pages}
             )
 
@@ -385,7 +385,7 @@ class InventorySummaryView(APIView):
                 }
             )
             row_index += 1
-        return JsonResponse(
+        return Response(
             {"data": final_data, "totalPages": typesense_pages if search_term else total_pages}
         )
 
@@ -409,10 +409,10 @@ class InventoryReplenishmentView(APIView):
                 request.GET.get("end_date"),
             )
         except (ValueError, TypeError):
-            return JsonResponse({"error": "Invalid parameter type for page or page_size."}, status=400)
+            return Response({"error": "Invalid parameter type for page or page_size."}, status=400)
 
         if start_date > end_date:
-            return JsonResponse({"error": "start_date cannot be after end_date"}, status=400)
+            return Response({"error": "start_date cannot be after end_date"}, status=400)
 
         days_in_period = max(1, (end_date.date() - start_date.date()).days + 1)
         sales_filter = Q(
@@ -422,7 +422,7 @@ class InventoryReplenishmentView(APIView):
         po_inbound_filter = Q(purchase_history__purchaseOrderInsertedTimestamp__range=(start_date, end_date))
         measure_q = _summary_measure_q(measure)
         if measure_q is None:
-            return JsonResponse({"error": "Invalid measure type"}, status=400)
+            return Response({"error": "Invalid measure type"}, status=400)
 
         final_data = []
         paginator = None
@@ -472,7 +472,7 @@ class InventoryReplenishmentView(APIView):
             try:
                 page_objects = paginator.page(page)
             except EmptyPage:
-                return JsonResponse({"data": [], "totalPages": paginator.num_pages})
+                return Response({"data": [], "totalPages": paginator.num_pages})
 
             for product in page_objects.object_list:
                 items_sold = float(product.items_sold_val or 0)
@@ -552,7 +552,7 @@ class InventoryReplenishmentView(APIView):
             try:
                 page_objects = paginator.page(page)
             except EmptyPage:
-                return JsonResponse({"data": [], "totalPages": paginator.num_pages})
+                return Response({"data": [], "totalPages": paginator.num_pages})
 
             image_map = _category_image_map([c.categoryId for c in page_objects.object_list])
             for i, category in enumerate(page_objects.object_list):
@@ -575,9 +575,9 @@ class InventoryReplenishmentView(APIView):
                     }
                 )
         else:
-            return JsonResponse({"error": "Invalid report type. Must be 'product' or 'category'."}, status=400)
+            return Response({"error": "Invalid report type. Must be 'product' or 'category'."}, status=400)
 
-        return JsonResponse({"data": final_data, "totalPages": paginator.num_pages})
+        return Response({"data": final_data, "totalPages": paginator.num_pages})
 
 
 class DustyInventoryView(APIView):
@@ -819,13 +819,13 @@ class DustyInventoryView(APIView):
             page = int(request.GET.get("_page_num", 1))
             page_size = int(request.GET.get("_page_size", 20))
         except (TypeError, ValueError):
-            return JsonResponse({"error": "Invalid page parameters"}, status=400)
+            return Response({"error": "Invalid page parameters"}, status=400)
 
         start_str = request.GET.get("_start_date")
         end_str = request.GET.get("_end_date")
         start_date, end_date = self._period_bounds(start_str, end_str)
         if start_date is None:
-            return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
         if start_str and end_str:
             days_threshold = max(1, (end_date.date() - start_date.date()).days + 1)
@@ -844,7 +844,7 @@ class DustyInventoryView(APIView):
             if report_type == "product":
                 qs = self._dusty_product_queryset(cutoff_date, measure, start_date, end_date)
                 if qs is None:
-                    return JsonResponse({"error": "Invalid measure type"}, status=400)
+                    return Response({"error": "Invalid measure type"}, status=400)
                 agg = qs.aggregate(
                     total_closing=Sum("closing_inventory"),
                     total_cost=Sum("inventory_cost"),
@@ -854,7 +854,7 @@ class DustyInventoryView(APIView):
                 closing = float(agg["total_closing"] or 0)
                 sold = float(agg["total_sold"] or 0)
                 rate = (sold * 100.0 / (closing + sold)) if (closing + sold) > 0 else 0
-                return JsonResponse(
+                return Response(
                     {
                         "totalClosingInventory": closing,
                         "totalInventoryCost": float(agg["total_cost"] or 0),
@@ -864,21 +864,21 @@ class DustyInventoryView(APIView):
                         "analysisThresholdDays": days_threshold,
                     }
                 )
-            return JsonResponse({"error": "Totals are only supported for product report type"}, status=400)
+            return Response({"error": "Totals are only supported for product report type"}, status=400)
 
         if report_type == "product":
             qs = self._dusty_product_queryset(cutoff_date, measure, start_date, end_date)
             if qs is None:
-                return JsonResponse({"error": "Invalid measure type"}, status=400)
+                return Response({"error": "Invalid measure type"}, status=400)
             data, total_records = self._product_rows(qs, page, page_size, sort_by, reverse_sort)
         elif report_type == "category":
             data, total_records = self._category_rows(
                 load_subcategory, measure, cutoff_date, start_date, end_date, page, page_size, sort_by, reverse_sort
             )
         else:
-            return JsonResponse({"error": "Invalid report type"}, status=400)
+            return Response({"error": "Invalid report type"}, status=400)
 
-        return JsonResponse({"data": data, "totalPages": total_records})
+        return Response({"data": data, "totalPages": total_records})
 
 
 class ProductHistoryView(APIView):
@@ -887,7 +887,7 @@ class ProductHistoryView(APIView):
     def get(self, request, product_id):
         product = Product.objects.filter(productId=product_id).first()
         if not product:
-            return JsonResponse({"error": "Product not found", "status": "error"}, status=404)
+            return Response({"error": "Product not found", "status": "error"}, status=404)
 
         sales_history = list(
             ProductHistory.objects.filter(productId=product)
@@ -940,7 +940,7 @@ class ProductHistoryView(APIView):
                 for row in purchase_rows
             ],
         }
-        return JsonResponse({"data": payload, "status": "success"}, status=200)
+        return Response({"data": payload, "status": "success"}, status=200)
 
 
 class FetchCategoriesView(APIView):
@@ -975,7 +975,7 @@ class FetchCategoriesView(APIView):
             return tree
 
         category_data = build_category_tree(parent_id=None)  # Start with top-level categories
-        return JsonResponse({"data": category_data}, status=200)
+        return Response({"data": category_data}, status=200)
 
 
 class FetchVendorsByCategoryView(APIView):
@@ -993,7 +993,7 @@ class FetchVendorsByCategoryView(APIView):
             }
             for vendor in vendors
         ]
-        return JsonResponse({"data": vendor_data}, status=200)
+        return Response({"data": vendor_data}, status=200)
 
 
 class POMakerView(APIView):
@@ -1010,7 +1010,7 @@ class POMakerView(APIView):
         loadAll = request.GET.get("loadAll", "false").lower() == "true"
 
         if categoryId is None or categoryId == "":
-            return JsonResponse({"error": "Category ID is required."}, status=400)
+            return Response({"error": "Category ID is required."}, status=400)
         category = Category.objects.filter(categoryId=int(categoryId)).first()
         if vendorId is not None and vendorId != "":
             vendor = Vendor.objects.filter(id=vendorId).first()
@@ -1042,11 +1042,11 @@ class POMakerView(APIView):
             products = Product.objects.filter(categories__in=categoryChildList, active=True, availableQuantity__gte=F("minQuantity"), minQuantity=0).distinct()
 
         if not products.exists():
-            return JsonResponse({"error": "No products found for the given category."}, status=404)
+            return Response({"error": "No products found for the given category."}, status=404)
         if vendorId is not None and vendorId != "":
             products = products.filter(vendorId=vendorId)
         if not products.exists():
-            return JsonResponse({"error": "No products found for the given vendor."}, status=404)
+            return Response({"error": "No products found for the given vendor."}, status=404)
 
         # Handle pagination
         totalPages = (products.count() + page_size - 1) // page_size
@@ -1099,7 +1099,7 @@ class POMakerView(APIView):
             data.append(product_data)
             i += 1
 
-        return JsonResponse({"data": data, "totalPages": totalPages}, status=200)
+        return Response({"data": data, "totalPages": totalPages}, status=200)
 
     def post(self, request):
         """
@@ -1111,7 +1111,7 @@ class POMakerView(APIView):
             selected_products = data.get("selected_products", [])
 
             if not selected_products:
-                return JsonResponse({"error": "No products selected"}, status=400)
+                return Response({"error": "No products selected"}, status=400)
 
             # Group products by vendor
             vendor_products = defaultdict(list)
@@ -1165,13 +1165,13 @@ class POMakerView(APIView):
                     po.save()
                     created_pos += 1
 
-            return JsonResponse({"success": True, "message": f"Successfully created {created_pos} Purchase Orders"}, status=201)
+            return Response({"success": True, "message": f"Successfully created {created_pos} Purchase Orders"}, status=201)
 
         except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+            return Response({"error": "Invalid JSON data"}, status=400)
         except Exception as e:
             notifyMe(f"Error creating Purchase Orders: {str(e)}", "101-error")
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=500)
 
 
 class POView(APIView):
@@ -1219,7 +1219,7 @@ class POView(APIView):
         poData = []
         for po in poObjs:
             poData.append({"id": po.id, "vendorId": po.vendor.id, "vendor": po.vendor.name, "status": po.status, "totalAmount": po.totalAmount, "totalQuantity": po.totalQuantity, "insertedTimestamp": po.insertedTimestamp})
-        return JsonResponse({"purchase_orders": poData}, status=200)
+        return Response({"purchase_orders": poData}, status=200)
 
     def post(self, request):
         action = request.data.get("action", "export")
@@ -1257,11 +1257,11 @@ class POView(APIView):
                     )
                 except POLocal.DoesNotExist:
                     continue
-            return JsonResponse({"purchase_orders": data}, status=200)
+            return Response({"purchase_orders": data}, status=200)
         elif action == "push":
-            return JsonResponse({"message": "Pushing Purchase Orders..."})
+            return Response({"message": "Pushing Purchase Orders..."})
         else:
-            return JsonResponse({"error": "Invalid action"}, status=400)
+            return Response({"error": "Invalid action"}, status=400)
 
     def delete(self, request):
         """
@@ -1269,17 +1269,17 @@ class POView(APIView):
         """
         po_id = request.GET.get("po_id")
         if not po_id:
-            return JsonResponse({"error": "Purchase Order ID is required"}, status=400)
+            return Response({"error": "Purchase Order ID is required"}, status=400)
 
         try:
             po = POLocal.objects.get(id=po_id)
             po.delete()
-            return JsonResponse({"message": "Purchase Order deleted successfully"}, status=200)
+            return Response({"message": "Purchase Order deleted successfully"}, status=200)
         except POLocal.DoesNotExist:
-            return JsonResponse({"error": "Purchase Order not found"}, status=404)
+            return Response({"error": "Purchase Order not found"}, status=404)
         except Exception as e:
             notifyMe(f"Error deleting Purchase Order: {str(e)}", "101-error")
-            return JsonResponse({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=500)
 
 
 class POLineItemView(APIView):
@@ -1306,9 +1306,9 @@ class POLineItemView(APIView):
                         "totalPrice": float(item.totalPrice),
                     }
                 )
-            return JsonResponse({"line_items": data}, status=200)
+            return Response({"line_items": data}, status=200)
         except POLocal.DoesNotExist:
-            return JsonResponse({"error": "Purchase Order not found"}, status=404)
+            return Response({"error": "Purchase Order not found"}, status=404)
 
 
 class HotProductView(APIView):
@@ -1363,7 +1363,7 @@ class HotProductView(APIView):
             data.append(temp)
             i += 1
 
-        return JsonResponse({"totalPages": totalPages, "currentPage": page, "pageSize": page_size, "products": data}, status=200)
+        return Response({"totalPages": totalPages, "currentPage": page, "pageSize": page_size, "products": data}, status=200)
 
     def post(self, request):
         upcs = request.data.get("upcs", [])
@@ -1376,8 +1376,8 @@ class HotProductView(APIView):
         found_products.update(isHotProduct=True)
 
         if not_found_upcs:
-            return JsonResponse({"message": "Some UPCs not found.", "notFoundUPCs": not_found_upcs}, status=200)
-        return JsonResponse({"message": "Hot products updated successfully."}, status=200)
+            return Response({"message": "Some UPCs not found.", "notFoundUPCs": not_found_upcs}, status=200)
+        return Response({"message": "Hot products updated successfully."}, status=200)
 
     def delete(self, request):
         upcs = request.data.get("upcs", [])
@@ -1390,8 +1390,8 @@ class HotProductView(APIView):
         found_products.update(isHotProduct=False)
 
         if not_found_upcs:
-            return JsonResponse({"message": "Some UPCs not found.", "notFoundUPCs": not_found_upcs}, status=200)
-        return JsonResponse({"message": "Hot products removed successfully."}, status=200)
+            return Response({"message": "Some UPCs not found.", "notFoundUPCs": not_found_upcs}, status=200)
+        return Response({"message": "Hot products removed successfully."}, status=200)
 
 
 class ClearanceLossReportView(APIView):
@@ -1401,30 +1401,30 @@ class ClearanceLossReportView(APIView):
         try:
             startDate = request.GET.get("startDate")
             if not startDate:
-                return JsonResponse({"error": "startDate parameter is required."}, status=400)
+                return Response({"error": "startDate parameter is required."}, status=400)
             try:
                 # Convert startDate to datetime object in correct format
                 startDate_dt = datetime.datetime.strptime(startDate, "%m/%d/%Y")
                 startDate = timezone.make_aware(startDate_dt)
             except Exception as e:
-                return JsonResponse({"error": f"Invalid startDate format: {e}. Use MM/DD/YYYY."}, status=400)
+                return Response({"error": f"Invalid startDate format: {e}. Use MM/DD/YYYY."}, status=400)
             endDate = request.GET.get("endDate") or timezone.now()
             if isinstance(endDate, str):
                 try:
                     endDate_dt = datetime.datetime.strptime(endDate, "%m/%d/%Y")
                     endDate = timezone.make_aware(endDate_dt)
                 except Exception as e:
-                    return JsonResponse({"error": f"Invalid endDate format: {e}. Use MM/DD/YYYY."}, status=400)
+                    return Response({"error": f"Invalid endDate format: {e}. Use MM/DD/YYYY."}, status=400)
         except Exception as e:
-            return JsonResponse({"error": f"Invalid date format: {e}"}, status=400)
+            return Response({"error": f"Invalid date format: {e}"}, status=400)
 
         try:
             with open("./data/clearance_loss.json", "r") as f:
                 monthly_original_costs = json.load(f)
         except FileNotFoundError:
-            return JsonResponse({"error": "Original cost data file not found."}, status=500)
+            return Response({"error": "Original cost data file not found."}, status=500)
         except json.JSONDecodeError:
-            return JsonResponse({"error": "Error decoding original cost data file."}, status=500)
+            return Response({"error": "Error decoding original cost data file."}, status=500)
 
         clearance_products = Product.objects.filter(isClearanceProduct=True).exclude(childProductList=[])
         product_map = {p.productId: p for p in clearance_products}
@@ -1466,7 +1466,7 @@ class ClearanceLossReportView(APIView):
 
         overall_total_loss = sum(month["totalLoss"] for month in monthly_breakdown.values())
 
-        return JsonResponse({"message": "Monthly Clearance Loss Report", "overallTotalLoss": overall_total_loss, "monthlyBreakdown": monthly_breakdown}, status=200)
+        return Response({"message": "Monthly Clearance Loss Report", "overallTotalLoss": overall_total_loss, "monthlyBreakdown": monthly_breakdown}, status=200)
 
 
 class ParLevelView(APIView):
@@ -1480,7 +1480,7 @@ class ParLevelView(APIView):
         else:
             par_levels = Product.objects.filter(parValueDays__isnull=False).values("productId", "productName", "parValueDays")
 
-        return JsonResponse({"message": "Success", "data": list(par_levels)}, status=200)
+        return Response({"message": "Success", "data": list(par_levels)}, status=200)
 
     def _get_period_days(self, period_str):
         """Helper function to convert period string to days."""
@@ -1584,4 +1584,4 @@ class ParLevelView(APIView):
         else:  # dataType == 'product'
             self._handle_product_update(changes, period_days)
 
-        return JsonResponse({"message": "Parlevel and Minimum Quantity updated successfully"}, status=200)
+        return Response({"message": "Parlevel and Minimum Quantity updated successfully"}, status=200)
