@@ -60,15 +60,32 @@ class InvoicesView(APIView):
 
 
 def download_pdf(url, save_path):
-    """Downloads a PDF from a given URL and saves it to a local path."""
-    # print(f"Downloading PDF from {url}...")
+    """Downloads a PDF from a given URL and saves it to a local path.
+    Returns True only if the downloaded content is actually a valid PDF."""
     try:
-        response = requests.get(url, timeout=30)
-        # Raise an exception for bad status codes (4xx or 5xx)
+        response = requests.get(url, timeout=60)
         response.raise_for_status()
-        with open("./media/pdf/original/" + save_path, "wb") as f:
+
+        content_type = response.headers.get("Content-Type", "")
+
+        # Check if the response is actually a PDF
+        if "application/pdf" not in content_type and not response.content[:5] == b"%PDF-":
+            return False
+
+        if len(response.content) < 100:
+            return False
+
+        file_path = os.path.join("./media/pdf/original/", save_path)
+        with open(file_path, "wb") as f:
             f.write(response.content)
-        # print(f"Successfully downloaded and saved to {save_path}")
+
+        # Validate that pypdf can actually read it before returning success
+        try:
+            PdfReader(file_path)
+        except Exception as pdf_err:
+            os.remove(file_path)
+            return False
+
         return True
     except requests.exceptions.RequestException as e:
         print(f"Error downloading PDF: {e}")
@@ -176,14 +193,59 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None,paymen
         raise e
 
 
+def _build_pdf_urls(entry, token, urlMain):
+    """
+    Build a prioritized list of PDF download URLs to try for a payment entry.
+    Returns list of (url, description) tuples.
+    """
+    invoiceId = entry.get("orderId", None)
+    parentPaymentId = entry.get("parentPaymentId", None)
+    customerId = entry.get("customerId", None)
+    date = entry.get("paymentInsertedTimestamp", None)
+    accessToken = token.accessToken if token else ""
+
+    urls = []
+
+    # 1. If we have a specific invoice, try the invoice PDF
+    if invoiceId:
+        urls.append((
+            f"{urlMain}/services/pdf/sales-order/invoice/{invoiceId}?token={accessToken}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false",
+            "single invoice PDF"
+        ))
+
+    # 2. If we have a parentPaymentId, try the payment invoice PDF
+    if parentPaymentId:
+        urls.append((
+            f"{urlMain}/services/pdf/payment/invoice/{parentPaymentId}?type=customer&token={accessToken}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1",
+            "payment invoice PDF"
+        ))
+
+    # 3. Try the customer statement PDF as fallback
+    if customerId and date:
+        urls.append((
+            f"{urlMain}/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={accessToken}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1",
+            "customer statement PDF"
+        ))
+
+    # 4. Try the customer transaction PDF as last resort
+    if customerId and date:
+        urls.append((
+            f"{urlMain}/services/pdf/customer/transaction?startDate={date}&endDate={date}&customerIds={customerId}&customer=true&token={accessToken}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1",
+            "customer transaction PDF"
+        ))
+
+    return urls
+
+
 def _process_payment_entry(entry, token, urlMain, count, total):
     """
     Processes a single payment entry and returns the JSON string to yield.
 
-    Raises an exception on retryable failures (network errors, corrupt PDF
-    downloads such as "Stream has ended unexpectedly", etc.) so the caller can
-    retry. Non-retryable outcomes (missing transaction ID, download failures)
-    are returned as JSON strings without raising.
+    Tries multiple PDF download URLs in priority order. If the primary URL fails
+    (non-PDF response, corrupt file, network error), it falls back to alternative
+    endpoints before giving up.
+
+    Raises an exception on retryable failures so the caller can retry.
     """
     transactionId = entry.get("transactionId", None)
     invoiceId = entry.get("orderId", None)
@@ -191,11 +253,18 @@ def _process_payment_entry(entry, token, urlMain, count, total):
     date = entry.get("paymentInsertedTimestamp", None)
     parentPaymentId = entry.get("parentPaymentId", None)
     customerId = entry.get("customerId", None)
-    paymentModeName = entry.get("paymentModeName", None)
+    paymentModeName = entry.get("paymentModeName", "other")
+
+    # Skip if no transaction ID at all
+    if not transactionId:
+        msg = f"Skipping payment with no transaction ID for customer: {customerId} Parent Payment ID: {parentPaymentId}"
+        return json.dumps({"error": msg}, indent=4)
+
+    # If parentPaymentId exists, fetch child payments to determine the approach
     if parentPaymentId:
         headers = {
             "Accept": "application/json, text/plain",
-            "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
+            "Accept-Language": "en-US,en;q=0.9",
             "Authorization": ("Bearer " + token.accessToken if token else ""),
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
@@ -216,90 +285,64 @@ def _process_payment_entry(entry, token, urlMain, count, total):
         )
         if response.json().get("hasError", False):
             return json.dumps({"error": "Failed to fetch child payment details"}, indent=4)
-        else:
-            childPayments = response.json()["result"]["content"]
-            if len(childPayments) == 1:
-                invoiceId = childPayments[0].get("orderId", None)
-                if transactionId:
-                    url = f"{urlMain}/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
-                    invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
-                    original_file = f"{invoiceName}_original.pdf"
-                    stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
-                    if download_pdf(url, original_file):
-                        checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
-                        info_lines = [
-                            (
-                                checkLabel,
-                                (str(transactionId) if transactionId else "N/A"),
-                            ),
-                            (
-                                "AMOUNT",
-                                (str(paymentAmount) if paymentAmount else "N/A"),
-                            ),
-                            ("DATE", str(date) if date else "N/A"),
-                            ("BY", entry["createdByName"] if "createdByName" in entry else "N/A"),
-                        ]
-                        add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
-                        return json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
-                    else:
-                        return json.dumps({"error": "Failed to download invoice PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-                else:
-                    return json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-            else:
-                if transactionId:
-                    url = f"{urlMain}/services/pdf/cusomter/statement?startDate={date}&endDate={date}&isAccrual=true&customerIds={customerId}&point=erp&token={token}&zone=America/New_York&storeIdList=1,2&defaultStoreId=1"
-                    invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
-                    original_file = f"{invoiceName}_original.pdf"
-                    stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
-                    if download_pdf(url, original_file):
-                        checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
-                        info_lines = [
-                            (
-                                checkLabel,
-                                (str(transactionId) if transactionId else "N/A"),
-                            ),
-                            (
-                                "AMOUNT",
-                                (str(paymentAmount) if paymentAmount else "N/A"),
-                            ),
-                            ("DATE", str(date) if date else "N/A"),
-                            ("BY", entry["createdByName"] if "createdByName" in entry else "N/A"),
-                        ]
-                        add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
-                        return json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
-                    else:
-                        return json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-                else:
-                    return json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-    else:
-        if transactionId:
-            url = f"{urlMain}/services/pdf/sales-order/invoice/{invoiceId}?token={token}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
-            invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0]}"
-            original_file = f"{invoiceName}_original.pdf"
-            stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
-            if download_pdf(url, original_file):
-                checkLabel = "CK#NO:" if "CK#" in transactionId else ("CC#NO:" if "CC" in transactionId else ("ACH#NO:" if "ACH" in transactionId else "TX#NO:"))
-                info_lines = [
-                    (
-                        checkLabel,
-                        str(transactionId) if transactionId else "N/A",
-                    ),
-                    (
-                        "AMOUNT",
-                        str(paymentAmount) if paymentAmount else "N/A",
-                    ),
-                    ("DATE", str(date) if date else "N/A"),
-                    ("BY", entry["createdByName"] if "createdByName" in entry else "N/A"),
-                ]
-                add_stamp_to_pdf(original_file, stamped_file, info_lines,paymentModeName)
-                return json.dumps({"status": "processed", "customerId": customerId, "transactionId": transactionId,"data": entry,"percent": round((count / total) * 100)}, indent=4)
-            else:
-                return json.dumps({"error": "Failed to download statement PDF for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
-        else:
-            return json.dumps({"error": "Skipping payment with no transaction ID for customer: " + str(customerId) + " Parent Payment ID: " + str(parentPaymentId)}, indent=4)
+
+        childPayments = response.json()["result"]["content"]
+
+        # If single child, update invoiceId from child
+        if len(childPayments) == 1:
+            child_orderId = childPayments[0].get("orderId", None)
+            if child_orderId:
+                invoiceId = child_orderId
+
+    # Build prioritized list of PDF URLs to try
+    # Override orderId in entry temporarily for URL building
+    entry_for_urls = {**entry, "orderId": invoiceId}
+    pdf_urls = _build_pdf_urls(entry_for_urls, token, urlMain)
+
+    if not pdf_urls:
+        msg = f"No PDF URLs could be built for customer: {customerId}, parentPaymentId: {parentPaymentId}"
+        return json.dumps({"error": msg}, indent=4)
+
+    invoiceName = f"{parentPaymentId}-{customerId}-{date.split(' ')[0] if date else 'nodate'}"
+    original_file = f"{invoiceName}_original.pdf"
+    stamped_file = f"{invoiceName}_with_paid_stamp.pdf"
+
+    # Try each URL in priority order until one works
+    downloaded = False
+    for url, url_desc in pdf_urls:
+        if download_pdf(url, original_file):
+            downloaded = True
+            break
+
+    if not downloaded:
+        tried = ", ".join([desc for _, desc in pdf_urls])
+        msg = f"All PDF download attempts failed for customer: {customerId}, Parent Payment ID: {parentPaymentId}. Tried: {tried}"
+        return json.dumps({"error": msg}, indent=4)
+
+    # Stamp the PDF
+    checkLabel = (
+        "CK#NO:" if transactionId and "CK#" in transactionId
+        else ("CC#NO:" if transactionId and "CC" in transactionId
+              else ("ACH#NO:" if transactionId and "ACH" in transactionId
+                    else "TX#NO:"))
+    )
+    info_lines = [
+        (checkLabel, str(transactionId) if transactionId else "N/A"),
+        ("AMOUNT", str(paymentAmount) if paymentAmount else "N/A"),
+        ("DATE", str(date) if date else "N/A"),
+        ("BY", entry.get("createdByName", "N/A")),
+    ]
+    add_stamp_to_pdf(original_file, stamped_file, info_lines, paymentModeName)
+    return json.dumps({
+        "status": "processed",
+        "customerId": customerId,
+        "transactionId": transactionId,
+        "data": entry,
+        "percent": round((count / total) * 100)
+    }, indent=4)
 
 
-def stampMaker(data, token, urlMain):
+def stampMaker(data, token, urlMain, username):
     print(f"Processing {len(data)} payments for stamping...")
     total = len(data)
     count = 1
@@ -312,7 +355,6 @@ def stampMaker(data, token, urlMain):
                 yield _process_payment_entry(entry, token, urlMain, count, total)
                 break
             except Exception as e:
-                # I want to print the line number where the error occurred
                 import sys
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 line_number = exc_tb.tb_lineno
@@ -327,9 +369,8 @@ def stampMaker(data, token, urlMain):
     # zip all stamped files from ./media/pdf/ and save it to ./media/zip/stamped_invoices.zip
     # and remove all stamped files from ./media/pdf/
     # and send the zip file as response
-    zip_filename = "stamped_invoices.zip"
+    zip_filename = f"stamped_invoices_{username}.zip"
     zip_filepath = f"./media/zip/{zip_filename}"
-
 
     with zipfile.ZipFile(zip_filepath, "w") as zipf:
         for root, dirs, files in os.walk("./media/pdf/"):
@@ -352,6 +393,10 @@ class StampInvoiceView(APIView):
         token = SalesgentToken.objects.filter(id=idToken).first()
         startDate = request.GET.get("startDate", None)
         endDate = request.GET.get("endDate", None)
+        username = request.GET.get("username", "unknown")
+
+        if not token:
+            return Response({"error": "Authentication token not found"}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # create folder ./media/pdf/ if not exists
         if not os.path.exists("./media/pdf/"):
@@ -382,7 +427,7 @@ class StampInvoiceView(APIView):
             return Response({"error": "Failed to fetch payment details"}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
         data = response.json()["result"]["content"]
 
-        streaming_response = StreamingHttpResponse(stampMaker(data, token, url), content_type="text/event-stream")
+        streaming_response = StreamingHttpResponse(stampMaker(data, token, url, username), content_type="text/event-stream")
         streaming_response["Cache-Control"] = "no-cache"
         return streaming_response
 
@@ -390,7 +435,8 @@ class DownloadStampedInvoicesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        zip_filename = "stamped_invoices.zip"
+        username = request.GET.get("username", "unknown")
+        zip_filename = f"stamped_invoices_{username}.zip"
         zip_filepath = f"./media/zip/{zip_filename}"
         if os.path.exists(zip_filepath):
             file_response = FileResponse(open(zip_filepath, "rb"), as_attachment=True, filename=zip_filename, content_type="application/zip")

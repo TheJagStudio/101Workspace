@@ -5,15 +5,24 @@ import { useAtom } from 'jotai';
 import { accountWebsitesAtom } from '../../Variables';
 
 const Toast = ({ message, onClose }) => {
+	const [isDownloading, setIsDownloading] = useState(false);
+
 	function downloadZip() {
 		if (message?.zipUrl) {
-			fetch(import.meta.env.VITE_SERVER_URL + message.zipUrl)
+			setIsDownloading(true);
+			const token = localStorage.getItem("accessToken");
+			fetch(import.meta.env.VITE_SERVER_URL + message.zipUrl, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
 				.then(res => res.blob())
 				.then(blob => {
 					const url = window.URL.createObjectURL(blob)
 					window.open(url, '_blank')
 					setTimeout(() => window.URL.revokeObjectURL(url), 10000)
 				})
+				.finally(() => setIsDownloading(false))
 		} else {
 			alert("No ZIP file available for download.")
 		}
@@ -35,8 +44,15 @@ const Toast = ({ message, onClose }) => {
 								All selected invoices have been stamped and zipped.
 							</p>
 							{message?.zipUrl && (
-								<button onClick={downloadZip} className="mt-2 inline-block text-pink-600 underline text-xs">
-									Download ZIP
+								<button onClick={downloadZip} disabled={isDownloading} className="mt-2 inline-flex items-center gap-1.5 text-pink-600 underline text-xs disabled:opacity-50 disabled:cursor-not-allowed">
+									{isDownloading ? (
+										<>
+											<Loader className="h-3 w-3 animate-spin" />
+											Downloading...
+										</>
+									) : (
+										'Download ZIP'
+									)}
 								</button>
 							)}
 						</div>
@@ -68,6 +84,7 @@ function StampInvoice() {
 	const [toastMessage, setToastMessage] = useState(null)
 	const [zipUrl, setZipUrl] = useState(null)
 	const [error, setError] = useState(null)
+	const [isDownloading, setIsDownloading] = useState(false)
 	const logRef = useRef([])
 	const [selectedCompany, setSelectedCompany] = useAtom(accountWebsitesAtom);
 	const [websiteUrl, setWebsiteUrl] = useState(selectedCompany !== "101GA" ? "https://erp.rivercitywholesale.com" : `https://erp.101distributorsga.com`);
@@ -82,8 +99,16 @@ function StampInvoice() {
 		setError(null)
 		logRef.current = []
 		try {
-			const url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?startDate=${startDate}&endDate=${endDate}&website=${selectedCompany}`
-			const response = await fetch(url, { method: 'GET' })
+			const token = localStorage.getItem("accessToken");
+			const userInfo = JSON.parse(localStorage.getItem("101-userInfo") || "{}");
+			const username = userInfo.username || "unknown";
+			const url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?startDate=${startDate}&endDate=${endDate}&website=${selectedCompany}&username=${encodeURIComponent(username)}`
+			const response = await fetch(url, {
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
 			if (!response.body) throw new Error('No response body')
 			const reader = response.body.getReader()
 			const decoder = new TextDecoder()
@@ -109,10 +134,13 @@ function StampInvoice() {
 							setStatus('syncing')
 						}
 						if (data.zipUrl) {
+							const userInfo = JSON.parse(localStorage.getItem("101-userInfo") || "{}");
+							const username = userInfo.username || "unknown";
 							setProgress(100)
 							setStatus('completed')
-							setZipUrl("/api/accounts/download-stamped-invoices/")
-							setToastMessage({ zipUrl: "/api/accounts/download-stamped-invoices/" })
+							const downloadUrl = `/api/accounts/download-stamped-invoices/?username=${encodeURIComponent(username)}`;
+							setZipUrl(downloadUrl)
+							setToastMessage({ zipUrl: downloadUrl })
 							setShowToast(true)
 						}
 						if (data.error) {
@@ -134,13 +162,20 @@ function StampInvoice() {
 
 	function downloadZip() {
 		if (zipUrl) {
-			fetch(import.meta.env.VITE_SERVER_URL + zipUrl)
+			setIsDownloading(true);
+			const token = localStorage.getItem("accessToken");
+			fetch(import.meta.env.VITE_SERVER_URL + zipUrl, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
 				.then(res => res.blob())
 				.then(blob => {
 					const url = window.URL.createObjectURL(blob)
 					window.open(url, '_blank')
 					setTimeout(() => window.URL.revokeObjectURL(url), 10000)
 				})
+				.finally(() => setIsDownloading(false))
 		} else {
 			alert("No ZIP file available for download.")
 		}
@@ -246,8 +281,15 @@ function StampInvoice() {
 						</div>)}
 						{zipUrl && (
 							<div className="mt-4">
-								<button onClick={downloadZip} className="text-pink-600 underline">
-									Download Stamped Invoices ZIP
+								<button onClick={downloadZip} disabled={isDownloading} className="inline-flex items-center gap-2 text-pink-600 underline disabled:opacity-50 disabled:cursor-not-allowed">
+									{isDownloading ? (
+										<>
+											<Loader className="h-4 w-4 animate-spin" />
+											Downloading...
+										</>
+									) : (
+										'Download Stamped Invoices ZIP'
+									)}
 								</button>
 							</div>
 						)}
