@@ -427,11 +427,11 @@ function StampInvoice() {
 										</ul>
 										{(appliedFilters.customerName || appliedFilters.companyName || appliedFilters.dbaName) ? (
 											<p className="mt-1.5 text-gray-500">
-												Only invoices matching the provided filter values in the selected date range will be stamped.
+												Matching invoices are loaded from Invoice List filters (customer / company / DBA) in the selected date range, then stamped.
 											</p>
 										) : (
 											<p className="mt-1.5 text-gray-500">
-												No name filters applied — all invoices in the date range will be stamped.
+												No name filters applied — all payments in the date range will be stamped.
 											</p>
 										)}
 									</>

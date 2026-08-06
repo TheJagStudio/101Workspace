@@ -1,6 +1,5 @@
 import os
 import time
-from urllib.parse import quote_plus
 from django.http import StreamingHttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -498,6 +497,69 @@ def stampMakerByInvoiceIds(invoice_ids, token, urlMain, username):
     yield json.dumps({"zipUrl": f"/media/zip/{zip_filename}"}, indent=4)
 
 
+def _fetch_invoice_ids_from_order_list(url_main, token, start_date, end_date, customer_name=None, company_name=None, dba_name=None):
+    """
+    Resolve invoice IDs via /api/order/list — the ERP endpoint that actually supports
+    customerName / companyName / dbaName filters (paymentDetails does not).
+    """
+    from urllib.parse import quote_plus
+
+    headers = {
+        "Accept": "application/json, text/plain",
+        "Authorization": f"Bearer {token.accessToken}" if token else "",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-ch-ua-mobile": "?0",
+    }
+
+    invoice_ids = []
+    seen = set()
+    page = 0
+    page_size = 500
+    max_pages = 200  # safety cap
+
+    while page < max_pages:
+        list_url = (
+            f"{url_main}/api/order/list?storeIds=1,2,3,4,5"
+            f"&page={page}&size={page_size}&showEmployeeSpecificData=false"
+            f"&startDate={start_date}+00:00:00&endDate={end_date}+23:59:59"
+        )
+        if customer_name:
+            list_url += f"&customerName={quote_plus(customer_name)}"
+        if company_name:
+            list_url += f"&companyName={quote_plus(company_name)}"
+        if dba_name:
+            list_url += f"&dbaName={quote_plus(dba_name)}"
+
+        response = requests.get(list_url, headers=headers, timeout=60)
+        payload = response.json()
+        if payload.get("hasError", False):
+            print("Error fetching order list for name filters:", payload)
+            break
+
+        result = payload.get("result") or {}
+        content = result.get("content") or []
+        for order in content:
+            order_id = order.get("id")
+            if order_id is None:
+                continue
+            order_id_str = str(order_id)
+            if order_id_str not in seen:
+                seen.add(order_id_str)
+                invoice_ids.append(order_id_str)
+
+        total_pages = result.get("totalPages")
+        if total_pages is not None:
+            if page + 1 >= int(total_pages):
+                break
+        elif len(content) < page_size:
+            break
+
+        page += 1
+
+    return invoice_ids
+
+
 class StampInvoiceView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -549,6 +611,29 @@ class StampInvoiceView(APIView):
         if not startDate or not endDate:
             return Response({"error": "startDate and endDate are required when invoiceIds are not provided"}, status=http_status.HTTP_400_BAD_REQUEST)
 
+        # Name filters (customer / company / DBA) — use order/list (same API as Invoice List).
+        # paymentDetails has no DBA field and ignores these query params.
+        if customerName or companyName or dbaName:
+            invoice_ids = _fetch_invoice_ids_from_order_list(
+                url,
+                token,
+                startDate,
+                endDate,
+                customer_name=customerName or None,
+                company_name=companyName or None,
+                dba_name=dbaName or None,
+            )
+            print(
+                f"Name filters via order/list — customerName={customerName!r}, companyName={companyName!r}, "
+                f"dbaName={dbaName!r}; matched {len(invoice_ids)} invoice(s)"
+            )
+            streaming_response = StreamingHttpResponse(
+                stampMakerByInvoiceIds(invoice_ids, token, url, username),
+                content_type="text/event-stream",
+            )
+            streaming_response["Cache-Control"] = "no-cache"
+            return streaming_response
+
         headers = {
             "sec-ch-ua-platform": '"Windows"',
             "Authorization": f"Bearer {token.accessToken}" if token else "",
@@ -559,16 +644,11 @@ class StampInvoiceView(APIView):
             "sec-ch-ua-mobile": "?0",
         }
 
+        # No name filters — stamp from payment details in the date range (original behavior)
         payment_details_url = (
             f"{url}/api/customer/paymentDetails?storeIds=1,2,3,4,5"
             f"&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000"
         )
-        if customerName:
-            payment_details_url += f"&customerName={quote_plus(customerName)}"
-        if companyName:
-            payment_details_url += f"&companyName={quote_plus(companyName)}"
-        if dbaName:
-            payment_details_url += f"&dbaName={quote_plus(dbaName)}"
 
         response = requests.get(
             payment_details_url,
