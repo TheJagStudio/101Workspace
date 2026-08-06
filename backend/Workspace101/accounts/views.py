@@ -193,6 +193,26 @@ def add_stamp_to_pdf(original_pdf_path, stamped_pdf_path, info_lines=None,paymen
         raise e
 
 
+def save_output_pdf(original_pdf_path, output_pdf_path, paymentModeName="other", apply_stamp=True, info_lines=None):
+    """
+    Save the downloaded PDF into the zip output folder.
+    When apply_stamp is True, overlays the PAID stamp; otherwise copies the original as-is.
+    Output filename still uses the *_with_paid_stamp.pdf suffix so existing zip logic works.
+    """
+    if apply_stamp:
+        add_stamp_to_pdf(original_pdf_path, output_pdf_path, info_lines, paymentModeName)
+        return
+
+    if not os.path.exists(f"./media/pdf/{paymentModeName}/"):
+        os.makedirs(f"./media/pdf/{paymentModeName}/")
+
+    src = f"./media/pdf/original/{original_pdf_path}"
+    dst = f"./media/pdf/{paymentModeName}/{output_pdf_path}"
+    if not os.path.exists(src):
+        raise FileNotFoundError(f"Original PDF not found: {src}")
+    os.replace(src, dst)
+
+
 def _build_pdf_urls(entry, token, urlMain):
     """
     Build a prioritized list of PDF download URLs to try for a payment entry.
@@ -237,7 +257,7 @@ def _build_pdf_urls(entry, token, urlMain):
     return urls
 
 
-def _process_payment_entry(entry, token, urlMain, count, total):
+def _process_payment_entry(entry, token, urlMain, count, total, apply_stamp=True):
     """
     Processes a single payment entry and returns the JSON string to yield.
 
@@ -319,7 +339,7 @@ def _process_payment_entry(entry, token, urlMain, count, total):
         msg = f"All PDF download attempts failed for customer: {customerId}, Parent Payment ID: {parentPaymentId}. Tried: {tried}"
         return json.dumps({"error": msg}, indent=4)
 
-    # Stamp the PDF
+    # Stamp the PDF (or save unstamped when apply_stamp is False)
     checkLabel = (
         "CK#NO:" if transactionId and "CK#" in transactionId
         else ("CC#NO:" if transactionId and "CC" in transactionId
@@ -332,7 +352,7 @@ def _process_payment_entry(entry, token, urlMain, count, total):
         ("DATE", str(date) if date else "N/A"),
         ("BY", entry.get("createdByName", "N/A")),
     ]
-    add_stamp_to_pdf(original_file, stamped_file, info_lines, paymentModeName)
+    save_output_pdf(original_file, stamped_file, paymentModeName, apply_stamp=apply_stamp, info_lines=info_lines)
     return json.dumps({
         "status": "processed",
         "customerId": customerId,
@@ -342,8 +362,8 @@ def _process_payment_entry(entry, token, urlMain, count, total):
     }, indent=4)
 
 
-def stampMaker(data, token, urlMain, username):
-    print(f"Processing {len(data)} payments for stamping...")
+def stampMaker(data, token, urlMain, username, apply_stamp=True):
+    print(f"Processing {len(data)} payments for {'stamping' if apply_stamp else 'download (no stamp)'}...")
     total = len(data)
     count = 1
     max_retries = 3
@@ -352,7 +372,7 @@ def stampMaker(data, token, urlMain, username):
         parentPaymentId = entry.get("parentPaymentId", None)
         for attempt in range(1, max_retries + 1):
             try:
-                yield _process_payment_entry(entry, token, urlMain, count, total)
+                yield _process_payment_entry(entry, token, urlMain, count, total, apply_stamp=apply_stamp)
                 break
             except Exception as e:
                 import sys
@@ -383,9 +403,9 @@ def stampMaker(data, token, urlMain, username):
     yield json.dumps({"zipUrl": f"/media/zip/{zip_filename}"}, indent=4)
 
 
-def _process_invoice_by_id(invoice_id, token, urlMain, count, total):
+def _process_invoice_by_id(invoice_id, token, urlMain, count, total, apply_stamp=True):
     """
-    Download and stamp a single invoice PDF by invoice/order ID.
+    Download and optionally stamp a single invoice PDF by invoice/order ID.
     Used when the user provides explicit invoice IDs (bypasses payment-date filters).
     """
     accessToken = token.accessToken if token else ""
@@ -444,7 +464,7 @@ def _process_invoice_by_id(invoice_id, token, urlMain, count, total):
         ("DATE", date_str),
         ("BY", str(created_by) if created_by else "N/A"),
     ]
-    add_stamp_to_pdf(original_file, stamped_file, info_lines, "invoice-id")
+    save_output_pdf(original_file, stamped_file, "invoice-id", apply_stamp=apply_stamp, info_lines=info_lines)
 
     return json.dumps({
         "status": "processed",
@@ -460,15 +480,15 @@ def _process_invoice_by_id(invoice_id, token, urlMain, count, total):
     }, indent=4)
 
 
-def stampMakerByInvoiceIds(invoice_ids, token, urlMain, username):
-    print(f"Processing {len(invoice_ids)} invoices by ID for stamping...")
+def stampMakerByInvoiceIds(invoice_ids, token, urlMain, username, apply_stamp=True):
+    print(f"Processing {len(invoice_ids)} invoices by ID for {'stamping' if apply_stamp else 'download (no stamp)'}...")
     total = len(invoice_ids)
     count = 1
     max_retries = 3
     for invoice_id in invoice_ids:
         for attempt in range(1, max_retries + 1):
             try:
-                yield _process_invoice_by_id(invoice_id, token, urlMain, count, total)
+                yield _process_invoice_by_id(invoice_id, token, urlMain, count, total, apply_stamp=apply_stamp)
                 break
             except Exception as e:
                 import sys
@@ -575,6 +595,8 @@ class StampInvoiceView(APIView):
         companyName = (request.GET.get("companyName") or "").strip()
         dbaName = (request.GET.get("dbaName") or "").strip()
         invoice_ids_raw = (request.GET.get("invoiceIds") or "").strip()
+        apply_stamp_raw = (request.GET.get("applyStamp") or "true").strip().lower()
+        apply_stamp = apply_stamp_raw not in ("false", "0", "no", "off")
 
         if not token:
             return Response({"error": "Authentication token not found"}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -602,7 +624,7 @@ class StampInvoiceView(APIView):
                 return Response({"error": "No valid invoice IDs provided"}, status=http_status.HTTP_400_BAD_REQUEST)
 
             streaming_response = StreamingHttpResponse(
-                stampMakerByInvoiceIds(invoice_ids, token, url, username),
+                stampMakerByInvoiceIds(invoice_ids, token, url, username, apply_stamp=apply_stamp),
                 content_type="text/event-stream",
             )
             streaming_response["Cache-Control"] = "no-cache"
@@ -625,10 +647,10 @@ class StampInvoiceView(APIView):
             )
             print(
                 f"Name filters via order/list — customerName={customerName!r}, companyName={companyName!r}, "
-                f"dbaName={dbaName!r}; matched {len(invoice_ids)} invoice(s)"
+                f"dbaName={dbaName!r}; matched {len(invoice_ids)} invoice(s); apply_stamp={apply_stamp}"
             )
             streaming_response = StreamingHttpResponse(
-                stampMakerByInvoiceIds(invoice_ids, token, url, username),
+                stampMakerByInvoiceIds(invoice_ids, token, url, username, apply_stamp=apply_stamp),
                 content_type="text/event-stream",
             )
             streaming_response["Cache-Control"] = "no-cache"
@@ -659,7 +681,10 @@ class StampInvoiceView(APIView):
             return Response({"error": "Failed to fetch payment details"}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
         data = response.json()["result"]["content"]
 
-        streaming_response = StreamingHttpResponse(stampMaker(data, token, url, username), content_type="text/event-stream")
+        streaming_response = StreamingHttpResponse(
+            stampMaker(data, token, url, username, apply_stamp=apply_stamp),
+            content_type="text/event-stream",
+        )
         streaming_response["Cache-Control"] = "no-cache"
         return streaming_response
 

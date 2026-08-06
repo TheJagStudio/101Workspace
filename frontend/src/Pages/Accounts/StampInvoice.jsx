@@ -94,6 +94,7 @@ function StampInvoice() {
 	const [companyName, setCompanyName] = useState('')
 	const [dbaName, setDbaName] = useState('')
 	const [invoiceIdsText, setInvoiceIdsText] = useState('')
+	const [applyStamp, setApplyStamp] = useState(true)
 	const [appliedFilters, setAppliedFilters] = useState(null)
 	const [dateFormat] = useState('yyyy-MM-dd')
 	const [isSyncing, setIsSyncing] = useState(false)
@@ -142,6 +143,7 @@ function StampInvoice() {
 				customerName: null,
 				companyName: null,
 				dbaName: null,
+				applyStamp,
 			}
 			: {
 				mode: 'filters',
@@ -149,6 +151,7 @@ function StampInvoice() {
 				customerName: trimmedCustomer || null,
 				companyName: trimmedCompany || null,
 				dbaName: trimmedDba || null,
+				applyStamp,
 			};
 
 		setIsSyncing(true)
@@ -164,7 +167,7 @@ function StampInvoice() {
 			const token = localStorage.getItem("accessToken");
 			const userInfo = JSON.parse(localStorage.getItem("101-userInfo") || "{}");
 			const username = userInfo.username || "unknown";
-			let url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?website=${selectedCompany}&username=${encodeURIComponent(username)}`
+			let url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?website=${selectedCompany}&username=${encodeURIComponent(username)}&applyStamp=${applyStamp ? 'true' : 'false'}`
 			if (invoiceIds.length > 0) {
 				url += `&invoiceIds=${encodeURIComponent(invoiceIds.join(','))}`
 			} else {
@@ -336,9 +339,38 @@ function StampInvoice() {
 							</p>
 						) : (
 							<p className="mt-1 text-xs text-gray-400">
-								If provided, only these invoices are stamped. Date range and name filters are not used.
+								If provided, only these invoices are processed. Date range and name filters are not used.
 							</p>
 						)}
+					</div>
+					<div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5">
+						<div className="min-w-0">
+							<label htmlFor="apply-stamp-toggle" className="block text-sm font-medium text-gray-800">
+								Apply PAID stamp
+							</label>
+							<p className="text-xs text-gray-500 mt-0.5">
+								{applyStamp
+									? 'Invoices will be stamped with PAID before download.'
+									: 'Download original invoices without a PAID stamp.'}
+							</p>
+						</div>
+						<button
+							id="apply-stamp-toggle"
+							type="button"
+							role="switch"
+							aria-checked={applyStamp}
+							disabled={isSyncing}
+							onClick={() => setApplyStamp((prev) => !prev)}
+							className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500/40 disabled:opacity-50 disabled:cursor-not-allowed ${
+								applyStamp ? 'bg-pink-600' : 'bg-gray-300'
+							}`}
+						>
+							<span
+								className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+									applyStamp ? 'translate-x-5' : 'translate-x-0'
+								}`}
+							/>
+						</button>
 					</div>
 					<button
 						onClick={startSync}
@@ -353,7 +385,9 @@ function StampInvoice() {
 						) : (
 							<Database className="h-5 w-5 mr-2" />
 						)}
-						{isSyncing ? 'Stamping...' : 'Start Stamping'}
+						{isSyncing
+							? (applyStamp ? 'Stamping...' : 'Downloading...')
+							: (applyStamp ? 'Start Stamping' : 'Download Without Stamp')}
 					</button>
 					{status === 'error' && (
 						<div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
@@ -367,9 +401,9 @@ function StampInvoice() {
 						<h1 className="text-2xl font-bold text-gray-800">Stamping Progress</h1>
 						<p className="text-gray-500 mt-1 text-sm">
 							{isSyncing
-								? `Stamping invoices... ${progress}%`
+								? `${applyStamp ? 'Stamping' : 'Downloading'} invoices... ${progress}%`
 								: status === 'completed'
-									? 'Stamping completed'
+									? (appliedFilters?.applyStamp === false ? 'Download completed' : 'Stamping completed')
 									: 'Ready to stamp'}
 						</p>
 					</header>
@@ -393,7 +427,7 @@ function StampInvoice() {
 									<>
 										<div className="font-semibold text-pink-700 mb-1">Invoice ID mode (all other filters ignored):</div>
 										<p className="mb-1">
-											Stamping <span className="font-semibold">{appliedFilters.invoiceIds.length}</span> invoice
+											Processing <span className="font-semibold">{appliedFilters.invoiceIds.length}</span> invoice
 											{appliedFilters.invoiceIds.length === 1 ? '' : 's'} by ID.
 										</p>
 										<ul className="max-h-24 overflow-y-auto font-mono text-[11px] space-y-0.5">
@@ -401,6 +435,9 @@ function StampInvoice() {
 												<li key={id}>{id}</li>
 											))}
 										</ul>
+										<p className="mt-1.5 text-gray-500">
+											PAID stamp: <span className="font-semibold">{appliedFilters.applyStamp ? 'On' : 'Off (original PDFs)'}</span>
+										</p>
 									</>
 								) : (
 									<>
@@ -424,14 +461,20 @@ function StampInvoice() {
 													{appliedFilters.dbaName || '— (not applied)'}
 												</span>
 											</li>
+											<li>
+												PAID stamp:{' '}
+												<span className="font-semibold">
+													{appliedFilters.applyStamp ? 'On' : 'Off (original PDFs)'}
+												</span>
+											</li>
 										</ul>
 										{(appliedFilters.customerName || appliedFilters.companyName || appliedFilters.dbaName) ? (
 											<p className="mt-1.5 text-gray-500">
-												Matching invoices are loaded from Invoice List filters (customer / company / DBA) in the selected date range, then stamped.
+												Matching invoices are loaded from Invoice List filters (customer / company / DBA) in the selected date range, then processed.
 											</p>
 										) : (
 											<p className="mt-1.5 text-gray-500">
-												No name filters applied — all payments in the date range will be stamped.
+												No name filters applied — all payments in the date range will be processed.
 											</p>
 										)}
 									</>
