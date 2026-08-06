@@ -198,6 +198,7 @@ function App() {
 					{user?.permissions?.utility_product_sync && (<Route path="product-sync" element={<ProductSync />} />)}
 				</Route>
 				<Route path="/accounts" element={user?.is_active ? <AccountOutlet logout={logout} /> : <Navigate to="/login" replace />} >
+					<Route index element={<Navigate to="invoice" replace />} />
 					{user?.permissions?.accounts_invoice && (<Route path="invoice" element={<Invoice />} />)}
 					{user?.permissions?.accounts_invoice && (<Route path="stamp-invoice" element={<StampInvoice />} />)}
 				</Route>

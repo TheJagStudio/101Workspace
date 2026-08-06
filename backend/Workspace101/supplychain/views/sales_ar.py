@@ -293,7 +293,7 @@ class ARRiskView(SupplyChainBaseView):
             })
 
         customers.sort(key=lambda x: x["totalDue"], reverse=True)
-        total_dto = aging_raw.get("totalCustomerDueAmountReportDto") if isinstance(aging_raw, dict) else {}
+        total_dto = aging_raw.get("totalCustomerDueAmountReportDto") or {} if isinstance(aging_raw, dict) else {}
         total_ar = safe_float(total_dto.get("totalDueAmount")) or sum(buckets.values())
 
         return self.ok({

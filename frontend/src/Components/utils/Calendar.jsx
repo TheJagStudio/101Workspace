@@ -298,7 +298,7 @@ const Calendar = ({ startDate, endDate, setStartDate, setEndDate, dateFormat, on
         },
         { label: 'This Year', range: () => ({ startDate: new Date(new Date().getFullYear(), 0, 1), endDate: new Date(new Date().getFullYear(), 11, 31) }) },
         { label: 'Last Year', range: () => ({ startDate: new Date(new Date().getFullYear() - 1, 0, 1), endDate: new Date(new Date().getFullYear() - 1, 11, 31) }) },
-        { label: ' To Date', range: () => ({ startDate: new Date(2019, 1, 1), endDate: new Date() }) }
+        { label: ' To Date', range: () => ({ startDate: new Date(2019, 0, 1), endDate: new Date() }) }
     ];
 
     const handlePredefinedRangeSelect = (rangeFunc) => {

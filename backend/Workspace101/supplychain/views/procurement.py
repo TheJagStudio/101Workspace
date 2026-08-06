@@ -148,7 +148,7 @@ class APAgingView(SupplyChainBaseView):
             })
 
         vendors.sort(key=lambda x: x["totalDue"], reverse=True)
-        total_dto = aging_raw.get("totalVendorDueAmountReportDto") if isinstance(aging_raw, dict) else {}
+        total_dto = aging_raw.get("totalVendorDueAmountReportDto") or {} if isinstance(aging_raw, dict) else {}
         total_ap = safe_float(total_dto.get("totalDueAmount")) or sum(buckets.values())
 
         return self.ok({

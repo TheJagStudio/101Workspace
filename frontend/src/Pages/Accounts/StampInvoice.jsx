@@ -71,9 +71,30 @@ const Toast = ({ message, onClose }) => {
 	)
 };
 
+const MIN_PAYMENT_DATE = '2019-01-01';
+
+function parseInvoiceIds(raw) {
+	if (!raw || !String(raw).trim()) return [];
+	const seen = new Set();
+	const ids = [];
+	for (const part of String(raw).split(/[\n,;]+/)) {
+		const id = part.trim();
+		if (id && !seen.has(id)) {
+			seen.add(id);
+			ids.push(id);
+		}
+	}
+	return ids;
+}
+
 function StampInvoice() {
 	const [startDate, setStartDate] = useState(null)
 	const [endDate, setEndDate] = useState(null)
+	const [customerName, setCustomerName] = useState('')
+	const [companyName, setCompanyName] = useState('')
+	const [dbaName, setDbaName] = useState('')
+	const [invoiceIdsText, setInvoiceIdsText] = useState('')
+	const [appliedFilters, setAppliedFilters] = useState(null)
 	const [dateFormat] = useState('yyyy-MM-dd')
 	const [isSyncing, setIsSyncing] = useState(false)
 	const [progress, setProgress] = useState(0)
@@ -89,7 +110,47 @@ function StampInvoice() {
 	const [selectedCompany, setSelectedCompany] = useAtom(accountWebsitesAtom);
 	const [websiteUrl, setWebsiteUrl] = useState(selectedCompany !== "101GA" ? "https://erp.rivercitywholesale.com" : `https://erp.101distributorsga.com`);
 
+	const parsedInvoiceIds = parseInvoiceIds(invoiceIdsText);
+	const useInvoiceIdMode = parsedInvoiceIds.length > 0;
+
+	const isDateBeforeMin = (dateStr) => {
+		if (!dateStr) return false;
+		return String(dateStr).slice(0, 10) < MIN_PAYMENT_DATE;
+	};
+
 	const startSync = async () => {
+		const invoiceIds = parseInvoiceIds(invoiceIdsText);
+
+		if (invoiceIds.length === 0) {
+			if (!startDate || !endDate) {
+				alert('Please select a payment date range, or enter invoice IDs to stamp.');
+				return;
+			}
+			if (isDateBeforeMin(startDate) || isDateBeforeMin(endDate)) {
+				alert(`Dates before ${MIN_PAYMENT_DATE} are not allowed. Please select a payment date range on or after January 1, 2019.`);
+				return;
+			}
+		}
+
+		const trimmedCustomer = customerName.trim();
+		const trimmedCompany = companyName.trim();
+		const trimmedDba = dbaName.trim();
+		const filtersForRun = invoiceIds.length > 0
+			? {
+				mode: 'invoiceIds',
+				invoiceIds,
+				customerName: null,
+				companyName: null,
+				dbaName: null,
+			}
+			: {
+				mode: 'filters',
+				invoiceIds: null,
+				customerName: trimmedCustomer || null,
+				companyName: trimmedCompany || null,
+				dbaName: trimmedDba || null,
+			};
+
 		setIsSyncing(true)
 		setStatus('starting')
 		setProgress(0)
@@ -97,12 +158,21 @@ function StampInvoice() {
 		setErrorLog([])
 		setZipUrl(null)
 		setError(null)
+		setAppliedFilters(filtersForRun)
 		logRef.current = []
 		try {
 			const token = localStorage.getItem("accessToken");
 			const userInfo = JSON.parse(localStorage.getItem("101-userInfo") || "{}");
 			const username = userInfo.username || "unknown";
-			const url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?startDate=${startDate}&endDate=${endDate}&website=${selectedCompany}&username=${encodeURIComponent(username)}`
+			let url = `${import.meta.env.VITE_SERVER_URL}/api/accounts/stamp-invoice/?website=${selectedCompany}&username=${encodeURIComponent(username)}`
+			if (invoiceIds.length > 0) {
+				url += `&invoiceIds=${encodeURIComponent(invoiceIds.join(','))}`
+			} else {
+				url += `&startDate=${startDate}&endDate=${endDate}`
+				if (trimmedCustomer) url += `&customerName=${encodeURIComponent(trimmedCustomer)}`
+				if (trimmedCompany) url += `&companyName=${encodeURIComponent(trimmedCompany)}`
+				if (trimmedDba) url += `&dbaName=${encodeURIComponent(trimmedDba)}`
+			}
 			const response = await fetch(url, {
 				method: 'GET',
 				headers: {
@@ -113,7 +183,6 @@ function StampInvoice() {
 			const reader = response.body.getReader()
 			const decoder = new TextDecoder()
 			let buffer = ''
-			const jsonRegex = /{[^}]*}(?={|$)/g // matches each JSON object
 
 			while (true) {
 				const { value, done } = await reader.read()
@@ -191,7 +260,7 @@ function StampInvoice() {
 						<h1 className="text-2xl font-bold text-gray-800">Stamp Invoice</h1>
 						<p className="text-gray-500 mt-1 text-sm">Stamp invoices with PAID and download as ZIP</p>
 					</header>
-					<div className="mb-4">
+					<div className={`mb-4 ${useInvoiceIdMode ? 'opacity-50 pointer-events-none' : ''}`}>
 						<span className="block text-sm text-gray-700 mb-1">Payment Date Range:</span>
 						<Calendar
 							startDate={startDate}
@@ -202,10 +271,78 @@ function StampInvoice() {
 							onRight={false}
 							accent="pink"
 						/>
+						<p className="mt-1 text-xs text-gray-400">Earliest allowed date: January 1, 2019</p>
+					</div>
+					<div className={`mb-4 space-y-3 ${useInvoiceIdMode ? 'opacity-50 pointer-events-none' : ''}`}>
+						<div>
+							<label className="block text-sm text-gray-700 mb-1" htmlFor="stamp-customer-name">
+								Customer Name <span className="text-gray-400 font-normal">(optional)</span>
+							</label>
+							<input
+								id="stamp-customer-name"
+								type="text"
+								value={customerName}
+								onChange={(e) => setCustomerName(e.target.value)}
+								disabled={isSyncing || useInvoiceIdMode}
+								placeholder="e.g. John Doe"
+								className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/25 focus:border-pink-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+							/>
+						</div>
+						<div>
+							<label className="block text-sm text-gray-700 mb-1" htmlFor="stamp-company-name">
+								Company Name <span className="text-gray-400 font-normal">(optional)</span>
+							</label>
+							<input
+								id="stamp-company-name"
+								type="text"
+								value={companyName}
+								onChange={(e) => setCompanyName(e.target.value)}
+								disabled={isSyncing || useInvoiceIdMode}
+								placeholder="e.g. John Doe LLC"
+								className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/25 focus:border-pink-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+							/>
+						</div>
+						<div>
+							<label className="block text-sm text-gray-700 mb-1" htmlFor="stamp-dba-name">
+								DBA Name <span className="text-gray-400 font-normal">(optional)</span>
+							</label>
+							<input
+								id="stamp-dba-name"
+								type="text"
+								value={dbaName}
+								onChange={(e) => setDbaName(e.target.value)}
+								disabled={isSyncing || useInvoiceIdMode}
+								placeholder="e.g. John Doe INC"
+								className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/25 focus:border-pink-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+							/>
+						</div>
+					</div>
+					<div className="mb-4">
+						<label className="block text-sm text-gray-700 mb-1" htmlFor="stamp-invoice-ids">
+							Invoice IDs <span className="text-gray-400 font-normal">(optional — overrides all filters above)</span>
+						</label>
+						<textarea
+							id="stamp-invoice-ids"
+							value={invoiceIdsText}
+							onChange={(e) => setInvoiceIdsText(e.target.value)}
+							disabled={isSyncing}
+							rows={4}
+							placeholder={"One ID per line, or comma-separated\ne.g.\n12345\n67890\nor 12345, 67890"}
+							className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-pink-500/25 focus:border-pink-500 disabled:bg-gray-50 disabled:cursor-not-allowed resize-y"
+						/>
+						{useInvoiceIdMode ? (
+							<p className="mt-1 text-xs text-pink-600">
+								{parsedInvoiceIds.length} invoice ID{parsedInvoiceIds.length === 1 ? '' : 's'} — date and name filters will be ignored.
+							</p>
+						) : (
+							<p className="mt-1 text-xs text-gray-400">
+								If provided, only these invoices are stamped. Date range and name filters are not used.
+							</p>
+						)}
 					</div>
 					<button
 						onClick={startSync}
-						disabled={isSyncing || !startDate || !endDate}
+						disabled={isSyncing || (!useInvoiceIdMode && (!startDate || !endDate))}
 						className={`w-full font-semibold py-2.5 px-6 rounded-md flex items-center justify-center ${isSyncing
 							? 'bg-gray-200 cursor-not-allowed'
 							: 'bg-pink-600 hover:bg-pink-700 text-white'
@@ -250,13 +387,67 @@ function StampInvoice() {
 								/>
 							</div>
 						</div>
+						{appliedFilters && (isSyncing || status === 'syncing' || status === 'completed' || status === 'starting') && (
+							<div className="mb-4 p-3 bg-pink-50 border border-pink-100 rounded-md text-xs text-gray-700">
+								{appliedFilters.mode === 'invoiceIds' ? (
+									<>
+										<div className="font-semibold text-pink-700 mb-1">Invoice ID mode (all other filters ignored):</div>
+										<p className="mb-1">
+											Stamping <span className="font-semibold">{appliedFilters.invoiceIds.length}</span> invoice
+											{appliedFilters.invoiceIds.length === 1 ? '' : 's'} by ID.
+										</p>
+										<ul className="max-h-24 overflow-y-auto font-mono text-[11px] space-y-0.5">
+											{appliedFilters.invoiceIds.map((id) => (
+												<li key={id}>{id}</li>
+											))}
+										</ul>
+									</>
+								) : (
+									<>
+										<div className="font-semibold text-pink-700 mb-1">Filters applied for this run:</div>
+										<ul className="space-y-0.5">
+											<li>
+												Customer Name:{' '}
+												<span className="font-semibold">
+													{appliedFilters.customerName || '— (not applied)'}
+												</span>
+											</li>
+											<li>
+												Company Name:{' '}
+												<span className="font-semibold">
+													{appliedFilters.companyName || '— (not applied)'}
+												</span>
+											</li>
+											<li>
+												DBA Name:{' '}
+												<span className="font-semibold">
+													{appliedFilters.dbaName || '— (not applied)'}
+												</span>
+											</li>
+										</ul>
+										{(appliedFilters.customerName || appliedFilters.companyName || appliedFilters.dbaName) ? (
+											<p className="mt-1.5 text-gray-500">
+												Only invoices matching the provided filter values in the selected date range will be stamped.
+											</p>
+										) : (
+											<p className="mt-1.5 text-gray-500">
+												No name filters applied — all invoices in the date range will be stamped.
+											</p>
+										)}
+									</>
+								)}
+							</div>
+						)}
 						{/* Log */}
 						<div className="mb-2">
 							<div className="text-xs text-gray-500 mb-1">Processed:</div>
 							<ul className="text-xs text-gray-700 max-h-40 overflow-y-auto">
 								{log?.map((item, idx) => (
 									<li key={idx} className="mb-1">
-										Customer: <span className="font-semibold">{item?.data?.customerName || item?.customerId}</span>
+										{item?.data?.orderId && (
+											<>Invoice: <span className="font-mono font-semibold">{item.data.orderId}</span> &mdash; </>
+										)}
+										Customer: <span className="font-semibold">{item?.data?.customerName || item?.customerId || 'N/A'}</span>
 										{item?.data?.company && (
 											<> &mdash; <span className="italic">{item?.data?.company}</span></>
 										)}

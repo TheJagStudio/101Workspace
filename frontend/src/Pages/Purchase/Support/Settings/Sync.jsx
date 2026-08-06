@@ -73,6 +73,7 @@ const SyncPage = () => {
 		all: 0,
 	});
 	const [error, setError] = useState(null);
+	const [backgroundSync, setBackgroundSync] = useState(false);
 	const pollInterval = useRef(null);
 
 	useEffect(() => {
@@ -89,49 +90,92 @@ const SyncPage = () => {
 			setProgress((prev) => ({ ...prev, [key]: 0 }));
 			setError(null);
 
-			const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/sync/sync-data/`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({syncType : key }),
-			});
+			if (backgroundSync) {
+				// Background mode: Start sync and poll for status
+				const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/sync/sync-data/`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ syncType: key, background: true }),
+				});
 
-			if (!response.body) {
-				throw new Error("No response body");
-			}
+				const result = await response.json();
+				if (result.status === "started") {
+					// Start polling for progress
+					const pollForProgress = async () => {
+						const statusResponse = await fetch(
+							`${import.meta.env.VITE_SERVER_URL}/api/sync/sync-data/?syncType=${key}`
+						);
+						const statusData = await statusResponse.json();
 
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
-			let done = false;
-			let buffer = "";
+						if (typeof statusData.progress === "number") {
+							setProgress((prev) => ({ ...prev, [key]: Math.min(100, statusData.progress) }));
+						}
 
-			while (!done) {
-				const { value, done: streamDone } = await reader.read();
-				done = streamDone;
-				if (value) {
-					buffer += decoder.decode(value, { stream: true });
-					let lines = buffer.split("\n");
-					buffer = lines.pop(); // keep incomplete line for next chunk
+						if (statusData.done || statusData.status === "done") {
+							setLoading((prev) => ({ ...prev, [key]: false }));
+							if (pollInterval.current) {
+								clearInterval(pollInterval.current);
+								pollInterval.current = null;
+							}
+							if (statusData.error) {
+								setError(`Error syncing ${key}: ${statusData.error}`);
+							}
+						}
+					};
 
-					for (let line of lines) {
-						line = line.trim();
-						if (line.startsWith("data:")) {
-							const jsonStr = line.replace("data:", "").trim();
-							if (jsonStr) {
-								try {
-									const data = JSON.parse(jsonStr);
-									if (typeof data.progress === "number") {
-										setProgress((prev) => ({
-											...prev,
-											[key]: Math.min(100, data.progress),
-										}));
+					// Poll every 2 seconds
+					pollInterval.current = setInterval(pollForProgress, 2000);
+					// Initial poll
+					pollForProgress();
+				}
+			} else {
+				// Real-time streaming mode (existing behavior)
+				const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/sync/sync-data/`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ syncType: key }),
+				});
+
+				if (!response.body) {
+					throw new Error("No response body");
+				}
+
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
+				let done = false;
+				let buffer = "";
+
+				while (!done) {
+					const { value, done: streamDone } = await reader.read();
+					done = streamDone;
+					if (value) {
+						buffer += decoder.decode(value, { stream: true });
+						let lines = buffer.split("\n");
+						buffer = lines.pop(); // keep incomplete line for next chunk
+
+						for (let line of lines) {
+							line = line.trim();
+							if (line.startsWith("data:")) {
+								const jsonStr = line.replace("data:", "").trim();
+								if (jsonStr) {
+									try {
+										const data = JSON.parse(jsonStr);
+										if (typeof data.progress === "number") {
+											setProgress((prev) => ({
+												...prev,
+												[key]: Math.min(100, data.progress),
+											}));
+										}
+										if (data.status === "done" || data.progress === 100) {
+											setLoading((prev) => ({ ...prev, [key]: false }));
+										}
+									} catch (e) {
+										// ignore parse errors
 									}
-									if (data.status === "done" || data.progress === 100) {
-										setLoading((prev) => ({ ...prev, [key]: false }));
-									}
-								} catch (e) {
-									// ignore parse errors
 								}
 							}
 						}
@@ -147,6 +191,28 @@ const SyncPage = () => {
 	return (
 		<div className="py-4 ">
 			<h1 className="text-2xl font-semibold mb-6">Sync Data</h1>
+			
+			{/* Background Sync Toggle */}
+			<div className="mb-6 p-4 border rounded-lg shadow-sm bg-gray-50">
+				<div className="flex items-center justify-between">
+					<div>
+						<p className="font-medium text-gray-900">Background Sync Mode</p>
+						<p className="text-gray-600 text-sm">
+							Enable to run syncs in the background with throttled requests (reduces server load)
+						</p>
+					</div>
+					<label className="relative inline-flex items-center cursor-pointer">
+						<input
+							type="checkbox"
+							checked={backgroundSync}
+							onChange={(e) => setBackgroundSync(e.target.checked)}
+							className="sr-only peer"
+						/>
+						<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+					</label>
+				</div>
+			</div>
+
 			{error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
 			{syncItems.map((item) => {
 				// Special handling for "all"

@@ -76,7 +76,7 @@ class CustomerChurnView(SupplyChainBaseView):
 
         local_at_risk = []
         customers = Customer.objects.filter(active=True).annotate(
-            last_order=Max("invoice_set__insertedTimestamp"),
+            last_order=Max("invoice__insertedTimestamp"),
         )
         for c in customers[:500]:
             last = c.last_order

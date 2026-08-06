@@ -1,4 +1,6 @@
 import os
+import threading
+from django.db import connections
 from django.shortcuts import render
 import requests
 from api.models import (
@@ -44,7 +46,15 @@ def notifyMe(message, channel):
     return
 
 
-def syncProducts(token):
+def _bg_throttle(request_index):
+    """Sleep 1s between requests and take a 10s break every 5 requests in background mode."""
+    time.sleep(1)
+    if request_index > 0 and request_index % 5 == 0:
+        print(f"[BG] Taking 10s break after {request_index} requests")
+        time.sleep(10)
+
+
+def syncProducts(token, is_background=False):
     totalPages = 80
     i = 0
     categoryNameMap = {
@@ -80,6 +90,8 @@ def syncProducts(token):
             for product in data:
                 productList.append(product)
             i += 1
+            if is_background:
+                _bg_throttle(i)
         except Exception as e:
             print(f"Error fetching products from page {i + 1}: {e}")
             yield 100
@@ -98,6 +110,8 @@ def syncProducts(token):
             for product in data:
                 productList.append(product)
             i += 1
+            if is_background:
+                _bg_throttle(i)
         except Exception as e:
             print(f"Error fetching products from page {i + 1}: {e}")
             yield 100
@@ -226,7 +240,7 @@ def syncProducts(token):
         yield 30 + (i * 70) / totalProducts
 
 
-def syncBusinessTypes(token):
+def syncBusinessTypes(token, is_background=False):
     headers = {
         "Accept": "application/json, text/plain",
         "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
@@ -268,7 +282,7 @@ def syncBusinessTypes(token):
             yield (i * 100) / totalBusinessTypes
 
 
-def syncVendors(token):
+def syncVendors(token, is_background=False):
     vendors = []
     totalElements = 1000
     totalPages = 10
@@ -381,12 +395,14 @@ def syncVendors(token):
                 print("No vendors found in this page, skipping...")
                 yield 100
         i += 1
+        if is_background:
+            _bg_throttle(i)
         if i >= totalPages:
             yield 100
             break
 
 
-def syncCategories(token):
+def syncCategories(token, is_background=False):
     headers = {
         "Accept": "application/json, text/plain",
         "Accept-Language": "en-US,en;q=0.9,gu;q=0.8,ru;q=0.7,hi;q=0.6",
@@ -465,7 +481,7 @@ def syncCategories(token):
         yield 100
 
 
-def syncSearchData(token):
+def syncSearchData(token, is_background=False):
     # Connect to Typesense
     client = typesense.Client(
         {
@@ -568,6 +584,8 @@ def syncSearchData(token):
             all_products.append(product)
         percent = (page / totalPages) * 50
         page += 1
+        if is_background:
+            _bg_throttle(page)
         yield percent
 
     # Import to Typesense in chunks of 1000
@@ -581,7 +599,7 @@ def syncSearchData(token):
     yield 100
 
 
-def syncCustomers(token):
+def syncCustomers(token, is_background=False):
     totalPages = 50
     i = 0
     customers = []
@@ -610,6 +628,8 @@ def syncCustomers(token):
             customers.extend(response.json()["result"]["content"])
             totalPages = response.json()["result"]["totalPages"]
             i = i + 1
+            if is_background:
+                _bg_throttle(i)
             yield (i * 15) / (totalPages + 1)
         except Exception as e:
             print(f"Error fetching customers on page {i}: {e}")
@@ -626,6 +646,8 @@ def syncCustomers(token):
             customers.extend(response.json()["result"]["content"])
             totalPages = response.json()["result"]["totalPages"]
             i = i + 1
+            if is_background:
+                _bg_throttle(i)
             yield 15 + (i * 15) / (totalPages + 1)
         except Exception as e:
             print(f"Error fetching customers on page {i}: {e}")
@@ -770,7 +792,7 @@ def syncCustomers(token):
         yield 100
 
 
-def syncInvoices(token):
+def syncInvoices(token, is_background=False):
 
     headers = {
         "Accept": "application/json, text/plain",
@@ -953,6 +975,8 @@ def syncInvoices(token):
             )
 
             page += 1
+            if is_background:
+                _bg_throttle(page)
             print(f"[Invoices] Progress: {(page * 100) / totalPages:.1f}%")
             yield (page * 100) / totalPages
         except Exception as e:
@@ -1026,7 +1050,7 @@ def purchaseHistory(productId, token):
         return data["result"]["purchaseByProductDtoPage"]["content"]
 
 
-def fetch_product_data(product, token):
+def fetch_product_data(product, token, is_background=False, req_counter=None):
     try:
         product_id = product.productId
         history_dir = "./dataHistory"
@@ -1044,10 +1068,16 @@ def fetch_product_data(product, token):
         else:
             dl_start = time.time()
             print(f"[History] Downloading sales for product {product_id}...")
+            if is_background and req_counter is not None:
+                req_counter[0] += 1
+                _bg_throttle(req_counter[0])
             sales_data = productSales(product_id, token)
             print(
                 f"[History] Downloading purchases for product {product_id} (sales took {time.time() - dl_start:.1f}s)..."
             )
+            if is_background and req_counter is not None:
+                req_counter[0] += 1
+                _bg_throttle(req_counter[0])
             purchase_data = purchaseHistory(product_id, token)
             print(
                 f"[History] Product {product_id} download finished in {time.time() - dl_start:.1f}s"
@@ -1080,7 +1110,7 @@ def fetch_product_data(product, token):
         }
 
 
-def syncProductHistory(token):
+def syncProductHistory(token, is_background=False):
     history_dir = "./dataHistory"
     os.makedirs(history_dir, exist_ok=True)
 
@@ -1106,13 +1136,14 @@ def syncProductHistory(token):
     processed_count = 0
     fetched_count = 0
     fullBatch = []
+    req_counter = [0]
     for product in products:
         fetched_count += 1
         print(
             f"[History] ({fetched_count}/{product_count}) Handling product {product.productId}, buffer={len(fullBatch)}"
         )
         try:
-            fullBatch.append(fetch_product_data(product, token))
+            fullBatch.append(fetch_product_data(product, token, is_background=is_background, req_counter=req_counter))
         except Exception as exc:
             print(f"Product {product.productId} generated an exception: {exc}")
 
@@ -1514,7 +1545,92 @@ def syncProductHistory(token):
     yield 100
 
 
+def bg_sync_worker(syncType, token):
+    try:
+        # Map syncType to the corresponding generator
+        generator_func = None
+        status_name = syncType
+        starting_status = f"{syncType}_starting"
+        if syncType == "businessType":
+            generator_func = syncBusinessTypes
+            starting_status = "business_types_starting"
+            status_name = "business_types"
+        elif syncType == "invoice":
+            generator_func = syncInvoices
+            starting_status = "invoices_starting"
+            status_name = "invoices"
+        elif syncType == "categories":
+            generator_func = syncCategories
+            starting_status = "categories_starting"
+            status_name = "categories"
+        elif syncType == "products":
+            generator_func = syncProducts
+            starting_status = "products_starting"
+            status_name = "products"
+        elif syncType == "productsHistory":
+            generator_func = syncProductHistory
+            starting_status = "products_history_starting"
+            status_name = "products_history"
+        elif syncType == "vendor":
+            generator_func = syncVendors
+            starting_status = "vendor_starting"
+            status_name = "vendor"
+        elif syncType == "search":
+            generator_func = syncSearchData
+            starting_status = "search_data_starting"
+            status_name = "search_data"
+        elif syncType == "customer":
+            generator_func = syncCustomers
+            starting_status = "customer_starting"
+            status_name = "customer"
+        else:
+            cache.set(f"bg_sync_status_{syncType}", {"progress": 0, "status": "error", "done": True, "error": "Invalid syncType specified"}, timeout=3600)
+            return
+
+        cache.set(f"bg_sync_status_{syncType}", {"progress": 0, "status": starting_status, "done": False, "error": None}, timeout=3600)
+
+        # Run generator and update progress
+        for percent in generator_func(token, is_background=True):
+            if isinstance(percent, str):
+                cache.set(f"bg_sync_status_{syncType}", {"progress": 0, "status": "error", "done": True, "error": percent}, timeout=3600)
+                return
+            elif not isinstance(percent, (int, float)):
+                error_msg = str(percent)
+                if hasattr(percent, 'data'):
+                    error_msg = percent.data.get('message') or error_msg
+                cache.set(f"bg_sync_status_{syncType}", {"progress": 0, "status": "error", "done": True, "error": error_msg}, timeout=3600)
+                return
+
+            cache.set(f"bg_sync_status_{syncType}", {"progress": round(percent), "status": status_name, "done": False, "error": None}, timeout=3600)
+
+        # Mark as done
+        cache.set(f"bg_sync_status_{syncType}", {"progress": 100, "status": "done", "done": True, "error": None}, timeout=3600)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        cache.set(f"bg_sync_status_{syncType}", {"progress": 0, "status": "error", "done": True, "error": str(e)}, timeout=3600)
+    finally:
+        connections.close_all()
+
+
 class syncData(APIView):
+    def get(self, request):
+        syncType = request.query_params.get("syncType")
+        if not syncType:
+            return Response({"status": "error", "message": "syncType query parameter is required"}, status=400)
+
+        status = cache.get(f"bg_sync_status_{syncType}")
+        if not status:
+            return Response({
+                "progress": 0,
+                "status": "pending",
+                "done": False,
+                "error": None
+            })
+
+        return Response(status)
+
     def post(self, request):
         token = (
             SalesgentToken.objects.first().accessToken
@@ -1522,6 +1638,7 @@ class syncData(APIView):
             else None
         )
         syncType = request.data.get("syncType", "all")
+        background = request.data.get("background", False)
 
         if not token:
             notifyMe(
@@ -1531,6 +1648,16 @@ class syncData(APIView):
             return Response(
                 {"status": "error", "message": "Token is required"}, status=400
             )
+
+        if background:
+            # Start background thread
+            t = threading.Thread(target=bg_sync_worker, args=(syncType, token), daemon=True)
+            t.start()
+            return Response({
+                "status": "started",
+                "message": f"Background sync started for {syncType}",
+                "syncType": syncType
+            })
 
         def event_stream():
             try:

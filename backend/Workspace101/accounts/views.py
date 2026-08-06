@@ -1,5 +1,6 @@
 import os
 import time
+from urllib.parse import quote_plus
 from django.http import StreamingHttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -383,6 +384,120 @@ def stampMaker(data, token, urlMain, username):
     yield json.dumps({"zipUrl": f"/media/zip/{zip_filename}"}, indent=4)
 
 
+def _process_invoice_by_id(invoice_id, token, urlMain, count, total):
+    """
+    Download and stamp a single invoice PDF by invoice/order ID.
+    Used when the user provides explicit invoice IDs (bypasses payment-date filters).
+    """
+    accessToken = token.accessToken if token else ""
+    headers = {
+        "Accept": "application/json, text/plain",
+        "Authorization": f"Bearer {accessToken}",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    }
+
+    customer_name = None
+    customer_id = None
+    company = None
+    amount = None
+    date = None
+    created_by = "N/A"
+
+    try:
+        order_resp = requests.get(
+            f"{urlMain}/api/order/{invoice_id}/withCustomer?storeIds=1,2,3,4,5",
+            headers=headers,
+            timeout=30,
+        )
+        order_json = order_resp.json()
+        if not order_json.get("hasError", True):
+            result = order_json.get("result") or {}
+            order = result.get("order") or result
+            customer = result.get("customer") or {}
+            customer_name = (
+                customer.get("name")
+                or customer.get("customerName")
+                or order.get("customerName")
+            )
+            customer_id = customer.get("id") or order.get("customerId")
+            company = customer.get("company") or customer.get("companyName") or order.get("companyName")
+            amount = order.get("totalAmount") or order.get("amount") or order.get("orderTotal")
+            date = order.get("insertedTimestamp") or order.get("orderDate") or order.get("dueDate")
+            created_by = order.get("createdByName") or order.get("salesPersonName") or "N/A"
+    except Exception as e:
+        print(f"Could not fetch order metadata for invoice {invoice_id}: {e}")
+
+    pdf_url = (
+        f"{urlMain}/services/pdf/sales-order/invoice/{invoice_id}"
+        f"?token={accessToken}&zone=America%2FNew_York&storeIdList=1%2C2&defaultStoreId=1&showSkuOnSalePage=false"
+    )
+    invoice_name = f"invoice-{invoice_id}"
+    original_file = f"{invoice_name}_original.pdf"
+    stamped_file = f"{invoice_name}_with_paid_stamp.pdf"
+
+    if not download_pdf(pdf_url, original_file):
+        return json.dumps({"error": f"Failed to download PDF for invoice ID: {invoice_id}"}, indent=4)
+
+    date_str = str(date).split(" ")[0] if date else "N/A"
+    info_lines = [
+        ("INV#:", str(invoice_id)),
+        ("AMOUNT", str(amount) if amount is not None else "N/A"),
+        ("DATE", date_str),
+        ("BY", str(created_by) if created_by else "N/A"),
+    ]
+    add_stamp_to_pdf(original_file, stamped_file, info_lines, "invoice-id")
+
+    return json.dumps({
+        "status": "processed",
+        "customerId": customer_id,
+        "transactionId": f"INV-{invoice_id}",
+        "data": {
+            "customerName": customer_name,
+            "company": company,
+            "orderId": invoice_id,
+            "paymentAmount": float(amount) if isinstance(amount, (int, float)) else None,
+        },
+        "percent": round((count / total) * 100),
+    }, indent=4)
+
+
+def stampMakerByInvoiceIds(invoice_ids, token, urlMain, username):
+    print(f"Processing {len(invoice_ids)} invoices by ID for stamping...")
+    total = len(invoice_ids)
+    count = 1
+    max_retries = 3
+    for invoice_id in invoice_ids:
+        for attempt in range(1, max_retries + 1):
+            try:
+                yield _process_invoice_by_id(invoice_id, token, urlMain, count, total)
+                break
+            except Exception as e:
+                import sys
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                line_number = exc_tb.tb_lineno
+                print(f"Error at line {line_number} for invoice {invoice_id} (attempt {attempt}/{max_retries}): {str(e)}")
+                if attempt < max_retries:
+                    time.sleep(2)
+                    continue
+                yield json.dumps({
+                    "error": f"Failed to process invoice ID {invoice_id} after {max_retries} attempts. Error: {str(e)}"
+                }, indent=4)
+        count += 1
+
+    zip_filename = f"stamped_invoices_{username}.zip"
+    zip_filepath = f"./media/zip/{zip_filename}"
+
+    with zipfile.ZipFile(zip_filepath, "w") as zipf:
+        for root, dirs, files in os.walk("./media/pdf/"):
+            for file in files:
+                if file.endswith("_with_paid_stamp.pdf"):
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, "./media/pdf/")
+                    zipf.write(file_path, arcname=arcname)
+                    os.remove(file_path)
+    yield json.dumps({"zipUrl": f"/media/zip/{zip_filename}"}, indent=4)
+
+
 class StampInvoiceView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -394,6 +509,10 @@ class StampInvoiceView(APIView):
         startDate = request.GET.get("startDate", None)
         endDate = request.GET.get("endDate", None)
         username = request.GET.get("username", "unknown")
+        customerName = (request.GET.get("customerName") or "").strip()
+        companyName = (request.GET.get("companyName") or "").strip()
+        dbaName = (request.GET.get("dbaName") or "").strip()
+        invoice_ids_raw = (request.GET.get("invoiceIds") or "").strip()
 
         if not token:
             return Response({"error": "Authentication token not found"}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -408,6 +527,28 @@ class StampInvoiceView(APIView):
         if not os.path.exists("./media/zip/"):
             os.makedirs("./media/zip/")
 
+        # Invoice ID mode: exclusive — ignore date/name filters, loop IDs directly
+        if invoice_ids_raw:
+            invoice_ids = []
+            seen = set()
+            for part in invoice_ids_raw.replace("\n", ",").replace(";", ",").split(","):
+                invoice_id = part.strip()
+                if invoice_id and invoice_id not in seen:
+                    seen.add(invoice_id)
+                    invoice_ids.append(invoice_id)
+            if not invoice_ids:
+                return Response({"error": "No valid invoice IDs provided"}, status=http_status.HTTP_400_BAD_REQUEST)
+
+            streaming_response = StreamingHttpResponse(
+                stampMakerByInvoiceIds(invoice_ids, token, url, username),
+                content_type="text/event-stream",
+            )
+            streaming_response["Cache-Control"] = "no-cache"
+            return streaming_response
+
+        if not startDate or not endDate:
+            return Response({"error": "startDate and endDate are required when invoiceIds are not provided"}, status=http_status.HTTP_400_BAD_REQUEST)
+
         headers = {
             "sec-ch-ua-platform": '"Windows"',
             "Authorization": f"Bearer {token.accessToken}" if token else "",
@@ -418,8 +559,19 @@ class StampInvoiceView(APIView):
             "sec-ch-ua-mobile": "?0",
         }
 
+        payment_details_url = (
+            f"{url}/api/customer/paymentDetails?storeIds=1,2,3,4,5"
+            f"&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000"
+        )
+        if customerName:
+            payment_details_url += f"&customerName={quote_plus(customerName)}"
+        if companyName:
+            payment_details_url += f"&companyName={quote_plus(companyName)}"
+        if dbaName:
+            payment_details_url += f"&dbaName={quote_plus(dbaName)}"
+
         response = requests.get(
-            f"{url}/api/customer/paymentDetails?storeIds=1,2,3,4,5&startDate={startDate}+00:00:00&endDate={endDate}+23:59:59&size=100000",
+            payment_details_url,
             headers=headers,
         )
         if response.json().get("hasError", False):
